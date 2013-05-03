@@ -8,106 +8,144 @@ import scala.collection.JavaConverters._
 // we have around 40 fields; but Scala functions and case classes cannot have more than 22 parameters :-/
 // have split it up somehow...
 
-case class FloatingBand(
-    band : net.sf.jasperreports.engine.JRBand,
+sealed case class FloatingBand(
+    band : Option[JRDesignBand],
     floating : Boolean);
 
+object FloatingBand {
+  val empty = new FloatingBand(
+      band = None,
+      floating = false);
+}
+
 // same order as in CSS
-case class Margins(
+sealed case class Margins(
     top : Int,
     right : Int,
     bottom : Int,
     left : Int);
 
-case class SummaryBand(
-    band : net.sf.jasperreports.engine.JRBand,
+sealed case class SummaryBand(
+    band : Option[JRDesignBand],
     newPage : Boolean,
     withPageHeaderAndFooter : Boolean);
 
-case class TitleBand(
-    band : net.sf.jasperreports.engine.JRBand,
+object SummaryBand {
+  val empty = new SummaryBand(
+      band = None,
+      newPage = false,
+      withPageHeaderAndFooter = false);
+}
+
+sealed case class TitleBand(
+    band : Option[JRDesignBand],
     newPage : Boolean);
 
-case class Pages(
+object TitleBand {
+  val empty = new TitleBand(
+      band = None,
+      newPage = false);
+}
+
+sealed case class Pages(
     height : Int,
     width : Int,
     margins : Margins,
     orientation : net.sf.jasperreports.engine.`type`.OrientationEnum,
-    footer : net.sf.jasperreports.engine.JRBand,
-    header : net.sf.jasperreports.engine.JRBand,
-    background : net.sf.jasperreports.engine.JRBand
+    footer : Option[JRDesignBand],
+    header : Option[JRDesignBand],
+    background : Option[JRDesignBand]
 );
+object Pages {
+  val empty = {
+    // very explicit defaults...
+    val o = new net.sf.jasperreports.engine.design.JasperDesign();
+    new Pages(
+        height = o.getPageHeight(),
+        width = o.getPageWidth(),
+        margins = new Margins(
+            left = o.getLeftMargin(),
+            right = o.getRightMargin(),
+            top = o.getTopMargin(),
+            bottom = o.getBottomMargin()),
+        orientation = o.getOrientationValue(),
+        footer = None,
+        header = None,
+        background = None
+    )
+  }
+}
 
-case class Columns(
+sealed case class Columns(
     count : Int,
     direction : net.sf.jasperreports.engine.`type`.RunDirectionEnum,
     footer : FloatingBand,
-    header : net.sf.jasperreports.engine.JRBand,
+    header : Option[JRDesignBand],
     spacing : Int,
     width : Int,
     printOrder : net.sf.jasperreports.engine.`type`.PrintOrderEnum
 );
 
-case class Data(
-    datasets: IndexedSeq[net.sf.jasperreports.engine.design.JRDesignDataset],  // Map-Like
-    fields : Seq[net.sf.jasperreports.engine.JRField], // Map-Like
-    sortFields : Seq[net.sf.jasperreports.engine.JRSortField]
-  // setQuery?
-    )
+object Columns {
+  val empty = {
+    // very explicit defaults...
+    val o = new net.sf.jasperreports.engine.design.JasperDesign();
+    new Columns(
+        count = o.getColumnCount(),
+        direction = o.getColumnDirection(),
+        footer = FloatingBand.empty,
+        header = None,
+        spacing = o.getColumnSpacing(),
+        width = o.getColumnWidth(),
+        printOrder = o.getPrintOrderValue()
+        )
+  }
+}
 
-case class JasperDesign(
+sealed case class JasperDesign(
   name : String,
-  styles : IndexedSeq[net.sf.jasperreports.engine.JRStyle], // Map-Like
+  details: Seq[JRDesignBand],
+  styles : IndexedSeq[JRStyle.Internal], // Map-Like
   templates : IndexedSeq[net.sf.jasperreports.engine.JRReportTemplate],
-  groups : Seq[net.sf.jasperreports.engine.design.JRDesignGroup], // Map-Like
-  scriptlets : IndexedSeq[net.sf.jasperreports.engine.JRScriptlet], // Map-Like
-  parameters : Seq[net.sf.jasperreports.engine.JRParameter], // without system parameters!  // Map-Like
-  variables : Seq[net.sf.jasperreports.engine.design.JRDesignVariable], // without system variables!  // Map-Like
+  subDatasets: Map[String, JRDesignDataset],
+  mainDataset: JRDesignDataset,
   imports : Set[String],
   columns : Columns,
   // ?? def defaultStyle()
-  // filterExpression
   // formatFactoryClass
   ignorePagination : Boolean,
   language : String, // Java or Groovy
-  lastPageFooter : net.sf.jasperreports.engine.JRBand,
-  // mainDataset??
-  noData : net.sf.jasperreports.engine.JRBand,
+  lastPageFooter : Option[JRDesignBand],
+  noData : Option[JRDesignBand],
   pages : Pages,
-  // resourceBundle?
-  // setScripletClass?
   summary : SummaryBand,
   title : TitleBand
   // UUID?
 ) {
-  lazy val obj : JD = {
-    def l[J, T](tgt : java.util.List[J], src: Seq[T]) : Unit =
-      //tgt.addAll(src asJava)
-      // TODO: Optimize
-      for (s <- src) tgt.add(s.asInstanceOf[J])
-    
+  def drop : net.sf.jasperreports.engine.design.JasperDesign = {
     val r = new JD();
     r.setName(name);
-    l(r.getStylesList(), styles);
-    //l(r.getTemplatesList(), templates);
+    for (v <- details) r.getDetailSection().asInstanceOf[net.sf.jasperreports.engine.design.JRDesignSection].addBand(v);
+    for (v <- styles) r.addStyle(v);
     r.getTemplatesList().addAll(templates); // why does it work here, but not for the others??
-    l(r.getGroupsList(), groups);
-    l(r.getScriptletsList(), scriptlets);
-    l(r.getParametersList(), parameters);
-    l(r.getVariablesList(), variables);
+    // TODO for (v <- mainDataset.groups) r.addGroup(v);
+    // TODO for (v <- mainDataset.scriptlets) r.addScriptlet(v);
+    for (v <- mainDataset.parameters) r.addParameter(v);
+    // TODO for (v <- mainDataset.variables) r.addVariable(v);
+    // TODO subDatasets
     for (s <- imports) r.addImport(s);
     r.setColumnCount(columns.count);
     r.setColumnDirection(columns.direction);
-    r.setColumnFooter(columns.footer.band);
+    r.setColumnFooter(columns.footer.band.getOrElse(null));
     r.setFloatColumnFooter(columns.footer.floating);
-    r.setColumnHeader(columns.header);
+    r.setColumnHeader(columns.header.getOrElse(null));
     r.setColumnSpacing(columns.spacing);
     r.setColumnWidth(columns.width);
     r.setPrintOrder(columns.printOrder)
     r.setIgnorePagination(ignorePagination);
     r.setLanguage(language);
-    r.setLastPageFooter(lastPageFooter);
-    r.setNoData(noData);
+    r.setLastPageFooter(lastPageFooter.getOrElse(null));
+    r.setNoData(noData.getOrElse(null));
     r.setPageHeight(pages.height);
     r.setPageWidth(pages.width);
     r.setTopMargin(pages.margins.top);
@@ -115,27 +153,51 @@ case class JasperDesign(
     r.setBottomMargin(pages.margins.bottom);
     r.setLeftMargin(pages.margins.left);
     r.setOrientation(pages.orientation);
-    r.setPageFooter(pages.footer);
-    r.setPageHeader(pages.header);
-    r.setBackground(pages.background);
-    r.setSummary(summary.band);
+    r.setPageFooter(pages.footer.getOrElse(null));
+    r.setPageHeader(pages.header.getOrElse(null));
+    r.setBackground(pages.background.getOrElse(null));
+    r.setSummary(summary.band.getOrElse(null));
     r.setSummaryNewPage(summary.newPage);
     r.setSummaryWithPageHeaderAndFooter(summary.withPageHeaderAndFooter);
-    r.setTitle(title.band);
+    r.setTitle(title.band.getOrElse(null));
     r.setTitleNewPage(title.newPage);
 
     r;
   }
   
+  
+  /* TODO: These are static
   def systemParameters : Seq[net.sf.jasperreports.engine.JRParameter] =
     // obj.getParametersList() filter { p : Any => p.asInstanceOf[net.sf.jasperreports.engine.JRParameter].isSystemDefined() };
     obj.getParametersList().asInstanceOf[List[net.sf.jasperreports.engine.JRParameter]] filter { p => p.isSystemDefined() };
   
   def systemVariables : Seq[net.sf.jasperreports.engine.JRVariable] =
     obj.getVariablesList().asInstanceOf[List[net.sf.jasperreports.engine.JRVariable]] filter { p => p.isSystemDefined() };
+
+  */ 
 }
 
 object JasperDesign {
+  def apply(name: String) : JasperDesign =
+    new JasperDesign(
+      name = name, // TODO: Validate non-empty
+      details = Vector.empty,
+      styles = Vector.empty,
+      templates = Vector.empty,
+      subDatasets = Map.empty,
+      mainDataset = JRDesignDataset.empty,
+      imports = Set.empty,
+      columns = Columns.empty,
+      ignorePagination = false,
+      language = net.sf.jasperreports.engine.JRReport.LANGUAGE_JAVA,
+      lastPageFooter = None,
+      noData = None,
+      pages = Pages.empty,
+      summary = SummaryBand.empty,
+      title = TitleBand.empty
+      );
+
+  /*
   def apply() : JasperDesign =
     apply(new JD())
     
@@ -202,4 +264,6 @@ object JasperDesign {
   implicit def lift(o : JD) : JasperDesign = JasperDesign(o)
   
   implicit def drop(o : JasperDesign) : JD = o.obj;
+
+  */
 }
