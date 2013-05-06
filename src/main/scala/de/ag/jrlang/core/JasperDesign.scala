@@ -2,6 +2,12 @@ package de.ag.jrlang.core
 
 //import net.sf.jasperreports.engine.JRParameter
 import net.sf.jasperreports.engine.design.{JasperDesign => JD}
+import de.ag.jrlang.core.Columns;
+import de.ag.jrlang.core.FloatingBand;
+import de.ag.jrlang.core.JRDesignDataset;
+import de.ag.jrlang.core.Pages;
+import de.ag.jrlang.core.SummaryBand;
+import de.ag.jrlang.core.TitleBand;
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 

@@ -2,6 +2,7 @@ package de.ag.jrlang.core
 
 // JRDesignElementGroup, JRBaseElementGroup
 
+import de.ag.jrlang.core.JRDesignBand;
 import scala.collection.JavaConversions._
 
 sealed case class JRDesignBand (
