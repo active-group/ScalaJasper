@@ -131,8 +131,8 @@ sealed case class JasperDesign(
   def drop : net.sf.jasperreports.engine.design.JasperDesign = {
     val r = new JD();
     r.setName(name);
-    for (v <- details) r.getDetailSection().asInstanceOf[net.sf.jasperreports.engine.design.JRDesignSection].addBand(v);
     for (v <- styles) r.addStyle(v);
+    for (v <- details) r.getDetailSection().asInstanceOf[net.sf.jasperreports.engine.design.JRDesignSection].addBand(v);
     r.getTemplatesList().addAll(templates); // why does it work here, but not for the others??
     // TODO for (v <- mainDataset.groups) r.addGroup(v);
     // TODO for (v <- mainDataset.scriptlets) r.addScriptlet(v);
@@ -167,7 +167,6 @@ sealed case class JasperDesign(
     r.setSummaryWithPageHeaderAndFooter(summary.withPageHeaderAndFooter);
     r.setTitle(title.band.getOrElse(null));
     r.setTitleNewPage(title.newPage);
-
     r;
   }
   

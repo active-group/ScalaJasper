@@ -11,7 +11,12 @@ public class Noxml {
   public static void main(String[] args) {
     try {
       JasperDesign d = getJasperDesignMin();
-      write(print(compile(d)), "/Users/frese/tmp/testJava.pdf");
+      de.ag.jrlang.core.JasperDesignTest.show(d);
+      JasperPrint p = print(compile(d));
+      //write(p, "/Users/frese/tmp/testJava.pdf");
+      String s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p);
+      System.err.println(s);
+
     } catch (JRException e) {
       e.printStackTrace();
     }

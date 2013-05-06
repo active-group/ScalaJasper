@@ -193,6 +193,7 @@ sealed case class JRCommon(
     positionType: net.sf.jasperreports.engine.`type`.PositionTypeEnum,
     mode: Option[net.sf.jasperreports.engine.`type`.ModeEnum],
     printInFirstWholeBand: Boolean,
+    printWhenExpression: JRDesignExpression,
     printRepeatedValues: Boolean,
     printWhenDetailOverflows: Boolean,
     removeLineWhenBlank: Boolean,
@@ -211,7 +212,8 @@ object JRCommon {
       positionType = net.sf.jasperreports.engine.`type`.PositionTypeEnum.FLOAT, // ??
       mode = None,
       printInFirstWholeBand = false,
-      printRepeatedValues = false,
+      printWhenExpression = "",
+      printRepeatedValues = true, // !!
       printWhenDetailOverflows = false,
       removeLineWhenBlank = false,
       stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH, //??
@@ -219,7 +221,8 @@ object JRCommon {
       )
   
   def put(src: JRCommon, tgt:net.sf.jasperreports.engine.design.JRDesignElement) = {
-    tgt.setKey(src.key);
+    tgt.setKey(if (src.key == "") null else src.key);
+    //tgt.setKey(src.key);
     tgt.setForecolor(src.forecolor.getOrElse(null));
     tgt.setBackcolor(src.backcolor.getOrElse(null));
     tgt.setHeight(src.height);
@@ -228,12 +231,19 @@ object JRCommon {
     tgt.setY(src.y);
     tgt.setPositionType(src.positionType);
     tgt.setMode(src.mode.getOrElse(null));
-    // ?? tgt.setPrintWhenExpression(expression)
+    tgt.setPrintWhenExpression(src.printWhenExpression); // TODO: put these
+    tgt.setPrintRepeatedValues(src.printRepeatedValues); // two in one; as only one can be used (expression has precedence)
     tgt.setPrintInFirstWholeBand(src.printInFirstWholeBand);
-    tgt.setPrintRepeatedValues(src.printRepeatedValues);
     tgt.setPrintWhenDetailOverflows(src.printWhenDetailOverflows);
     tgt.setStretchType(src.stretchType);
-    // TODO tgt.setStyle(src.style.getOrElse(null));
+    src.style match {
+      case None =>
+        (); // ?? tgt.setStyle(null);
+      case Some(s : JRStyle.Internal) =>
+        tgt.setStyle(s)
+      case Some(s : JRStyle.External) =>
+        tgt.setStyleNameReference(s.reference)
+    }
   }
 }
     

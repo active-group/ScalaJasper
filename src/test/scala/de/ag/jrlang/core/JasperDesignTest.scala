@@ -11,36 +11,27 @@ import de.ag.jrlang.core._
 @RunWith(classOf[JUnitRunner])
 class JasperDesignTest extends FunSuite {
 
-  def compile(d : JasperDesign) = {
-    val r : net.sf.jasperreports.engine.design.JasperDesign = d;
-    net.sf.jasperreports.engine.JasperCompileManager.compileReport(r);
-  }
-  
-  // -> de.ag.jrlang.util ?
-  def print(rep : net.sf.jasperreports.engine.JasperReport) : net.sf.jasperreports.engine.JasperPrint = {
-    val p = new java.util.HashMap[java.lang.String,java.lang.Object];
-    p.put("ReportTitle", "Test");
-    val ds = new net.sf.jasperreports.engine.JREmptyDataSource();
-    net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p, ds);
-    // net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p);
-  }
 
   def testPrint(d : JasperDesign) = {
-    val r = compile(d)
-    val p = print(r);
+    val r = JasperDesignTest.compile(d)
+    val p = JasperDesignTest.print(r);
     val bytes = net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(p);
     // it's not easily verifiable, because it contains current timestamps ("of course")
-    printf("%s", new String(bytes))
+    // printf("%s", new String(bytes))
     //net.sf.jasperreports.engine.JasperPrintManager.printReport(p, true, )
-    net.sf.jasperreports.engine.JasperExportManager.exportReportToPdfFile(p, "/Users/frese/tmp/test.pdf");
+    //net.sf.jasperreports.engine.JasperExportManager.exportReportToPdfFile(p, "/Users/frese/tmp/test.pdf");
+    val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)
+    printf("%s", s);
   }
 
-  /*def testPrintJ(d : JasperDesign) = {
+  def testPrintJ(d : JasperDesign) = {
     val jd = d.drop;
     val r = de.ag.jrlang.test.Noxml.compile(jd)
     val p = de.ag.jrlang.test.Noxml.print(r)
     de.ag.jrlang.test.Noxml.write(p, "/Users/frese/tmp/test2.pdf")
-  }*/
+    val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)
+    printf("%s", s);
+  }
   
   test("empty report") {
     // running from sbt crashes with some classloader/resources bug,
@@ -60,24 +51,22 @@ class JasperDesignTest extends FunSuite {
             pdfEncoding = Some("Cp1252"),
             pdfEmbedded = Some(false))
         );
-    // setting the internal style here - that won't be one of the objects in the styles list.. problem?
     val rect = JRCommon.empty.copy(
         x = 0, y = 0,
-        width = 200, height = 50,
+        width = 55, height = 15,
         style = Some(mystyle), // only the name is references, as it seems
-        forecolor = Some(java.awt.Color.BLACK),
-        backcolor = Some(java.awt.Color.WHITE),
-        mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
+        backcolor = Some(java.awt.Color.black),
+        forecolor = Some(java.awt.Color.white)
+        // mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
         );
     val myband = JRDesignBand.empty.copy(
-            height = 200,
+            height = 20,
             children = Vector(
-                // JREllipse.empty.copy(common = rect),
-                JRStaticText("Hello world").copy(common = rect)
+                JREllipse.empty.copy(common = rect),
+                JRStaticText("Hello").copy(common = rect)
                 ));
-    // Damn, he sill not prints anything.. setting the band everywhere... still nothing :-(
     val r = JasperDesign("hello-world-report").copy(
-        // styles = Vector(mystyle), // is needed, but maybe auto collect them?!
+        styles = Vector(mystyle), // is needed, but maybe auto collect them?!
         // details = Vector(myband),
         // title = TitleBand.empty.copy(band = Some(myband), newPage = true),
         pages = Pages.empty.copy(
@@ -88,8 +77,9 @@ class JasperDesignTest extends FunSuite {
             // band = Some(myband)
             )
         );
-    testPrint(r);
+    testPrintJ(r);
   }
+  
 
   
   /*
@@ -135,4 +125,30 @@ class JasperDesignTest extends FunSuite {
     v2.getParametersList().clear();
     assert(v2.getParametersList().size() == 0);
   }
+}
+
+
+object JasperDesignTest {
+  def compile(d : JasperDesign) = {
+    val r : net.sf.jasperreports.engine.design.JasperDesign = d;
+    show(r)
+    net.sf.jasperreports.engine.JasperCompileManager.compileReport(r);
+  }
+  
+  // -> de.ag.jrlang.util ?
+  def print(rep : net.sf.jasperreports.engine.JasperReport) : net.sf.jasperreports.engine.JasperPrint = {
+    val p = new java.util.HashMap[java.lang.String,java.lang.Object];
+    p.put("ReportTitle", "Test");
+    val ds = new net.sf.jasperreports.engine.JREmptyDataSource();
+    net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p, ds);
+    // net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p);
+  }
+  def show(jd: net.sf.jasperreports.engine.design.JasperDesign) = {
+    System.err.println("Report: ");
+    val props = jd.getPropertiesMap()
+    for (p <- props.getPropertyNames()) {
+      System.err.println("  %s -> %s", p, props.getProperty(p));
+    }
+  }
+
 }

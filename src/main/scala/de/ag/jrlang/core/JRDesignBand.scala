@@ -17,7 +17,7 @@ object JRDesignBand {
   val empty = new JRDesignBand(
       height = 0,
       printWhenExpression = null,
-      splitType = net.sf.jasperreports.engine.`type`.SplitTypeEnum.STRETCH, //??
+      splitType = net.sf.jasperreports.engine.`type`.SplitTypeEnum.IMMEDIATE, //??
       children = Vector.empty
       )
   
