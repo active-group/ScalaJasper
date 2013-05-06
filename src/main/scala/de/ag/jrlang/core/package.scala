@@ -33,9 +33,13 @@ package object core {
   implicit def liftExpression(o : net.sf.jasperreports.engine.design.JRDesignExpression) =
     o.getText()
   implicit def dropExpression(o: String) = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignExpression()
-    r.setText(o);
-    r
+    if ((o == "") || (o == null))
+      null
+      else {
+        val r = new net.sf.jasperreports.engine.design.JRDesignExpression()
+        r.setText(o);
+        r
+      }
   }
 
   
