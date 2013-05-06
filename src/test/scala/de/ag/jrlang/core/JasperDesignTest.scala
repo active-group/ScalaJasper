@@ -3,28 +3,44 @@ package de.ag.jrlang.core
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
+import de.ag.jrlang.core.SummaryBand;
+import de.ag.jrlang.core.TitleBand;
 import de.ag.jrlang.core._
 
 @RunWith(classOf[JUnitRunner])
 class JasperDesignTest extends FunSuite {
 
-  // -> de.ag.jrlang.util ?
-  def print(d : JasperDesign) : net.sf.jasperreports.engine.JasperPrint = {
+  def compile(d : JasperDesign) = {
     val r : net.sf.jasperreports.engine.design.JasperDesign = d;
-    val rep = net.sf.jasperreports.engine.JasperCompileManager.compileReport(r);
+    net.sf.jasperreports.engine.JasperCompileManager.compileReport(r);
+  }
+  
+  // -> de.ag.jrlang.util ?
+  def print(rep : net.sf.jasperreports.engine.JasperReport) : net.sf.jasperreports.engine.JasperPrint = {
     val p = new java.util.HashMap[java.lang.String,java.lang.Object];
-    // datasource ?
-    net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p);
+    p.put("ReportTitle", "Test");
+    val ds = new net.sf.jasperreports.engine.JREmptyDataSource();
+    net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p, ds);
+    // net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p);
   }
 
   def testPrint(d : JasperDesign) = {
-    val p = print(d);
-    //val bytes = net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(p);
+    val r = compile(d)
+    val p = print(r);
+    val bytes = net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(p);
     // it's not easily verifiable, because it contains current timestamps ("of course")
-    //printf("%s", new String(bytes))
+    printf("%s", new String(bytes))
     //net.sf.jasperreports.engine.JasperPrintManager.printReport(p, true, )
     net.sf.jasperreports.engine.JasperExportManager.exportReportToPdfFile(p, "/Users/frese/tmp/test.pdf");
   }
+
+  /*def testPrintJ(d : JasperDesign) = {
+    val jd = d.drop;
+    val r = de.ag.jrlang.test.Noxml.compile(jd)
+    val p = de.ag.jrlang.test.Noxml.print(r)
+    de.ag.jrlang.test.Noxml.write(p, "/Users/frese/tmp/test2.pdf")
+  }*/
   
   test("empty report") {
     // running from sbt crashes with some classloader/resources bug,
@@ -46,29 +62,30 @@ class JasperDesignTest extends FunSuite {
         );
     // setting the internal style here - that won't be one of the objects in the styles list.. problem?
     val rect = JRCommon.empty.copy(
-        x = 100, y = 0,
+        x = 0, y = 0,
         width = 200, height = 50,
-        style = Some(mystyle),
+        style = Some(mystyle), // only the name is references, as it seems
         forecolor = Some(java.awt.Color.BLACK),
-        backcolor = Some(java.awt.Color.WHITE)
+        backcolor = Some(java.awt.Color.WHITE),
+        mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
         );
     val myband = JRDesignBand.empty.copy(
             height = 200,
             children = Vector(
-                //JREllipse.empty.copy(common = rect),
+                // JREllipse.empty.copy(common = rect),
                 JRStaticText("Hello world").copy(common = rect)
                 ));
     // Damn, he sill not prints anything.. setting the band everywhere... still nothing :-(
     val r = JasperDesign("hello-world-report").copy(
-        styles = Vector(mystyle), // needed?
-        details = Vector(myband),
-        title = TitleBand.empty.copy(band = Some(myband), newPage = true),
+        // styles = Vector(mystyle), // is needed, but maybe auto collect them?!
+        // details = Vector(myband),
+        // title = TitleBand.empty.copy(band = Some(myband), newPage = true),
         pages = Pages.empty.copy(
-            header = Some(myband),
-            footer = Some(myband)
+            header = Some(myband)
+            // footer
             ),
         summary = SummaryBand.empty.copy(
-            band = Some(myband)
+            // band = Some(myband)
             )
         );
     testPrint(r);
