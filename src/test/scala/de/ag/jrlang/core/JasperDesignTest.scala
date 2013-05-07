@@ -8,11 +8,11 @@ import de.ag.jrlang.core._
 
 @RunWith(classOf[JUnitRunner])
 class JasperDesignTest extends FunSuite {
-
+  
 
   def testPrint(d : JasperDesign) = {
     val r = JasperDesignTest.compile(d)
-    val p = JasperDesignTest.print(r);
+    val p = JasperDesignTest.print(r, Map.empty);
     //val bytes = net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(p);
     // it's not easily verifiable, because it contains current timestamps ("of course")
     // printf("%s", new String(bytes))
@@ -26,7 +26,19 @@ class JasperDesignTest extends FunSuite {
     // running from sbt crashes with some classloader/resources bug,
     // running from eclipse works ("of course"); so hard to debug.
     val r = JasperDesign("empty report")
-    testPrint(r);
+    
+    val expected = 
+<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="empty report" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
+  <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+  <origin band="detail"/>
+  <style name="default" isDefault="true" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false"/>
+  <page/>
+</jasperPrint>
+
+    val actual = JasperDesignTest.printToXML(r, Map.empty);
+    JasperDesignTest.compareJasperPrintXML(expected, actual);
   }
 
   test("simple report") {
@@ -75,7 +87,29 @@ class JasperDesignTest extends FunSuite {
             // band = Some(myband)
             )
         );
-    testPrint(r);
+    
+    val expected =
+<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="hello-world-report" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
+  <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+  <origin band="pageHeader"/>
+  <origin band="detail"/>
+  <style name="default" isDefault="true" fontSize="12" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252"/>
+  <style name="autodef0" fontSize="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252"/>
+  <page>
+    <ellipse>
+      <reportElement uuid="e09461da-2eb3-41f9-9d0c-629f1532d1e8" style="autodef0" x="20" y="30" width="55" height="15" forecolor="#FFFFFF" backcolor="#000000" origin="0" srcId="1"/>
+    </ellipse>
+    <text textHeight="9.421875" lineSpacingFactor="1.1777344" leadingOffset="-1.6875">
+      <reportElement uuid="2155e5cc-96c2-4125-a527-c2124b38f01f" style="autodef0" x="20" y="30" width="55" height="15" forecolor="#FFFFFF" backcolor="#000000" origin="0" srcId="2"/>
+      <textContent><![CDATA[Hello]]></textContent>
+    </text>
+  </page>
+</jasperPrint>
+   
+    val actual = JasperDesignTest.printToXML(r, Map.empty);
+    JasperDesignTest.compareJasperPrintXML(expected, actual);
   }
   
 
@@ -127,16 +161,16 @@ class JasperDesignTest extends FunSuite {
 
 
 object JasperDesignTest {
-  def compile(d : JasperDesign) = {
-    val r : net.sf.jasperreports.engine.design.JasperDesign = d;
-    show(r)
-    net.sf.jasperreports.engine.JasperCompileManager.compileReport(r);
+  def compile(d : net.sf.jasperreports.engine.design.JasperDesign) = {
+    net.sf.jasperreports.engine.JasperCompileManager.compileReport(d);
   }
   
   // -> de.ag.jrlang.util ?
-  def print(rep : net.sf.jasperreports.engine.JasperReport) : net.sf.jasperreports.engine.JasperPrint = {
+  def print(rep : net.sf.jasperreports.engine.JasperReport, params: Map[String, AnyRef]) : net.sf.jasperreports.engine.JasperPrint = {
     val p = new java.util.HashMap[java.lang.String,java.lang.Object];
-    p.put("ReportTitle", "Test");
+    //p.put("ReportTitle", "Test");
+    for ((k,v) <- params)
+      p.put(k, v)
     val ds = new net.sf.jasperreports.engine.JREmptyDataSource();
     net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p, ds);
     // net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p);
@@ -149,4 +183,50 @@ object JasperDesignTest {
     }
   }
 
+  def printToXML(d: JasperDesign, params: Map[String, AnyRef]) = {
+    val r = d.drop;
+    val rr = compile(r);
+    val p = print(rr, params);
+    val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)
+    val xml:scala.xml.Elem = scala.xml.XML.loadString(s);
+    xml
+  }
+  
+  def compareJasperPrintXML(expected_ : scala.xml.Elem, actual_ : scala.xml.Elem) = {
+    val expected = prepareForCompare(expected_);
+    val actual = prepareForCompare(actual_);
+    if (!(expected == actual)) {
+      val pp = new scala.xml.PrettyPrinter(80, 2)
+      System.err.printf("Expected: %s\nActual: %s\n", pp.format(expected), pp.format(actual));
+      // these methods are not that clever:
+      //System.err.printf("Missing: %s\n", expected diff actual);
+      //System.err.printf("Unexpected: %s\n", actual diff expected);
+      val e:String = expected.toString;
+      val a:String = actual.toString;
+      val (suff1, suff2) = (e, a).zipped.dropWhile(Function.tupled(_ == _)).unzip;
+      //val (inter1, inter2) = (suff1.reverse, suff2.reverse).dropWhile...
+      System.err.printf("First differences around:\n");
+      System.err.printf("...%s\n", suff1.mkString);
+      System.err.printf("...%s\n", suff2.mkString);
+    }
+    assert(expected == actual)
+  }
+  
+  def prepareForCompare(xml: scala.xml.Elem) =
+    removeAttr("uuid", // remove all attributes named uuid, in all nested elements
+      scala.xml.Utility.sort( // sort
+          scala.xml.Utility.trim(xml))); // remove whitespace
+
+  def removeAttr(n: String, xml:scala.xml.Node) =
+    xml match {
+      case e:scala.xml.Elem => removeElemAttr(n, e)
+      case x => x
+    }
+  def removeElemAttr(n: String, xml:scala.xml.Elem) : scala.xml.Elem =
+    xml.copy(child = xml.child.foldLeft(Vector[scala.xml.Node]()) { case(r, e) =>
+      e match {
+        case v:scala.xml.Elem => r :+ removeElemAttr(n, v)
+        case x => r :+ x
+      }
+    }, attributes = xml.attributes.remove(n))
 }
