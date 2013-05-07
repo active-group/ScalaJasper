@@ -71,30 +71,6 @@ object JRParagraph {
       lineSpacing = None);
 }
 
-sealed case class JRFont(
-    fontName: Option[String],
-    fontSize: Option[Int],
-    bold: Option[Boolean],
-    italic: Option[Boolean],
-    strikeThrough: Option[Boolean],
-    underline: Option[Boolean],
-    pdfEncoding: Option[String],
-    pdfFontName: Option[String],
-    pdfEmbedded: Option[Boolean]
-    );
-object JRFont {
-  val empty = new JRFont(
-      fontName = None,
-      fontSize = None,
-      bold = None,
-      italic = None,
-      strikeThrough = None,
-      underline = None,
-      pdfEncoding = None,
-      pdfFontName = None,
-      pdfEmbedded = None)
-}
-
 /*
 sealed abstract class PrintWhen;
 object PrintWhen {
@@ -103,79 +79,101 @@ object PrintWhen {
 }
 */
 
-sealed case class JRCommon(
-    key: String,
-    forecolor: Option[java.awt.Color],
-    backcolor: Option[java.awt.Color],
+sealed case class Size(
     height: Int,
     width: Int,
-    x: Int,
+    stretchType: net.sf.jasperreports.engine.`type`.StretchTypeEnum
+    );
+object Size {
+  val empty = new Size(
+      height = 0,
+      width = 0,
+      stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH //??
+      );
+}
+
+sealed case class Pos(
+    x: Int, // x and y are mandatory?!
     y: Int,
-    positionType: net.sf.jasperreports.engine.`type`.PositionTypeEnum,
-    mode: Option[net.sf.jasperreports.engine.`type`.ModeEnum],
+    positionType: net.sf.jasperreports.engine.`type`.PositionTypeEnum
+    );
+object Pos {
+  val empty = new Pos(
+      x = 0,
+      y = 0,
+      positionType = net.sf.jasperreports.engine.`type`.PositionTypeEnum.FLOAT // ??
+     );
+}
+
+sealed case class Conditions(
     printInFirstWholeBand: Boolean,
     printWhenExpression: Expression,
     printRepeatedValues: Boolean,
     printWhenDetailOverflows: Boolean,
-    // printWhenGroupChanges?
-    removeLineWhenBlank: Boolean,
-    stretchType: net.sf.jasperreports.engine.`type`.StretchTypeEnum,
-    style: Option[Style] // aka parentStyle
-    ) extends StyleFoldable[JRCommon]
-{
-  def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = StyleFoldable.foldOption(style, st0)
-    (copy(style = style_), st1)
-  }
-}
-
-object JRCommon { // TODO: Split up along more logical groups
-  val empty = new JRCommon(
-      key = "",
-      forecolor = None, // remove colors in favour of style (compiler could decide to use them)
-      backcolor = None,
-      height = 0,
-      width = 0,
-      x = 0,
-      y = 0,
-      positionType = net.sf.jasperreports.engine.`type`.PositionTypeEnum.FLOAT, // ??
-      mode = None,
+    // TODO printWhenGroupChanges? is a JRGroup - probably needs a reference to a group defined elsewhere
+    removeLineWhenBlank: Boolean
+    );
+object Conditions {
+  val empty = new Conditions(
       printInFirstWholeBand = false,
       printWhenExpression = "",
-      printRepeatedValues = true, // !!
+      printRepeatedValues = true, // important!!
       printWhenDetailOverflows = false,
-      removeLineWhenBlank = false,
-      stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH, //??
-      style = None
-      )
-  
-  def put(src: JRCommon, tgt:net.sf.jasperreports.engine.design.JRDesignElement) = {
-    tgt.setKey(if (src.key == "") null else src.key); // don't know if it's important to be null
-    tgt.setForecolor(src.forecolor.getOrElse(null));
-    tgt.setBackcolor(src.backcolor.getOrElse(null));
-    tgt.setHeight(src.height);
-    tgt.setWidth(src.width);
-    tgt.setX(src.x);
-    tgt.setY(src.y);
-    tgt.setPositionType(src.positionType);
-    tgt.setMode(src.mode.getOrElse(null));
-    tgt.setPrintWhenExpression(src.printWhenExpression); // TODO: put these
-    tgt.setPrintRepeatedValues(src.printRepeatedValues); // two in one; as only one can be used (expression has precedence)
-    tgt.setPrintInFirstWholeBand(src.printInFirstWholeBand);
-    tgt.setPrintWhenDetailOverflows(src.printWhenDetailOverflows);
-    tgt.setStretchType(src.stretchType);
-    src.style match {
-      case None =>
-        (); // ?? tgt.setStyle(null);
-      case Some(s : Style.Internal) =>
-        tgt.setStyle(s)
-      case Some(s : Style.External) =>
+      removeLineWhenBlank = false
+      );
+}
+
+private object ElementUtils {
+  // sets properties common to all report elements
+  def putReportElement(
+      key:String,
+      style:Style,
+      pos:Pos,
+      size:Size,
+      conditions:Conditions,
+      // custom properties?
+      tgt:net.sf.jasperreports.engine.design.JRDesignElement) = {  
+    tgt.setKey(if (key == "") null else key); // don't know if it's important to be null
+    tgt.setHeight(size.height);
+    tgt.setWidth(size.width);
+    tgt.setStretchType(size.stretchType);
+    tgt.setX(pos.x);
+    tgt.setY(pos.y);
+    tgt.setPositionType(pos.positionType);
+    tgt.setPrintWhenExpression(conditions.printWhenExpression); // TODO: put these
+    tgt.setPrintRepeatedValues(conditions.printRepeatedValues); // two in one; as only one can be used (expression has precedence)
+    tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand);
+    tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows);
+
+    // might take colors and mode out of the style - if it's worth it
+    // forecolor: Option[java.awt.Color],
+    // backcolor: Option[java.awt.Color],
+    // mode: Option[net.sf.jasperreports.engine.`type`.ModeEnum],
+    // tgt.setForecolor(src.forecolor.getOrElse(null));
+    // tgt.setBackcolor(src.backcolor.getOrElse(null));
+    // tgt.setMode(src.mode.getOrElse(null));
+    style match {
+      // after global style folding, it should always be External or empty
+      case s : Style.Internal => {
+        var so : net.sf.jasperreports.engine.design.JRDesignStyle = null;
+        if (!s.isEmpty) so = s;
+        tgt.setStyle(so)
+        tgt.setStyleNameReference(null)
+      }
+      case s : Style.External => {
+        tgt.setStyle(null);
         tgt.setStyleNameReference(s.reference)
+      }
     }
   }
 }
     
 sealed case class Chart(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions,
     anchor: JRAnchor,
     hyperlink: JRHyperlink,
     chartType : ChartType, // contains type byte, plot and dataset
@@ -186,74 +184,119 @@ sealed case class Chart(
     title: ChartTitle,
     subtitle: ChartSubtitle,
     renderType: String,
-    evaluation: JREvaluation,
-    common: JRCommon) extends Element;
+    evaluation: JREvaluation) extends Element;
 
 sealed case class ComponentElement(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions,
     component: net.sf.jasperreports.engine.component.Component,
-    componentKey: net.sf.jasperreports.engine.component.ComponentKey,
-    common: JRCommon
+    componentKey: net.sf.jasperreports.engine.component.ComponentKey
     ) extends Element;
 
 sealed case class Crosstab(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     // etc ... dataset: JRCrosstabDataset,
-    
-    common: JRCommon
     ) extends Element;
 
-sealed case class Group(
+/** The only reason to group your report elements is to customize their stretch behavior. */
+sealed case class ElementGroup( // different from a "group"!
     children: Seq[Element]
     ) extends Element;
 
 sealed case class Ellipse(
-    common: JRCommon
-    ) extends Element with StyleFoldable[Ellipse]
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
+// TODO: Graphic?
+) extends Element with StyleFoldable[Ellipse]
 {
   def foldStyles(st0: StylesMap) = {
-    val (common_, st1) = common.foldStyles(st0);
-    (copy(common = common_),
+    val (style_, st1) = style.foldStyles(st0);
+    (copy(style = style_),
         st1)
   }
 };
 
 object Ellipse {
-  val empty = Ellipse(common = JRCommon.empty)
+  val empty = new Ellipse(
+      key = "",
+      style = Style.Internal.empty,
+      size = Size.empty,
+      pos = Pos.empty,
+      conditions = Conditions.empty
+      )
 
   implicit def drop(o: Ellipse) : net.sf.jasperreports.engine.design.JRDesignEllipse = {
     // Unlike other elements (e.g. TextField), the ellipse is missing a default constructor;
     // setting JRDefaultStyleProvider to null like the others do.
     val r = new net.sf.jasperreports.engine.design.JRDesignEllipse(null);
-    JRCommon.put(o.common, r);
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
     r
   }
 }
 
 sealed case class Frame(
-    common: JRCommon,
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions,
     children: Seq[Element]
     ) extends Element;
 
 sealed case class GenericElement(
-    // TODO
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     ) extends Element;
 
 sealed case class Image(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     ) extends Element;
 
 sealed case class Line(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     ) extends Element;
 
 sealed case class Rectangle(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     ) extends Element;
 
 sealed case class StaticText(
     text: String,
-    common: JRCommon
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     ) extends Element with StyleFoldable[StaticText]
 {
   def foldStyles(st0: StylesMap) = {
-    val (common_, st1) = common.foldStyles(st0);
-    (copy(common = common_),
+    val (style_, st1) = style.foldStyles(st0);
+    (copy(style = style_),
         st1)
   }
 };;
@@ -261,18 +304,32 @@ sealed case class StaticText(
 object StaticText {
   def apply(text: String) = new StaticText(
       text = text,
-      common = JRCommon.empty);
+      key = "",
+      style = Style.Internal.empty,
+      size = Size.empty,
+      pos = Pos.empty,
+      conditions = Conditions.empty);
   
   implicit def drop(o: StaticText) : net.sf.jasperreports.engine.design.JRDesignStaticText = {
     val r = new net.sf.jasperreports.engine.design.JRDesignStaticText();
     r.setText(o.text);
-    JRCommon.put(o.common, r);
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
     r
   }
 }
 
 sealed case class Subreport(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     ) extends Element;
 
 sealed case class TextField(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions
     ) extends Element;

@@ -8,13 +8,13 @@ sealed case class ChartLegend(
 sealed case class ChartTitle(
     color: Option[java.awt.Color],
     expression: Expression,
-    font: Option[JRFont],
+    font: Font,
     position: net.sf.jasperreports.charts.`type`.EdgeEnum);
 
 sealed case class ChartSubtitle(
     color: Option[java.awt.Color],
     expression: Expression,
-    font: Option[JRFont]);
+    font: Font);
 
 
 abstract sealed class ChartType(value: Byte);
@@ -40,7 +40,7 @@ sealed case class JRPieDataset(
 sealed case class JRItemLabel(
     color: java.awt.Color,
     backgroundColor: java.awt.Color,
-    font: JRFont
+    font: Font
     )
 
 sealed case class JRPiePlot(

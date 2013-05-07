@@ -34,7 +34,7 @@ class ReportTest extends FunSuite {
   <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
   <origin band="detail"/>
-  <style name="default" isDefault="true" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false"/>
+  <style name="default" isDefault="true" />
   <page/>
 </jasperPrint>
 
@@ -45,36 +45,37 @@ class ReportTest extends FunSuite {
   test("simple report") {
     // TODO: which style defs are mandatory?
     val mystyle = Style.Internal.empty.copy(
-        font = JRFont.empty.copy(
+        font = Font.empty.copy(
             //fontName = Some("DejaVu Sans"),
             fontSize = Some(12),
             pdfFontName = Some("Helvetica"),
             pdfEncoding = Some("Cp1252"),
             pdfEmbedded = Some(false))
         );
-    val rect = JRCommon.empty.copy(
-        x = 0, y = 0,
-        width = 55, height = 15,
-        //style = Some(Style.External(reference="mystyle")), // only the name is references, as it seems
-        
-        style = Some(mystyle.copy(font = mystyle.font.copy(fontSize = Some(8)))),
-        
-        // Experiment: We could use 'parentStyle' for every copy that is made automatically...?!
-        //style = Some(Style.Internal.empty.copy(
-        //    parentStyle = Some(mystyle),
-        //    font = JRFont.empty.copy(fontSize = Some(8)))),
-        
-        // style = Some(mystyle),
-        
+    val style2 = mystyle.copy(
+        font = mystyle.font.copy(fontSize = Some(8)),
         backcolor = Some(java.awt.Color.black),
         forecolor = Some(java.awt.Color.white)
         // mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
         );
+    // Experiment: We could use 'parentStyle' for every copy that is made automatically...?!
+    //style = Some(Style.Internal.empty.copy(
+    //    parentStyle = Some(mystyle),
+    //    font = JRFont.empty.copy(fontSize = Some(8)))),
+
     val myband = Band.empty.copy(
             height = 20,
             children = Vector(
-                Ellipse.empty.copy(common = rect),
-                StaticText("Hello").copy(common = rect)
+                Ellipse.empty.copy(
+                    style = style2,
+                    pos = Pos.empty.copy(x = 0, y = 0),
+                    size = Size.empty.copy(width=55, height = 15)
+                    ),
+                StaticText("Hello").copy(
+                    style = style2,
+                    pos = Pos.empty.copy(x = 0, y = 0),
+                    size = Size.empty.copy(width=55, height = 15)
+                    )
                 ));
     val r = Report("hello-world-report").copy(
         defaultStyle = mystyle,
@@ -96,14 +97,14 @@ class ReportTest extends FunSuite {
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
   <origin band="pageHeader"/>
   <origin band="detail"/>
-  <style name="default" isDefault="true" fontSize="12" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252"/>
-  <style name="autodef0" fontSize="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252"/>
+  <style name="default" isDefault="true" fontSize="12" isPdfEmbedded="false" pdfFontName="Helvetica" pdfEncoding="Cp1252"/>
+  <style name="autodef0" backcolor="#000000" fontSize="8" forecolor="#FFFFFF" isPdfEmbedded="false" pdfEncoding="Cp1252" pdfFontName="Helvetica"/>
   <page>
     <ellipse>
-      <reportElement uuid="e09461da-2eb3-41f9-9d0c-629f1532d1e8" style="autodef0" x="20" y="30" width="55" height="15" forecolor="#FFFFFF" backcolor="#000000" origin="0" srcId="1"/>
+      <reportElement uuid="e09461da-2eb3-41f9-9d0c-629f1532d1e8" style="autodef0" x="20" y="30" width="55" height="15" origin="0" srcId="1"/>
     </ellipse>
     <text textHeight="9.421875" lineSpacingFactor="1.1777344" leadingOffset="-1.6875">
-      <reportElement uuid="2155e5cc-96c2-4125-a527-c2124b38f01f" style="autodef0" x="20" y="30" width="55" height="15" forecolor="#FFFFFF" backcolor="#000000" origin="0" srcId="2"/>
+      <reportElement uuid="2155e5cc-96c2-4125-a527-c2124b38f01f" style="autodef0" x="20" y="30" width="55" height="15" origin="0" srcId="2"/>
       <textContent><![CDATA[Hello]]></textContent>
     </text>
   </page>
