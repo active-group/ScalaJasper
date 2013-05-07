@@ -11,12 +11,62 @@ import de.ag.jrlang.core.TitleBand;
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
+case class StylesMap(
+    predefined: Map[JRStyle.Internal, JRStyle.External],
+    styles : Map[JRStyle.Internal, JRStyle.External]) {
+  def lookup(style: JRStyle.Internal): (JRStyle.External, StylesMap) = {
+    val pre = predefined.get(style);
+    if (pre.isDefined)
+      (pre.get, this)
+    else {
+      val e = styles.getOrElse(style, JRStyle.External(StylesMap.newName(styles)));
+      (e, copy(styles = styles.updated(style, e)))
+    }
+  }
+  
+  def list: Seq[(String, JRStyle.Internal)] =
+    styles.map({ case(i,e) => (e.reference, i) }) toSeq
+}
+object StylesMap {
+  def apply(predefined: Map[String, JRStyle.Internal]) =
+    new StylesMap(predefined map { case(n, i) => (i, JRStyle.External(n)) }, Map.empty)    
+  
+  private def newName(styles : Map[JRStyle.Internal, JRStyle.External]) : String =
+    "autodef" + (styles.size) // could be a little more intelligent
+}
+
+trait StyleFoldable[T] {
+  def foldStyles(st: StylesMap): (T, StylesMap)
+}
+object StyleFoldable {
+  
+  def foldAll[T <: StyleFoldable[T]](coll : Seq[T], st: StylesMap) : (Vector[T], StylesMap) =
+    coll.foldLeft((Vector.empty:Vector[T], st)) { case((c, st), v) => {
+      val (v_, st_) = v.foldStyles(st);
+      (c :+ v_, st_)
+    }}
+  
+  def foldOption[T <: StyleFoldable[T]](v: Option[T], st: StylesMap) =
+    if (v.isDefined) {
+      val (v_, st_) = v.get.foldStyles(st)
+      (Some(v_), st_)
+    }
+    else (None, st)
+      
+}
+
 // we have around 40 fields; but Scala functions and case classes cannot have more than 22 parameters :-/
 // have split it up somehow...
 
 sealed case class FloatingBand(
     band : Option[JRDesignBand],
-    floating : Boolean);
+    floating : Boolean)
+  extends StyleFoldable[FloatingBand] {
+    def foldStyles(st: StylesMap) = {
+      val (band_, st_) = StyleFoldable.foldOption(band, st);
+      (copy(band = band_), st_)
+    }
+  }
 
 object FloatingBand {
   val empty = new FloatingBand(
@@ -34,7 +84,14 @@ sealed case class Margins(
 sealed case class SummaryBand(
     band : Option[JRDesignBand],
     newPage : Boolean,
-    withPageHeaderAndFooter : Boolean);
+    withPageHeaderAndFooter : Boolean)
+  extends StyleFoldable[SummaryBand] {
+    def foldStyles(st: StylesMap) = {
+      val (band_, st_) = StyleFoldable.foldOption(band, st);
+      (copy(band = band_), st_)
+    }
+  }
+
 
 object SummaryBand {
   val empty = new SummaryBand(
@@ -45,7 +102,13 @@ object SummaryBand {
 
 sealed case class TitleBand(
     band : Option[JRDesignBand],
-    newPage : Boolean);
+    newPage : Boolean)
+  extends StyleFoldable[TitleBand] {
+    def foldStyles(st: StylesMap) = {
+      val (band_, st_) = StyleFoldable.foldOption(band, st);
+      (copy(band = band_), st_)
+    }
+  }
 
 object TitleBand {
   val empty = new TitleBand(
@@ -61,7 +124,19 @@ sealed case class Pages(
     footer : Option[JRDesignBand],
     header : Option[JRDesignBand],
     background : Option[JRDesignBand]
-);
+) extends StyleFoldable[Pages] {
+    def foldStyles(st0: StylesMap) = {
+      val (footer_, st1) = StyleFoldable.foldOption(footer, st0);
+      val (header_, st2) = StyleFoldable.foldOption(header, st1);
+      val (background_, st3) = StyleFoldable.foldOption(background, st2);
+      (copy(
+          footer = footer_,
+          header = header_,
+          background = background_),
+          st3)
+    }
+  }
+
 object Pages {
   val empty = {
     // very explicit defaults...
@@ -90,7 +165,14 @@ sealed case class Columns(
     spacing : Int,
     width : Int,
     printOrder : net.sf.jasperreports.engine.`type`.PrintOrderEnum
-);
+) extends StyleFoldable[Columns] {
+  def foldStyles(st0: StylesMap) = {
+     val (footer_, st1) = footer.foldStyles(st0);
+     val (header_, st2) = StyleFoldable.foldOption(header, st1)
+     (copy(footer = footer_, header = header_),
+         st2)
+  }
+};
 
 object Columns {
   val empty = {
@@ -111,7 +193,8 @@ object Columns {
 sealed case class JasperDesign(
   name : String,
   details: Seq[JRDesignBand],
-  styles : IndexedSeq[JRStyle.Internal], // Map-Like
+  // styles : IndexedSeq[JRStyle.Internal], // Map-Like
+  defaultStyle: JRStyle.Internal,
   templates : IndexedSeq[net.sf.jasperreports.engine.JRReportTemplate],
   subDatasets: Map[String, JRDesignDataset],
   mainDataset: JRDesignDataset,
@@ -127,49 +210,32 @@ sealed case class JasperDesign(
   summary : SummaryBand,
   title : TitleBand
   // UUID?
-) {
-  def drop : net.sf.jasperreports.engine.design.JasperDesign = {
-    val r = new JD();
-    r.setName(name);
-    for (v <- styles) r.addStyle(v);
-    for (v <- details) r.getDetailSection().asInstanceOf[net.sf.jasperreports.engine.design.JRDesignSection].addBand(v);
-    r.getTemplatesList().addAll(templates); // why does it work here, but not for the others??
-    // TODO for (v <- mainDataset.groups) r.addGroup(v);
-    // TODO for (v <- mainDataset.scriptlets) r.addScriptlet(v);
-    for (v <- mainDataset.parameters) r.addParameter(v);
-    // TODO for (v <- mainDataset.variables) r.addVariable(v);
-    // TODO subDatasets
-    for (s <- imports) r.addImport(s);
-    r.setColumnCount(columns.count);
-    r.setColumnDirection(columns.direction);
-    r.setColumnFooter(columns.footer.band.getOrElse(null));
-    r.setFloatColumnFooter(columns.footer.floating);
-    r.setColumnHeader(columns.header.getOrElse(null));
-    r.setColumnSpacing(columns.spacing);
-    r.setColumnWidth(columns.width);
-    r.setPrintOrder(columns.printOrder)
-    r.setIgnorePagination(ignorePagination);
-    r.setLanguage(language);
-    r.setLastPageFooter(lastPageFooter.getOrElse(null));
-    r.setNoData(noData.getOrElse(null));
-    r.setPageHeight(pages.height);
-    r.setPageWidth(pages.width);
-    r.setTopMargin(pages.margins.top);
-    r.setRightMargin(pages.margins.right);
-    r.setBottomMargin(pages.margins.bottom);
-    r.setLeftMargin(pages.margins.left);
-    r.setOrientation(pages.orientation);
-    r.setPageFooter(pages.footer.getOrElse(null));
-    r.setPageHeader(pages.header.getOrElse(null));
-    r.setBackground(pages.background.getOrElse(null));
-    r.setSummary(summary.band.getOrElse(null));
-    r.setSummaryNewPage(summary.newPage);
-    r.setSummaryWithPageHeaderAndFooter(summary.withPageHeaderAndFooter);
-    r.setTitle(title.band.getOrElse(null));
-    r.setTitleNewPage(title.newPage);
-    r;
+) // noone needs to know: extends StyleFoldable[JasperDesign]
+{
+  private def foldStyles(st0: StylesMap) = {
+    val (details_, st1) = StyleFoldable.foldAll(details, st0);
+    val (columns_, st2) = columns.foldStyles(st1);
+    val (lastPageFooter_, st3) = StyleFoldable.foldOption(lastPageFooter, st2)
+    val (noData_, st4) = StyleFoldable.foldOption(noData, st3)
+    val (pages_, st5) = pages.foldStyles(st4);
+    val (summary_, st6) = summary.foldStyles(st5);
+    val (title_, st7) = title.foldStyles(st6);
+    (copy(
+         details = details_,
+         columns = columns_,
+         lastPageFooter = lastPageFooter_,
+         noData = noData_,
+         pages = pages_,
+         summary = summary_,
+         title = title_
+         ),
+     st7)
   }
   
+  def drop : net.sf.jasperreports.engine.design.JasperDesign =
+    JasperDesign.dropNew(this)
+
+
   
   /* TODO: These are static
   def systemParameters : Seq[net.sf.jasperreports.engine.JRParameter] =
@@ -187,7 +253,7 @@ object JasperDesign {
     new JasperDesign(
       name = name, // TODO: Validate non-empty
       details = Vector.empty,
-      styles = Vector.empty,
+      defaultStyle = JRStyle.Internal.empty,
       templates = Vector.empty,
       subDatasets = Map.empty,
       mainDataset = JRDesignDataset.empty,
@@ -202,6 +268,68 @@ object JasperDesign {
       title = TitleBand.empty
       );
 
+  private def dropNew(o: JasperDesign) = {
+    // 1. compilation step: collect all styles used, replacing them with uniquely generated names.
+    val predef = Map("default" -> o.defaultStyle);
+    val (o_, styles) = o.foldStyles(StylesMap(predef));
+    // o should now contain only style-references ("External"), no internal styles anymore
+    dropNew2(o_, styles.list) // well, could include predef, if identifying default correctly
+  }
+  
+  private def dropNew2(o: JasperDesign, styles: Seq[(String, JRStyle.Internal)]) = {
+    val r = new JD();
+
+    r.setName(o.name);
+
+    r.addStyle({
+      val s: net.sf.jasperreports.engine.design.JRDesignStyle = o.defaultStyle;
+      s.setName("default"); // FIXME name defined above already
+      s.setDefault(true);
+      s
+    })
+    for ((n,v) <- styles) {
+      val s: net.sf.jasperreports.engine.design.JRDesignStyle = v;
+      s.setName(n);
+      r.addStyle(s);
+    }
+    for (v <- o.details) r.getDetailSection().asInstanceOf[net.sf.jasperreports.engine.design.JRDesignSection].addBand(v);
+    r.getTemplatesList().addAll(o.templates); // why does it work here, but not for the others??
+    // TODO for (v <- mainDataset.groups) r.addGroup(v);
+    // TODO for (v <- mainDataset.scriptlets) r.addScriptlet(v);
+    for (v <- o.mainDataset.parameters) r.addParameter(v);
+    // TODO for (v <- mainDataset.variables) r.addVariable(v);
+    // TODO subDatasets
+    for (s <- o.imports) r.addImport(s);
+    r.setColumnCount(o.columns.count);
+    r.setColumnDirection(o.columns.direction);
+    r.setColumnFooter(o.columns.footer.band.getOrElse(null));
+    r.setFloatColumnFooter(o.columns.footer.floating);
+    r.setColumnHeader(o.columns.header.getOrElse(null));
+    r.setColumnSpacing(o.columns.spacing);
+    r.setColumnWidth(o.columns.width);
+    r.setPrintOrder(o.columns.printOrder)
+    r.setIgnorePagination(o.ignorePagination);
+    r.setLanguage(o.language);
+    r.setLastPageFooter(o.lastPageFooter.getOrElse(null));
+    r.setNoData(o.noData.getOrElse(null));
+    r.setPageHeight(o.pages.height);
+    r.setPageWidth(o.pages.width);
+    r.setTopMargin(o.pages.margins.top);
+    r.setRightMargin(o.pages.margins.right);
+    r.setBottomMargin(o.pages.margins.bottom);
+    r.setLeftMargin(o.pages.margins.left);
+    r.setOrientation(o.pages.orientation);
+    r.setPageFooter(o.pages.footer.getOrElse(null));
+    r.setPageHeader(o.pages.header.getOrElse(null));
+    r.setBackground(o.pages.background.getOrElse(null));
+    r.setSummary(o.summary.band.getOrElse(null));
+    r.setSummaryNewPage(o.summary.newPage);
+    r.setSummaryWithPageHeaderAndFooter(o.summary.withPageHeaderAndFooter);
+    r.setTitle(o.title.band.getOrElse(null));
+    r.setTitleNewPage(o.title.newPage);
+    r;
+  }
+  
   /*
   def apply() : JasperDesign =
     apply(new JD())

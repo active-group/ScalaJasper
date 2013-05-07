@@ -4,8 +4,6 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import de.ag.jrlang.core.SummaryBand;
-import de.ag.jrlang.core.TitleBand;
 import de.ag.jrlang.core._
 
 @RunWith(classOf[JUnitRunner])
@@ -15,7 +13,7 @@ class JasperDesignTest extends FunSuite {
   def testPrint(d : JasperDesign) = {
     val r = JasperDesignTest.compile(d)
     val p = JasperDesignTest.print(r);
-    val bytes = net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(p);
+    //val bytes = net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(p);
     // it's not easily verifiable, because it contains current timestamps ("of course")
     // printf("%s", new String(bytes))
     //net.sf.jasperreports.engine.JasperPrintManager.printReport(p, true, )
@@ -24,26 +22,16 @@ class JasperDesignTest extends FunSuite {
     printf("%s", s);
   }
 
-  def testPrintJ(d : JasperDesign) = {
-    val jd = d.drop;
-    val r = de.ag.jrlang.test.Noxml.compile(jd)
-    val p = de.ag.jrlang.test.Noxml.print(r)
-    de.ag.jrlang.test.Noxml.write(p, "/Users/frese/tmp/test2.pdf")
-    val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)
-    printf("%s", s);
-  }
-  
   test("empty report") {
     // running from sbt crashes with some classloader/resources bug,
     // running from eclipse works ("of course"); so hard to debug.
     val r = JasperDesign("empty report")
-    //testPrint(r);
+    testPrint(r);
   }
 
   test("simple report") {
     // TODO: which style defs are mandatory?
-    val mystyle = JRStyle.Internal("mystyle").copy(
-        isDefault = true,
+    val mystyle = JRStyle.Internal.empty.copy(
         font = JRFont.empty.copy(
             //fontName = Some("DejaVu Sans"),
             fontSize = Some(12),
@@ -54,7 +42,17 @@ class JasperDesignTest extends FunSuite {
     val rect = JRCommon.empty.copy(
         x = 0, y = 0,
         width = 55, height = 15,
-        style = Some(mystyle), // only the name is references, as it seems
+        //style = Some(JRStyle.External(reference="mystyle")), // only the name is references, as it seems
+        
+        style = Some(mystyle.copy(font = mystyle.font.copy(fontSize = Some(8)))),
+        
+        // Experiment: We could use 'parentStyle' for every copy that is made automatically...?!
+        //style = Some(JRStyle.Internal.empty.copy(
+        //    parentStyle = Some(mystyle),
+        //    font = JRFont.empty.copy(fontSize = Some(8)))),
+        
+        // style = Some(mystyle),
+        
         backcolor = Some(java.awt.Color.black),
         forecolor = Some(java.awt.Color.white)
         // mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
@@ -66,7 +64,7 @@ class JasperDesignTest extends FunSuite {
                 JRStaticText("Hello").copy(common = rect)
                 ));
     val r = JasperDesign("hello-world-report").copy(
-        styles = Vector(mystyle), // is needed, but maybe auto collect them?!
+        defaultStyle = mystyle,
         // details = Vector(myband),
         // title = TitleBand.empty.copy(band = Some(myband), newPage = true),
         pages = Pages.empty.copy(
@@ -77,7 +75,7 @@ class JasperDesignTest extends FunSuite {
             // band = Some(myband)
             )
         );
-    testPrintJ(r);
+    testPrint(r);
   }
   
 

@@ -3,6 +3,11 @@ package de.ag.jrlang.core
 sealed abstract class JRDesignChild
   //extends BaseAdapter[net.sf.jasperreports.engine.JRChild]
   //extends LeafAdapter[OOClass];
+{
+  // could probably do the 'implicit CanBuildFrom' technique here; but not worth it.
+  // def foldStyles(st0: StylesMap) : JRDesignChild;
+
+};
 
 object JRDesignChild {
   implicit def drop(c : JRDesignChild) : net.sf.jasperreports.engine.JRChild =
@@ -10,6 +15,18 @@ object JRDesignChild {
       case v : JREllipse => JREllipse.drop(v)
       case v : JRStaticText => JRStaticText.drop(v)
     }
+  
+  def foldAllStyles(c: Seq[JRDesignChild], st0: StylesMap) =
+    c.foldLeft((Vector.empty:Vector[JRDesignChild], st0)) {
+      case ((c, st), v) => {
+        val (v_, st_) = v match {
+          case v: JREllipse => v.foldStyles(st)
+          case v: JRStaticText => v.foldStyles(st)
+          case _: JRDesignChild => (v, st) // undefined, no styles
+        };
+        ((c :+ v_), st_)
+      }};
+  
 }
 
 sealed case class JRBreak(
@@ -96,11 +113,12 @@ object JRFont {
       pdfEmbedded = None)
 }
 
-abstract sealed class JRStyle;
+abstract sealed class JRStyle extends StyleFoldable[JRStyle] {
+}
+
 object JRStyle {
   sealed case class Internal(
-      name: String,
-      isDefault: Boolean,
+      // name is isDefault intentionally left out (see top level JaperDesign)
       parentStyle: Option[JRStyle],
       conditionalStyles: Any, // TODO
       backcolor: Option[java.awt.Color],
@@ -117,13 +135,18 @@ object JRStyle {
       verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum],
       fill: Option[net.sf.jasperreports.engine.`type`.FillEnum]
       ) extends JRStyle {
-    lazy val obj = Internal.dropNew(this) // TODO: explain
+    lazy val obj = Internal.dropNew(this) // TODO: explain -- not needed with global style folding
+    
+    def foldStyles(st0: StylesMap) = {
+      val (parentStyle_, st1) = StyleFoldable.foldOption(parentStyle, st0);
+      // TODO: Check: Problem if we replace parent style here - for comparing styles (as map keys?)
+      val nthis = copy(parentStyle = parentStyle_)
+      st1.lookup(nthis)
+    }
   }
   object Internal {
-    def apply(name: String) =
+    val empty =
       new Internal(
-          name = name,
-          isDefault = false,
           parentStyle = None,
           conditionalStyles = Vector(),
           backcolor = None,
@@ -145,8 +168,9 @@ object JRStyle {
     
     def dropNew(o:Internal) : net.sf.jasperreports.engine.design.JRDesignStyle = {
       val r = new net.sf.jasperreports.engine.design.JRDesignStyle();
-      r.setName(o.name);
-      r.setDefault(o.isDefault);
+      // name is isDefault are set externally
+      //r.setName(o.name);
+      //r.setDefault(o.isDefault);
       if (o.parentStyle.isDefined)
         put(o.parentStyle.get, r);
       // TODO: conditional styles?
@@ -166,7 +190,9 @@ object JRStyle {
     }
   }
 
-  sealed case class External(reference: String);
+  sealed case class External(reference: String) extends JRStyle {
+    def foldStyles(st0: StylesMap) = (this, st0)
+  }
 
   def put(src: JRStyle, tgt:net.sf.jasperreports.engine.design.JRDesignElement) = {
     src match {
@@ -199,7 +225,14 @@ sealed case class JRCommon(
     removeLineWhenBlank: Boolean,
     stretchType: net.sf.jasperreports.engine.`type`.StretchTypeEnum,
     style: Option[JRStyle] // aka parentStyle
-    );
+    ) extends StyleFoldable[JRCommon]
+{
+  def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = StyleFoldable.foldOption(style, st0)
+    (copy(style = style_), st1)
+  }
+}
+
 object JRCommon {
   val empty = new JRCommon(
       key = "",
@@ -221,8 +254,7 @@ object JRCommon {
       )
   
   def put(src: JRCommon, tgt:net.sf.jasperreports.engine.design.JRDesignElement) = {
-    tgt.setKey(if (src.key == "") null else src.key);
-    //tgt.setKey(src.key);
+    tgt.setKey(if (src.key == "") null else src.key); // don't know if it's important to be null
     tgt.setForecolor(src.forecolor.getOrElse(null));
     tgt.setBackcolor(src.backcolor.getOrElse(null));
     tgt.setHeight(src.height);
@@ -279,7 +311,14 @@ sealed case class JRElementGroup(
 
 sealed case class JREllipse(
     common: JRCommon
-    ) extends JRDesignChild;
+    ) extends JRDesignChild with StyleFoldable[JREllipse]
+{
+  def foldStyles(st0: StylesMap) = {
+    val (common_, st1) = common.foldStyles(st0);
+    (copy(common = common_),
+        st1)
+  }
+};
 
 object JREllipse {
   val empty = JREllipse(common = JRCommon.empty)
@@ -314,7 +353,14 @@ sealed case class JRRectangle(
 sealed case class JRStaticText(
     text: String,
     common: JRCommon
-    ) extends JRDesignChild;
+    ) extends JRDesignChild with StyleFoldable[JRStaticText]
+{
+  def foldStyles(st0: StylesMap) = {
+    val (common_, st1) = common.foldStyles(st0);
+    (copy(common = common_),
+        st1)
+  }
+};;
 
 object JRStaticText {
   def apply(text: String) = new JRStaticText(

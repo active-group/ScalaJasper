@@ -11,7 +11,14 @@ sealed case class JRDesignBand (
     splitType : net.sf.jasperreports.engine.`type`.SplitTypeEnum,
     children : Seq[JRDesignChild] // elements + groups
     // origin: probably useless
-    );
+    ) extends StyleFoldable[JRDesignBand]
+{
+  def foldStyles(st0: StylesMap) = {
+    val (children_, st1) = JRDesignChild.foldAllStyles(children, st0);
+    (copy(children = children_),
+        st1)
+  }
+};
 
 object JRDesignBand {
   val empty = new JRDesignBand(
