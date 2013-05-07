@@ -1,34 +1,29 @@
 package de.ag.jrlang.core
 
-// JRDesignElementGroup, JRBaseElementGroup
-
-import de.ag.jrlang.core.JRDesignBand;
-import scala.collection.JavaConversions._
-
-sealed case class JRDesignBand (
+sealed case class Band (
     height : Int,
-    printWhenExpression : JRDesignExpression,
+    printWhenExpression : Expression,
     splitType : net.sf.jasperreports.engine.`type`.SplitTypeEnum,
-    children : Seq[JRDesignChild] // elements + groups
-    // origin: probably useless
-    ) extends StyleFoldable[JRDesignBand]
+    children : Seq[Element] // elements + groups
+    // origin: probably useless (set automatically, after Band is used somewhere)
+    ) extends StyleFoldable[Band]
 {
   def foldStyles(st0: StylesMap) = {
-    val (children_, st1) = JRDesignChild.foldAllStyles(children, st0);
+    val (children_, st1) = Element.foldAllStyles(children, st0);
     (copy(children = children_),
         st1)
   }
 };
 
-object JRDesignBand {
-  val empty = new JRDesignBand(
+object Band {
+  val empty = new Band(
       height = 0,
-      printWhenExpression = null,
+      printWhenExpression = "",
       splitType = net.sf.jasperreports.engine.`type`.SplitTypeEnum.IMMEDIATE, //??
       children = Vector.empty
       )
   
-  implicit def dropBand(o: JRDesignBand) : net.sf.jasperreports.engine.design.JRDesignBand = {
+  implicit def compileBand(o: Band) : net.sf.jasperreports.engine.design.JRDesignBand = {
     if (o == null)
       // this is only to simplify code, where an implicit conversion from Option[Band] => jasper.Band is handy.
       null
@@ -54,18 +49,3 @@ object JRDesignBand {
     }
   }
 }
-
-/*
-object JRDesignBand extends CompanionAdapter[JRDesignBand, net.sf.jasperreports.engine.design.JRDesignBand] {
-  def apply() : JRDesignBand = apply(new net.sf.jasperreports.engine.design.JRDesignBand())
-  
-  def apply(o: net.sf.jasperreports.engine.design.JRDesignBand) =
-    new JRDesignBand(
-        height = o.getHeight(),
-        printWhenExpression = o.getPrintWhenExpression().asInstanceOf[net.sf.jasperreports.engine.design.JRDesignExpression],
-        splitType = o.getSplitTypeValue(),
-        children = o.getChildren().asInstanceOf[java.util.List[net.sf.jasperreports.engine.JRChild]]
-    )
-
-}
-*/

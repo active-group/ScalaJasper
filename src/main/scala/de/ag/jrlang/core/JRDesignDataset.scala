@@ -26,10 +26,20 @@ sealed case class JRDesignDataset(
     scriptletClassName: String,
     groups : Seq[JRDesignGroup], // Map-Like
     resourceBundle: String,
-    filterExpression: JRDesignExpression,
+    filterExpression: Expression,
     whenResourceMissingType: net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum,
     customProperties: Map[String, String]
 );
+  
+  /* TODO: These are more or less static (different for main and sub datasets)
+  def systemParameters : Seq[net.sf.jasperreports.engine.JRParameter] =
+    // obj.getParametersList() filter { p : Any => p.asInstanceOf[net.sf.jasperreports.engine.JRParameter].isSystemDefined() };
+    obj.getParametersList().asInstanceOf[List[net.sf.jasperreports.engine.JRParameter]] filter { p => p.isSystemDefined() };
+  
+  def systemVariables : Seq[net.sf.jasperreports.engine.JRVariable] =
+    obj.getVariablesList().asInstanceOf[List[net.sf.jasperreports.engine.JRVariable]] filter { p => p.isSystemDefined() };
+
+  */ 
 
 object JRDesignDataset {
   val empty = new JRDesignDataset(

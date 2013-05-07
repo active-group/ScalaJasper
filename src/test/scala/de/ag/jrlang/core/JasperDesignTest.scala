@@ -7,12 +7,12 @@ import org.junit.runner.RunWith
 import de.ag.jrlang.core._
 
 @RunWith(classOf[JUnitRunner])
-class JasperDesignTest extends FunSuite {
+class ReportTest extends FunSuite {
   
-
-  def testPrint(d : JasperDesign) = {
-    val r = JasperDesignTest.compile(d)
-    val p = JasperDesignTest.print(r, Map.empty);
+  /*
+  def testPrint(d : Report) = {
+    val r = ReportTest.compile(d)
+    val p = ReportTest.print(r, Map.empty);
     //val bytes = net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(p);
     // it's not easily verifiable, because it contains current timestamps ("of course")
     // printf("%s", new String(bytes))
@@ -21,11 +21,12 @@ class JasperDesignTest extends FunSuite {
     val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)
     printf("%s", s);
   }
+  */
 
   test("empty report") {
     // running from sbt crashes with some classloader/resources bug,
     // running from eclipse works ("of course"); so hard to debug.
-    val r = JasperDesign("empty report")
+    val r = Report("empty report")
     
     val expected = 
 <jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="empty report" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
@@ -37,13 +38,13 @@ class JasperDesignTest extends FunSuite {
   <page/>
 </jasperPrint>
 
-    val actual = JasperDesignTest.printToXML(r, Map.empty);
-    JasperDesignTest.compareJasperPrintXML(expected, actual);
+    val actual = ReportTest.printToXML(r, Map.empty);
+    ReportTest.compareJasperPrintXML(expected, actual);
   }
 
   test("simple report") {
     // TODO: which style defs are mandatory?
-    val mystyle = JRStyle.Internal.empty.copy(
+    val mystyle = Style.Internal.empty.copy(
         font = JRFont.empty.copy(
             //fontName = Some("DejaVu Sans"),
             fontSize = Some(12),
@@ -54,12 +55,12 @@ class JasperDesignTest extends FunSuite {
     val rect = JRCommon.empty.copy(
         x = 0, y = 0,
         width = 55, height = 15,
-        //style = Some(JRStyle.External(reference="mystyle")), // only the name is references, as it seems
+        //style = Some(Style.External(reference="mystyle")), // only the name is references, as it seems
         
         style = Some(mystyle.copy(font = mystyle.font.copy(fontSize = Some(8)))),
         
         // Experiment: We could use 'parentStyle' for every copy that is made automatically...?!
-        //style = Some(JRStyle.Internal.empty.copy(
+        //style = Some(Style.Internal.empty.copy(
         //    parentStyle = Some(mystyle),
         //    font = JRFont.empty.copy(fontSize = Some(8)))),
         
@@ -69,17 +70,17 @@ class JasperDesignTest extends FunSuite {
         forecolor = Some(java.awt.Color.white)
         // mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
         );
-    val myband = JRDesignBand.empty.copy(
+    val myband = Band.empty.copy(
             height = 20,
             children = Vector(
-                JREllipse.empty.copy(common = rect),
-                JRStaticText("Hello").copy(common = rect)
+                Ellipse.empty.copy(common = rect),
+                StaticText("Hello").copy(common = rect)
                 ));
-    val r = JasperDesign("hello-world-report").copy(
+    val r = Report("hello-world-report").copy(
         defaultStyle = mystyle,
         // details = Vector(myband),
         // title = TitleBand.empty.copy(band = Some(myband), newPage = true),
-        pages = Pages.empty.copy(
+        page = Page.empty.copy(
             header = Some(myband)
             // footer
             ),
@@ -108,15 +109,15 @@ class JasperDesignTest extends FunSuite {
   </page>
 </jasperPrint>
    
-    val actual = JasperDesignTest.printToXML(r, Map.empty);
-    JasperDesignTest.compareJasperPrintXML(expected, actual);
+    val actual = ReportTest.printToXML(r, Map.empty);
+    ReportTest.compareJasperPrintXML(expected, actual);
   }
   
 
   
   /*
   test("persistency") {
-     val o0 = JasperDesign();
+     val o0 = Report();
      val o1 = o0.copy(columns = o0.columns.copy(width = 42));
      assert(o1.columns.width == 42);
      val o2 = o1.copy(columns = o1.columns.copy(width = 10));
@@ -160,7 +161,7 @@ class JasperDesignTest extends FunSuite {
 }
 
 
-object JasperDesignTest {
+object ReportTest {
   def compile(d : net.sf.jasperreports.engine.design.JasperDesign) = {
     net.sf.jasperreports.engine.JasperCompileManager.compileReport(d);
   }
@@ -183,8 +184,8 @@ object JasperDesignTest {
     }
   }
 
-  def printToXML(d: JasperDesign, params: Map[String, AnyRef]) = {
-    val r = d.drop;
+  def printToXML(d: Report, params: Map[String, AnyRef]) = {
+    val r = Compiler.compile(d);
     val rr = compile(r);
     val p = print(rr, params);
     val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)

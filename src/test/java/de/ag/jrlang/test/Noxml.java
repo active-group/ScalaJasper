@@ -11,7 +11,6 @@ public class Noxml {
   public static void main(String[] args) {
     try {
       JasperDesign d = getJasperDesignMin();
-      de.ag.jrlang.core.JasperDesignTest.show(d);
       JasperPrint p = print(compile(d));
       //write(p, "/Users/frese/tmp/testJava.pdf");
       String s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p);
