@@ -17,9 +17,12 @@ object Element {
       case v : Image => Image.drop(v)
       case v : TextField => TextField.drop(v)
       case v : Subreport => Subreport.drop(v)
+      case v : Break => Break.drop(v)
+      case v : Frame => Frame.drop(v)
+      // Line, Rectanle, Component, GenericElement, Crosstab, Chart
     }
   
-  def foldAllStyles(c: Seq[Element], st: StylesMap) =
+  def foldAllStyles(c: Seq[Element], st: StylesMap) : (Vector[Element], StylesMap) =
     c.foldLeft((Vector.empty:Vector[Element], st)) {
       case ((c, st0), v) => {
         val (v_, st1) = v match {
@@ -28,6 +31,8 @@ object Element {
           case v: Image => v.foldStyles(st0)
           case v: TextField => v.foldStyles(st0)
           case v: Subreport => v.foldStyles(st0)
+          case v: Break => v.foldStyles(st0)
+          case v: Frame => v.foldStyles(st0)
           case _: Element => (v, st0) // undefined, no styles
         };
         ((c :+ v_), st1)
@@ -277,7 +282,7 @@ object Break {
   
   val empty = page;
   
-  implicit def dropBreak(o: Break): net.sf.jasperreports.engine.design.JRDesignBreak = {
+  implicit def drop(o: Break): net.sf.jasperreports.engine.design.JRDesignBreak = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak();
     ElementUtils.putReportElement(key = o.key, style=Style.Internal.empty, pos=o.pos, size=Size.empty, conditions=o.conditions, r);
     r.setType(o.breakType);
@@ -331,7 +336,7 @@ object Frame {
       conditions = Conditions.empty,
       children = Vector.empty);
   
-  implicit def dropFrame(o:Frame) : net.sf.jasperreports.engine.design.JRDesignFrame = {
+  implicit def drop(o:Frame) : net.sf.jasperreports.engine.design.JRDesignFrame = {
     val r = new net.sf.jasperreports.engine.design.JRDesignFrame();
     ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
     ElementUtils.addChildren(o.children, r.addElement(_), r.addElementGroup(_));
