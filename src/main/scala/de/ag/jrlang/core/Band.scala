@@ -32,19 +32,7 @@ object Band {
       r.setHeight(o.height);
       r.setPrintWhenExpression(o.printWhenExpression);
       r.setSplitType(o.splitType);
-      // obj will 'own' the created child objects (like in DOM)
-      for (c <- o.children) {
-        // although elements and groups end up in the same children list,
-        // there is no add method for children, but only for the two
-        // classes of children, elements and element groups -
-        // that API crime should be healed here
-        val co : net.sf.jasperreports.engine.JRChild = c;
-        co match {
-          case g : net.sf.jasperreports.engine.design.JRDesignElementGroup => r.addElementGroup(g)
-          case e : net.sf.jasperreports.engine.design.JRDesignElement => r.addElement(e)
-          case _ => throw new RuntimeException("Unexpected type of child: " + co.getClass())
-        }
-      }
+      ElementUtils.addChildren(o.children, r.addElement(_), r.addElementGroup(_));
       r
     }
   }

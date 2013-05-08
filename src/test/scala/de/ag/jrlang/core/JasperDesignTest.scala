@@ -114,6 +114,42 @@ class ReportTest extends FunSuite {
     ReportTest.compareJasperPrintXML(expected, actual);
   }
   
+  test("image") {
+    val mystyle = Style.Internal.empty;
+    val myband = Band.empty.copy(
+            height = 200,
+            children = Vector(
+                Image("\"src/test/resources/butterfly.jpg\"",
+                    net.sf.jasperreports.engine.`type`.ScaleImageEnum.FILL_FRAME).copy(
+                        lazily = true,
+                        size = Size.empty.copy(height = 150, width = 150))
+                ));
+    val r = Report("myfirstimage").copy(
+        defaultStyle = mystyle,
+        page = Page.empty.copy(
+            header = Some(myband)
+            )
+        );
+    
+    val expected =
+<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="myfirstimage" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
+  <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+  <origin band="pageHeader"/>
+  <origin band="detail"/>
+  <style name="default" isDefault="true" />
+  <page>
+    <image hAlign="Left" isLazy="true" scaleImage="FillFrame" vAlign="Top">
+      <reportElement height="150" origin="0" srcId="1" width="150" x="20" y="30" />
+      <imageSource>src/test/resources/butterfly.jpg</imageSource>
+    </image>
+  </page>
+</jasperPrint>
+   
+    val actual = ReportTest.printToXML(r, Map.empty);
+    ReportTest.compareJasperPrintXML(expected, actual);
+  }
 
   
   /*
