@@ -199,15 +199,22 @@ private[core] object ElementUtils {
   // Various classes need this, though they don't have a common type
   def addChildren(
       children: Seq[Element],
-      addElement: (net.sf.jasperreports.engine.JRElement => Unit),
-      addElementGroup: (net.sf.jasperreports.engine.design.JRDesignElementGroup => Unit)) {
+      addElement: net.sf.jasperreports.engine.design.JRDesignElement => Unit,
+      addElementGroup: net.sf.jasperreports.engine.design.JRDesignElementGroup => Unit) {
     // obj will 'own' the created child objects (like in DOM)
     for (c <- children) {
       // although elements and groups end up in the same children list,
       // there is no add method for children, but only for the two
       // classes of children, elements and element groups -
       // that API crime should be healed here
-      val co : net.sf.jasperreports.engine.JRChild = c;
+      /*c match {
+        case g: ElementGroup => addElementGroup(g)
+        case e: Element => {
+          val eo = Element.drop(e).asInstanceOf[net.sf.jasperreports.engine.design.JRDesignElement];
+          addElement(eo);
+        }
+      }*/
+      val co : net.sf.jasperreports.engine.JRChild = Element.drop(c);
       co match {
         case g : net.sf.jasperreports.engine.design.JRDesignElementGroup => addElementGroup(g)
         case e : net.sf.jasperreports.engine.design.JRDesignElement => addElement(e)
