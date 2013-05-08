@@ -151,6 +151,45 @@ class ReportTest extends FunSuite {
     ReportTest.compareJasperPrintXML(expected, actual);
   }
 
+  test("textfield with parameter") {
+    val mystyle = Style.Internal.empty;
+    val myband = Band.empty.copy(
+            height = 200,
+            children = Vector(
+                TextField("$P{myarg1}").copy(size = Size(width=200, height=50, stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH))
+                ));
+    val r = Report("text-parameter").copy(
+        mainDataset = JRDesignDataset.empty.copy(
+            parameters = Vector(
+                JRDesignParameter("myarg1", "\"mydefault\"")
+                )),
+        defaultStyle = mystyle,
+        page = Page.empty.copy(
+            header = Some(myband)
+            )
+        );
+    
+    val expected =
+<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" 
+  name="text-parameter" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
+  <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+  <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+  <origin band="pageHeader"/>
+  <origin band="detail"/>
+  <style name="default" isDefault="true" />
+  <page>
+    <text leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
+      <reportElement height="50" origin="0" srcId="1" width="200" x="20" y="30">
+      </reportElement>
+      <textContent>mydefault</textContent>
+    </text>
+  </page>
+</jasperPrint>
+   
+    val actual = ReportTest.printToXML(r, Map.empty);
+    ReportTest.compareJasperPrintXML(expected, actual);
+  }
   
   /*
   test("persistency") {
@@ -251,9 +290,10 @@ object ReportTest {
   }
   
   def prepareForCompare(xml: scala.xml.Elem) =
-    removeAttr("uuid", // remove all attributes named uuid, in all nested elements
-      scala.xml.Utility.sort( // sort
-          scala.xml.Utility.trim(xml))); // remove whitespace
+    // more diffs than that... removeAttr("orientation", // TODO only on jasperPrint element; JR 4 set's this to Portrait, while JR 5 doesn't set it?!
+      removeAttr("uuid", // remove all attributes named uuid, in all nested elements
+        scala.xml.Utility.sort( // sort
+            scala.xml.Utility.trim(xml))) // remove whitespace
 
   def removeAttr(n: String, xml:scala.xml.Node) =
     xml match {

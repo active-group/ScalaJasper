@@ -2,7 +2,7 @@ package de.ag.jrlang.core
 
 sealed case class JRDesignParameter(
     name: String,
-    defaultValueExpression: String,
+    defaultValueExpression: Expression,
     isForPrompting: Boolean,
     nestedTypeName: String,
     // maybe always false? systemDefined: Boolean,
@@ -12,6 +12,15 @@ sealed case class JRDesignParameter(
 );
 
 object JRDesignParameter {
+  def apply(name: String, defaultValueExpression : Expression = "") =
+    new JRDesignParameter(
+        name = name,
+        defaultValueExpression = defaultValueExpression,
+        isForPrompting = false,
+        nestedTypeName = null, // TODO use "" here, and convert to null belows
+        valueClassName = "java.lang.String", // maybe make subclasses "StringParameter", etc.?
+        description = "");
+  
   implicit def dropParameter(o: JRDesignParameter) : net.sf.jasperreports.engine.design.JRDesignParameter = {
     val r = new net.sf.jasperreports.engine.design.JRDesignParameter();
     r.setName(o.name);

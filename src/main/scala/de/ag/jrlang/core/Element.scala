@@ -4,17 +4,18 @@ import net.sf.jasperreports.engine.`type`.HorizontalAlignEnum
 
 sealed abstract class Element
 {
-  // could probably do the 'implicit CanBuildFrom' technique here; but not worth it.
-  // def foldStyles(st0: StylesMap) : Element;
-
 };
 
 object Element {
+  // could probably do the 'implicit CanBuildFrom' technique here; but not worth it.
+  // def foldStyles(st0: StylesMap) : Element;
+
   implicit def drop(c : Element) : net.sf.jasperreports.engine.JRChild =
     c match {
       case v : Ellipse => Ellipse.drop(v)
       case v : StaticText => StaticText.drop(v)
       case v : Image => Image.drop(v)
+      case v : TextField => TextField.drop(v)
     }
   
   def foldAllStyles(c: Seq[Element], st: StylesMap) =
@@ -24,6 +25,7 @@ object Element {
           case v: Ellipse => v.foldStyles(st0)
           case v: StaticText => v.foldStyles(st0)
           case v: Image => v.foldStyles(st0)
+          case v: TextField => v.foldStyles(st0)
           case _: Element => (v, st0) // undefined, no styles
         };
         ((c :+ v_), st1)
@@ -608,6 +610,7 @@ sealed case class StaticText(
     pos : Pos,
     conditions : Conditions,
     box : LineBox
+    // TODO ? paragraph
     ) extends Element with StyleFoldable[StaticText]
 {
   def foldStyles(st0: StylesMap) = {
@@ -615,7 +618,7 @@ sealed case class StaticText(
     (copy(style = style_),
         st1)
   }
-};;
+};
 
 object StaticText {
   def apply(text: String) = new StaticText(
@@ -641,7 +644,63 @@ sealed case class TextField(
     style: Style,
     size : Size,
     pos : Pos,
+    conditions : Conditions,
+    hyperlink : JRHyperlink,
+    box : LineBox,
+    /** Ensure that if the specified height for the text field is not sufficient,
+     *  it will automatically be increased (never decreased) in order to be able 
+     *  to display the entire text content. */
+    stretchWithOverflow: Boolean,
+    evaluationTime: EvaluationTime,
+    expression: Expression,
+    // Use Style for pattern, blankWhenNull, rotation, textAlignment, (styledText=Style.markup)
+    paragraph: JRParagraph
+    // TODO: What is patternExpression (with regards to Style pattern)
+    ) extends Element with StyleFoldable[TextField]
+{
+  def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0);
+    (copy(style = style_),
+        st1)
+  }
+};
+
+object TextField {
+  private val empty = new TextField(
+      key = "",
+      style = Style.Internal.empty,
+      size = Size.empty,
+      pos = Pos.empty,
+      conditions = Conditions.empty,
+      hyperlink = JRHyperlink.empty,
+      box = LineBox.empty,
+      stretchWithOverflow = false,
+      evaluationTime = EvaluationTime.Now,
+      expression = "",
+      paragraph = JRParagraph.empty)
+  
+  def apply(expression : Expression) = empty.copy(expression = expression)
+  
+  implicit def drop(o: TextField) : net.sf.jasperreports.engine.design.JRDesignTextField = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignTextField();
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    // TODO: hyperlink
+    LineBox.putLineBox(o.box, r.getLineBox());
+    r.setStretchWithOverflow(o.stretchWithOverflow);
+    EvaluationTime.putEvaluationTime(o.evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_));
+    r.setExpression(o.expression);
+    // TODO: paragraph (line spacing)
+    r
+  }
+}
+
+sealed case class Subreport(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
     conditions : Conditions
+    // TODO custom properties?
     ) extends Element;
 
 sealed case class ComponentElement(
@@ -664,14 +723,6 @@ sealed case class Crosstab(
     ) extends Element;
 
 sealed case class GenericElement(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions
-    ) extends Element;
-
-sealed case class Subreport(
     key: String,
     style: Style,
     size : Size,

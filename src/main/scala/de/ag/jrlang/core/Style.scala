@@ -53,6 +53,7 @@ object Style {
       scaleImage: Option[net.sf.jasperreports.engine.`type`.ScaleImageEnum],
       verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum],
       fill: Option[net.sf.jasperreports.engine.`type`.FillEnum]
+      // blankWhenNull missing
       ) extends Style {
     lazy val obj = Internal.dropNew(this) // TODO: explain -- not needed anymore with global style folding?
     
