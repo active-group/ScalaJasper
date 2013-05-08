@@ -16,5 +16,11 @@ package object core {
         r
       }
   }
+  
+  object Expression {
+    def const(s: String) : Expression =
+      // TODO: proper escaping; Java syntax - resp. if it depends on language, don't offer this.
+      "\"" + s + "\""
+  }
 
 }

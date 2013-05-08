@@ -185,9 +185,9 @@ object Report {
       details = Vector.empty,
       defaultStyle = Style.Internal.empty,
       templates = Vector.empty,
-      subDatasets = Map.empty,
+      subDatasets = Map.empty, // TODO: Check if this is a candidate for collecting from subelements (like styles)
       mainDataset = JRDesignDataset.empty,
-      imports = Set.empty,
+      imports = Set.empty, // "style templates"
       columns = Columns.empty,
       ignorePagination = false,
       language = net.sf.jasperreports.engine.JRReport.LANGUAGE_JAVA,

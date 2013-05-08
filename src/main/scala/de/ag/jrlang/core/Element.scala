@@ -16,6 +16,7 @@ object Element {
       case v : StaticText => StaticText.drop(v)
       case v : Image => Image.drop(v)
       case v : TextField => TextField.drop(v)
+      case v : Subreport => Subreport.drop(v)
     }
   
   def foldAllStyles(c: Seq[Element], st: StylesMap) =
@@ -26,6 +27,7 @@ object Element {
           case v: StaticText => v.foldStyles(st0)
           case v: Image => v.foldStyles(st0)
           case v: TextField => v.foldStyles(st0)
+          case v: Subreport => v.foldStyles(st0)
           case _: Element => (v, st0) // undefined, no styles
         };
         ((c :+ v_), st1)
@@ -694,14 +696,75 @@ object TextField {
   }
 }
 
+// --> JRDesignDatasetParameter
+sealed case class ParameterValue(
+    name: String,
+    valueExpression: Expression
+    );
+object ParameterValue {
+  private[core] def put(o: ParameterValue, tgt: net.sf.jasperreports.engine.design.JRDesignDatasetParameter) = {
+    tgt.setName(o.name);
+    tgt.setExpression(o.valueExpression);
+  }
+}
+
 sealed case class Subreport(
     key: String,
     style: Style,
     size : Size,
     pos : Pos,
-    conditions : Conditions
+    conditions : Conditions,
     // TODO custom properties?
-    ) extends Element;
+    /* The location (filename etc.) */
+    subreportExpression : Expression,
+    usingCache : Option[Boolean], // default depends on subreportExpression type
+    parametersMapExpression: Expression,
+    parameters: Seq[ParameterValue] // adds to the map created by mapExpression; overrides individual parameters
+    // TODO returnValue
+    // TODO connection, datasource
+    ) extends Element with StyleFoldable[Subreport]
+{
+  def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0);
+    (copy(style = style_),
+        st1)
+  }
+};
+
+object Subreport {
+  /** Quite common expression that passes all parameters of the main report to the subreport.
+   *  The map does not need to be copied anymore (since JasperReports 3.0.1) 
+   */
+  val inheritParametersExpression = new Expression("$R{REPORT_PARAMETERS_MAP}")
+  
+  def apply(subreportExpression: Expression, parameters: Seq[ParameterValue] = Vector.empty) = {
+    new Subreport(
+        key = "",
+        style = Style.Internal.empty,
+        size = Size.empty,
+        pos = Pos.empty,
+        conditions = Conditions.empty,
+        subreportExpression = subreportExpression,
+        usingCache = None,
+        parametersMapExpression = "",
+        parameters = parameters
+        );
+  }
+  
+  def drop(o: Subreport) : net.sf.jasperreports.engine.design.JRDesignSubreport = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignSubreport(null);
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    r.setExpression(o.subreportExpression);
+    r.setUsingCache(if (o.usingCache.isDefined) (o.usingCache.get : java.lang.Boolean) else null);
+    r.setParametersMapExpression(o.parametersMapExpression);
+    for (p <- o.parameters) {
+      val po = new net.sf.jasperreports.engine.design.JRDesignSubreportParameter();
+      ParameterValue.put(p, po);
+      r.addParameter(po);
+    }
+    r
+  }
+}
 
 sealed case class ComponentElement(
     key: String,
