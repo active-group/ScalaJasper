@@ -54,8 +54,8 @@ class ExpressionTests extends FunSuite {
       true
     }
     val expr1 = Expression.call(fn0, Expression.P("REPORT_PARAMETERS_MAP"));
-    val (compiledExpr1, pargs) = expr1.compile
-    val params = pargs map { case(p, _) => p };
+    val (compiledExpr1, pargs) = (expr1.raw, expr1.env)
+    val params = pargs map { case(p, _) => p } toList;
     val args = pargs map { case(p, v) => (p.name, v) } toMap;
     val r = Report("test").copy(
       mainDataset = JRDesignDataset.empty.copy(parameters = params),
@@ -67,18 +67,20 @@ class ExpressionTests extends FunSuite {
               pos = Pos.empty.copy(x = 0, y = 0),
               size = Size.empty.copy(width=55, height = 15),
               conditions = Conditions.empty.copy(
-                printWhenExpression=Some(compiledExpr1))
+                printWhenExpression=Some(expr1.copy(env=Map.empty)))
             )
           )))
         // footer
       )
     );
     // println(r.page.header.get.children);
-    println(expr1.compile);
+    println(expr1);
     println(r.mainDataset.parameters);
     println(args);
 
     val actual = ReportTest.printToXML(r, args);
     assert(fn0_was_called);
   }
+
+  // TEST: Use the same function/expression multiple times
 }
