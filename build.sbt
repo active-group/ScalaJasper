@@ -24,7 +24,8 @@ libraryDependencies in JRLang ++= Seq(
              ExclusionRule(organization = "com.sun.jdmk"),
              ExclusionRule(organization = "com.sun.jmx"),
              ExclusionRule(organization = "javax.jms")),
-    "net.sf.jasperreports" % "jasperreports" % "5.1.0",
+    "net.sf.jasperreports" % "jasperreports" % "5.1.0", // newest
+    //"net.sf.jasperreports" % "jasperreports" % "4.0.1", // equals uses this
     // exclude("commons-beanutils", "commons-beanutils"),
     //"net.sf.jasperreports" % "jasperreports" % "4.0.1" exclude("commons-beanutils", "commons-beanutils"),
     "junit" % "junit" % "4.8" % "test",

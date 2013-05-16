@@ -5,4 +5,4 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.1")
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.2")
 
 // IntelliJ plugin
-// addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.3.0")
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.3.0")
