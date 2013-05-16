@@ -47,10 +47,10 @@ sealed case class JRHyperlinkParameter(
 // TODO: Is that correct for Image? See XML docu, that has much less attributes.
 // Looks like a seperate API for constructing URLs - there are probably better ones for that
 sealed case class JRHyperlink( // move
-    anchorExpression: Expression,
-    pageExpression: Expression,
+    anchorExpression: Option[Expression],
+    pageExpression: Option[Expression],
     parameters: Seq[JRHyperlinkParameter],
-    referenceExpression: Expression,
+    referenceExpression: Option[Expression],
     hyperlinkTarget: net.sf.jasperreports.engine.`type`.HyperlinkTargetEnum,
     hyperlinkType: net.sf.jasperreports.engine.`type`.HyperlinkTypeEnum,
     linkTarget: String,
@@ -59,10 +59,10 @@ sealed case class JRHyperlink( // move
 
 object JRHyperlink {
   val empty = new JRHyperlink(
-      anchorExpression = "",
-      pageExpression = "",
+      anchorExpression = None,
+      pageExpression = None,
       parameters = Vector.empty,
-      referenceExpression = "",
+      referenceExpression = None,
       hyperlinkTarget = net.sf.jasperreports.engine.`type`.HyperlinkTargetEnum.NONE, // ??
       hyperlinkType = net.sf.jasperreports.engine.`type`.HyperlinkTypeEnum.NONE, // ??
       linkTarget = "",
@@ -145,7 +145,7 @@ object Pos {
 
 sealed case class Conditions(
     printInFirstWholeBand: Boolean,
-    printWhenExpression: Expression,
+    printWhenExpression: Option[Expression],
     printRepeatedValues: Boolean,
     printWhenDetailOverflows: Boolean,
     // TODO printWhenGroupChanges? is a JRGroup - probably needs a reference to a group defined elsewhere
@@ -154,7 +154,7 @@ sealed case class Conditions(
 object Conditions {
   val empty = new Conditions(
       printInFirstWholeBand = false,
-      printWhenExpression = "",
+      printWhenExpression = None,
       printRepeatedValues = true, // important!!
       printWhenDetailOverflows = false,
       removeLineWhenBlank = false
@@ -673,20 +673,18 @@ sealed case class TextField(
 };
 
 object TextField {
-  private val empty = new TextField(
-      key = "",
-      style = Style.Internal.empty,
-      size = Size.empty,
-      pos = Pos.empty,
-      conditions = Conditions.empty,
-      hyperlink = JRHyperlink.empty,
-      box = LineBox.empty,
-      stretchWithOverflow = false,
-      evaluationTime = EvaluationTime.Now,
-      expression = "",
-      paragraph = JRParagraph.empty)
-  
-  def apply(expression : Expression) = empty.copy(expression = expression)
+  def apply(expression : Expression) = new TextField(
+    key = "",
+    style = Style.Internal.empty,
+    size = Size.empty,
+    pos = Pos.empty,
+    conditions = Conditions.empty,
+    hyperlink = JRHyperlink.empty,
+    box = LineBox.empty,
+    stretchWithOverflow = false,
+    evaluationTime = EvaluationTime.Now,
+    expression = expression,
+    paragraph = JRParagraph.empty)
   
   implicit def drop(o: TextField) : net.sf.jasperreports.engine.design.JRDesignTextField = {
     val r = new net.sf.jasperreports.engine.design.JRDesignTextField();
@@ -723,7 +721,7 @@ sealed case class Subreport(
     /* The location (filename etc.) */
     subreportExpression : Expression,
     usingCache : Option[Boolean], // default depends on subreportExpression type
-    parametersMapExpression: Expression,
+    parametersMapExpression: Option[Expression],
     parameters: Seq[ParameterValue] // adds to the map created by mapExpression; overrides individual parameters
     // TODO returnValue
     // TODO connection, datasource
@@ -740,7 +738,7 @@ object Subreport {
   /** Quite common expression that passes all parameters of the main report to the subreport.
    *  The map does not need to be copied anymore (since JasperReports 3.0.1) 
    */
-  val inheritParametersExpression = new Expression("$R{REPORT_PARAMETERS_MAP}")
+  val inheritParametersExpression = "$R{REPORT_PARAMETERS_MAP}"
   
   def apply(subreportExpression: Expression, parameters: Seq[ParameterValue] = Vector.empty) = {
     new Subreport(
@@ -751,7 +749,7 @@ object Subreport {
         conditions = Conditions.empty,
         subreportExpression = subreportExpression,
         usingCache = None,
-        parametersMapExpression = "",
+        parametersMapExpression = None,
         parameters = parameters
         );
   }

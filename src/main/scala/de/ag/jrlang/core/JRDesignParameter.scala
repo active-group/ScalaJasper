@@ -2,8 +2,8 @@ package de.ag.jrlang.core
 
 sealed case class JRDesignParameter(
     name: String,
-    defaultValueExpression: Expression,
-    isForPrompting: Boolean,
+    defaultValueExpression: Option[Expression],
+    isForPrompting: Boolean, // True - show GUI to ask user for value; WTF?? remove?! description too; used for that
     nestedTypeName: String,
     // maybe always false? systemDefined: Boolean,
     valueClassName: String,
@@ -12,7 +12,7 @@ sealed case class JRDesignParameter(
 );
 
 object JRDesignParameter {
-  def apply(name: String, defaultValueExpression : Expression = "") =
+  def apply(name: String, defaultValueExpression : Option[Expression] = None) =
     new JRDesignParameter(
         name = name,
         defaultValueExpression = defaultValueExpression,

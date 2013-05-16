@@ -119,7 +119,7 @@ class ReportTest extends FunSuite {
     val myband = Band.empty.copy(
             height = 200,
             children = Vector(
-                Image("\"src/test/resources/butterfly.jpg\"",
+                Image(Expression.const("src/test/resources/butterfly.jpg"),
                     net.sf.jasperreports.engine.`type`.ScaleImageEnum.FILL_FRAME).copy(
                         lazily = true,
                         size = Size.empty.copy(height = 150, width = 150))
@@ -156,12 +156,12 @@ class ReportTest extends FunSuite {
     val myband = Band.empty.copy(
             height = 200,
             children = Vector(
-                TextField("$P{myarg1}").copy(size = Size(width=200, height=50, stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH))
+                TextField(Expression.raw("$P{myarg1}")).copy(size = Size(width=200, height=50, stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH))
                 ));
     val r = Report("text-parameter").copy(
         mainDataset = JRDesignDataset.empty.copy(
             parameters = Vector(
-                JRDesignParameter("myarg1", "\"mydefault\"")
+                JRDesignParameter("myarg1", Some(Expression.raw("\"mydefault\"")))
                 )),
         defaultStyle = mystyle,
         page = Page.empty.copy(

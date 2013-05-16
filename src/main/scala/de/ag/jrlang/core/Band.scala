@@ -2,7 +2,7 @@ package de.ag.jrlang.core
 
 sealed case class Band (
     height : Int,
-    printWhenExpression : Expression,
+    printWhenExpression : Option[Expression],
     splitType : net.sf.jasperreports.engine.`type`.SplitTypeEnum,
     children : Seq[Element] // elements + groups
     // origin: probably useless (set automatically, after Band is used somewhere)
@@ -18,7 +18,7 @@ sealed case class Band (
 object Band {
   val empty = new Band(
       height = 0,
-      printWhenExpression = "",
+      printWhenExpression = None,
       splitType = net.sf.jasperreports.engine.`type`.SplitTypeEnum.IMMEDIATE, //??
       children = Vector.empty
       )

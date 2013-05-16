@@ -219,7 +219,7 @@ object Report {
     for (v <- o.mainDataset.parameters) r.addParameter(v);
     // TODO for (v <- mainDataset.variables) r.addVariable(v);
     // TODO subDatasets
-    for (s <- o.imports) r.addImport(s);
+    for (s <- o.imports) r.addImport(s); // Java imports for expressions - remove?
     r.setColumnCount(o.columns.count);
     r.setColumnDirection(o.columns.direction);
     r.setColumnFooter(o.columns.footer.band.getOrElse(null));

@@ -26,7 +26,7 @@ sealed case class JRDesignDataset(
     scriptletClassName: String,
     groups : Seq[JRDesignGroup], // Map-Like
     resourceBundle: String,
-    filterExpression: Expression,
+    filterExpression: Option[Expression],
     whenResourceMissingType: net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum,
     customProperties: Map[String, String]
 );
@@ -52,7 +52,7 @@ object JRDesignDataset {
       scriptletClassName = "",
       groups = Vector.empty,
       resourceBundle = "",
-      filterExpression = "",
+      filterExpression = None,
       whenResourceMissingType = net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum.NULL, //??
       customProperties = Map.empty
       )
