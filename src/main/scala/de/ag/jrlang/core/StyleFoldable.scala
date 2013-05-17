@@ -25,7 +25,7 @@ object StylesMap {
 }
 
 trait StyleFoldable[T] {
-  def foldStyles(st: StylesMap): (T, StylesMap)
+  private[core] def foldStyles(st: StylesMap): (T, StylesMap)
 }
 object StyleFoldable {
   

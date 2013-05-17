@@ -19,7 +19,9 @@ object Element {
       case v : Subreport => Subreport.drop(v)
       case v : Break => Break.drop(v)
       case v : Frame => Frame.drop(v)
-      // Line, Rectanle, Component, GenericElement, Crosstab, Chart
+      case v : Line => Line.drop(v)
+      case v : Rectangle => Rectangle.drop(v)
+      // Component, GenericElement, Crosstab, Chart
     }
   
   def foldAllStyles(c: Seq[Element], st: StylesMap) : (Vector[Element], StylesMap) =
@@ -33,6 +35,8 @@ object Element {
           case v: Subreport => v.foldStyles(st0)
           case v: Break => v.foldStyles(st0)
           case v: Frame => v.foldStyles(st0)
+          case v: Line => v.foldStyles(st0)
+          case v: Rectangle => v.foldStyles(st0)
           case _: Element => (v, st0) // undefined, no styles
         };
         ((c :+ v_), st1)
@@ -426,7 +430,7 @@ object Pen {
   
   val empty = new Pen(None, None, None);
   
-  private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.base.JRBoxPen) = {
+  private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.JRPen) = {
     tgt.setLineColor(o.lineColor.getOrElse(null));
     tgt.setLineStyle(o.lineStyle.getOrElse(null));
     var w : java.lang.Float = null;
@@ -623,7 +627,8 @@ sealed case class Line(
     size : Size,
     pos : Pos,
     conditions : Conditions,
-    pen : Option[net.sf.jasperreports.engine.`type`.PenEnum],
+    // PenEnum is not used anymore
+    pen : Pen,
     /** The direction attribute determines which one of the two diagonals of the rectangle
      *  should be drawn:
      *  - direction="TopDown" draws a diagonal line from the top-left corner of the
@@ -632,11 +637,37 @@ sealed case class Line(
      *    the upper-right corner.
      *  The default direction for a line is top-down. */
     direction: net.sf.jasperreports.engine.`type`.LineDirectionEnum
-    ) extends Element{
+    ) extends Element with StyleFoldable[Line] with EnvCollector {
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
 
+  private[core] def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0);
+    (copy(style = style_),
+      st1)
+  }
 };
+
+object Line {
+  val empty = new Line(
+    key = "",
+    style = Style.Internal.empty,
+    size = Size.empty, // width and height must by > 0 (Jasper 'automagically' adjusts it)
+    pos = Pos.empty,
+    conditions = Conditions.empty,
+    pen = Pen.empty,
+    direction = net.sf.jasperreports.engine.`type`.LineDirectionEnum.BOTTOM_UP
+  )
+
+  implicit def drop(o: Line) : net.sf.jasperreports.engine.design.JRDesignLine = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignLine();
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    // LineBox.putLineBox(o.box, r..getLineBox());
+    Pen.putPen(o.pen, r.getLinePen());
+    r.setDirection(o.direction);
+    r
+  }
+}
 
 sealed case class Rectangle(
     key: String,
@@ -644,17 +675,43 @@ sealed case class Rectangle(
     size : Size,
     pos : Pos,
     conditions : Conditions,
-    pen : Option[net.sf.jasperreports.engine.`type`.PenEnum],
+    pen : Pen,
     /** The radius attribute specifies the radius for the arcs used to draw the corners
      *  of the rectangle. The default value is 0, meaning that the rectangle has normal,
-     *  square corners.
+     *  square corners. When None is specified, the radius is derived from the associated style.
      */
-    radius: Int
-    ) extends Element{
+    radius: Option[Int] // TODO: remove, use style
+    ) extends Element with StyleFoldable[Rectangle] with EnvCollector {
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
 
+  private[core] def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0);
+    (copy(style = style_),
+      st1)
+  }
 };
+
+object Rectangle {
+  val empty = new Rectangle(
+    key = "",
+    style = Style.Internal.empty,
+    size = Size.empty, // width and height must by > 0 (Jasper 'automagically' adjusts it)
+    pos = Pos.empty,
+    conditions = Conditions.empty,
+    pen = Pen.empty,
+    radius = None
+  )
+
+  implicit def drop(o: Rectangle) : net.sf.jasperreports.engine.design.JRDesignRectangle = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignRectangle();
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    // LineBox.putLineBox(o.box, r..getLineBox());
+    Pen.putPen(o.pen, r.getLinePen());
+    r.setRadius(if (o.radius.isDefined) (o.radius.get : java.lang.Integer) else null);
+    r
+  }
+}
 
 sealed case class StaticText(
     text: String,
