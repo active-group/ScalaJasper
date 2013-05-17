@@ -21,7 +21,8 @@ object Element {
       case v : Frame => Frame.drop(v)
       case v : Line => Line.drop(v)
       case v : Rectangle => Rectangle.drop(v)
-      // Component, GenericElement, Crosstab, Chart
+      case v : ComponentElement => ComponentElement.drop(v)
+      // GenericElement, Crosstab, Chart
     }
   
   def foldAllStyles(c: Seq[Element], st: StylesMap) : (Vector[Element], StylesMap) =
@@ -37,6 +38,7 @@ object Element {
           case v: Frame => v.foldStyles(st0)
           case v: Line => v.foldStyles(st0)
           case v: Rectangle => v.foldStyles(st0)
+          case v: ComponentElement => v.foldStyles(st0)
           case _: Element => (v, st0) // undefined, no styles
         };
         ((c :+ v_), st1)
@@ -896,12 +898,42 @@ sealed case class ComponentElement(
     pos : Pos,
     conditions : Conditions,
     component: net.sf.jasperreports.engine.component.Component,
-    componentKey: net.sf.jasperreports.engine.component.ComponentKey
-    ) extends Element{
+    componentKey: net.sf.jasperreports.engine.component.ComponentKey // needed?
+    ) extends Element with StyleFoldable[ComponentElement] with EnvCollector {
+  def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0);
+    // TODO: type test on Component, then more in there
+    (copy(style = style_),
+      st1)
+  }
+
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
-
 };
+
+object ComponentElement {
+  val empty = new ComponentElement(
+    key = "",
+    style = Style.Internal.empty,
+    size = Size.empty,
+    pos = Pos.empty,
+    conditions = Conditions.empty,
+    component = null,
+    componentKey = null // automatically set for internal components
+  )
+
+  implicit def drop(o: ComponentElement) : net.sf.jasperreports.engine.design.JRDesignComponentElement = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignComponentElement();
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    val (transcomp, transkey) = o.component match {
+      case no : components.Component => no.drop();
+      case _ => (o.component, o.componentKey);
+    }
+    r.setComponent(transcomp);
+    r.setComponentKey(transkey);
+    r
+  }
+}
 
 sealed case class Crosstab(
     key: String,
