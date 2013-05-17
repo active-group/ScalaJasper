@@ -2,7 +2,7 @@ package de.ag.jrlang.core
 
 import net.sf.jasperreports.engine.`type`.HorizontalAlignEnum
 
-sealed abstract class Element
+sealed abstract class Element extends EnvCollector
 {
 };
 
@@ -42,7 +42,10 @@ object Element {
 
 sealed case class JRHyperlinkParameter(
     name: String,
-    valueExpression: Expression);
+    valueExpression: Expression) extends EnvCollector {
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    valueExpression.collectEnv(e0)
+};
 
 // TODO: Is that correct for Image? See XML docu, that has much less attributes.
 // Looks like a seperate API for constructing URLs - there are probably better ones for that
@@ -55,7 +58,16 @@ sealed case class JRHyperlink( // move
     hyperlinkType: net.sf.jasperreports.engine.`type`.HyperlinkTypeEnum,
     linkTarget: String,
     linkType: String
-    );
+    ) extends EnvCollector{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    anchorExpression.collectEnv(
+      pageExpression.collectEnv(
+        referenceExpression.collectEnv(
+          parameters.collectEnv(e0)
+        )
+      )
+    )
+};
 
 object JRHyperlink {
   val empty = new JRHyperlink(
@@ -70,10 +82,13 @@ object JRHyperlink {
       );
 }
 
-sealed case class JRAnchor( // move
+sealed case class JRAnchor ( // move
     anchorNameExpression: Expression,
     bookmarkLevel: Int
-    );
+    ) extends EnvCollector{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    anchorNameExpression.collectEnv(e0)
+};
 
 abstract sealed class EvaluationTime(val value: net.sf.jasperreports.engine.`type`.EvaluationTimeEnum);
 
@@ -150,7 +165,10 @@ sealed case class Conditions(
     printWhenDetailOverflows: Boolean,
     // TODO printWhenGroupChanges? is a JRGroup - probably needs a reference to a group defined elsewhere
     removeLineWhenBlank: Boolean
-    );
+    ) extends EnvCollector{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    printWhenExpression.collectEnv(e0)
+};
 object Conditions {
   val empty = new Conditions(
       printInFirstWholeBand = false,
@@ -249,7 +267,10 @@ sealed case class Chart(
     title: ChartTitle,
     subtitle: ChartSubtitle,
     renderType: String,
-    evaluation: EvaluationTime) extends Element;
+    evaluation: EvaluationTime) extends Element{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    List(conditions, anchor, hyperlink).collectEnv(e0)
+};
 
 sealed case class Break(
     key: String,
@@ -264,6 +285,9 @@ sealed case class Break(
   override def foldStyles(st0 : StylesMap) = {
     (this, st0); // no styles
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    conditions.collectEnv(e0)
 }
 object Break {
   /** A default page break */
@@ -299,6 +323,9 @@ sealed case class ElementGroup( // different from a "group"!
     (copy(children = children_),
         st1)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    children.collectEnv(e0)
 };
 
 object ElementGroup {
@@ -325,6 +352,10 @@ sealed case class Frame(
     (copy(style = style_, children = children_),
         st2)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(children.collectEnv(e0)))
+
 };
 
 object Frame {
@@ -358,6 +389,11 @@ sealed case class Ellipse(
     (copy(style = style_),
         st1)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    conditions.collectEnv(
+      style.collectEnv(e0)
+    )
 };
 
 object Ellipse {
@@ -536,6 +572,9 @@ sealed case class Image(
     (copy(style = style_),
         st1)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(hyperlink.collectEnv(expression.collectEnv(e0))))
 };
 
 object Image {
@@ -593,7 +632,11 @@ sealed case class Line(
      *    the upper-right corner.
      *  The default direction for a line is top-down. */
     direction: net.sf.jasperreports.engine.`type`.LineDirectionEnum
-    ) extends Element;
+    ) extends Element{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(e0))
+
+};
 
 sealed case class Rectangle(
     key: String,
@@ -607,7 +650,11 @@ sealed case class Rectangle(
      *  square corners.
      */
     radius: Int
-    ) extends Element;
+    ) extends Element{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(e0))
+
+};
 
 sealed case class StaticText(
     text: String,
@@ -625,6 +672,10 @@ sealed case class StaticText(
     (copy(style = style_),
         st1)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(e0))
+
 };
 
 object StaticText {
@@ -670,6 +721,10 @@ sealed case class TextField(
     (copy(style = style_),
         st1)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(hyperlink.collectEnv(expression.collectEnv(e0))))
+
 };
 
 object TextField {
@@ -703,7 +758,10 @@ object TextField {
 sealed case class ParameterValue(
     name: String,
     valueExpression: Expression
-    );
+    ) extends EnvCollector{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    valueExpression.collectEnv(e0)
+};
 object ParameterValue {
   private[core] def put(o: ParameterValue, tgt: net.sf.jasperreports.engine.design.JRDesignDatasetParameter) = {
     tgt.setName(o.name);
@@ -732,6 +790,11 @@ sealed case class Subreport(
     (copy(style = style_),
         st1)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(parametersMapExpression.collectEnv(
+      subreportExpression.collectEnv(parameters.collectEnv(e0)))))
+
 };
 
 object Subreport {
@@ -777,7 +840,11 @@ sealed case class ComponentElement(
     conditions : Conditions,
     component: net.sf.jasperreports.engine.component.Component,
     componentKey: net.sf.jasperreports.engine.component.ComponentKey
-    ) extends Element;
+    ) extends Element{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(e0))
+
+};
 
 sealed case class Crosstab(
     key: String,
@@ -786,7 +853,11 @@ sealed case class Crosstab(
     pos : Pos,
     conditions : Conditions
     // etc ... dataset: JRCrosstabDataset,
-    ) extends Element;
+    ) extends Element{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(e0))
+
+};
 
 sealed case class GenericElement(
     key: String,
@@ -794,5 +865,9 @@ sealed case class GenericElement(
     size : Size,
     pos : Pos,
     conditions : Conditions
-    ) extends Element;
+    ) extends Element{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    style.collectEnv(conditions.collectEnv(e0))
+
+};
 

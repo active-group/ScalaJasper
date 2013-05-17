@@ -82,5 +82,30 @@ class ExpressionTests extends FunSuite {
     assert(fn0_was_called);
   }
 
+  test("fully automatic scala expressions") {
+    var fn0_was_called = false;
+    val fn0 = { pmap : java.util.Map[String, Object] =>
+      fn0_was_called = true;
+      true
+    }
+    val r = Report("test").copy(
+      page = Page.empty.copy(
+        header = Some(Band.empty.copy(
+          height = 20,
+          children = Vector(
+            StaticText("Hello").copy(
+              pos = Pos.empty.copy(x = 0, y = 0),
+              size = Size.empty.copy(width=55, height = 15),
+              conditions = Conditions.empty.copy(
+                printWhenExpression=Some(Expression.call(fn0, Expression.P("REPORT_PARAMETERS_MAP"))))
+            )
+          )))
+        // footer
+      )
+    );
+
+    val actual = ReportTest.printToXML(r, Map.empty);
+    assert(fn0_was_called);
+  }
   // TEST: Use the same function/expression multiple times
 }

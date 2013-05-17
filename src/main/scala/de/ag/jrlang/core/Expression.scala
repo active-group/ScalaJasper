@@ -1,10 +1,33 @@
 package de.ag.jrlang.core
 
+// a thing that can/must contribute to the global environment of a report (there is only one)
+private[core] trait EnvCollector {
+  private[core] def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) : Map[JRDesignParameter, AnyRef]
+}
+
+object EnvCollector {
+  implicit def opt(o : Option[EnvCollector]) : EnvCollector = {
+    new EnvCollector {
+      def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) =
+        o.map(_.collectEnv(e0)).getOrElse(e0)
+    }
+  }
+
+  implicit def seq(l : Seq[EnvCollector]) : EnvCollector = {
+    new EnvCollector {
+      def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) =
+        l.foldLeft(e0) { (e1, v) => v.collectEnv(e1) }
+    }
+  }
+}
+
 // we could add a type parameter, to be able to tell at some places
 // that it must be an expression of a certain type; but most if not all of
 // the time JasperReports is dynamically typed anyway, and allows a
 // variety of types; so it would usually be Expression[Any]
-sealed case class Expression private(raw: String, env: Map[JRDesignParameter, AnyRef]=Map.empty);
+sealed case class Expression private(raw: String, env: Map[JRDesignParameter, AnyRef]=Map.empty) extends EnvCollector {
+  override private[core] def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) = e0 ++ env
+}
 
 object Expression {
   /** lift value v into a (java) source expression which evaluates to a report runtime */
@@ -67,8 +90,6 @@ object Expression {
     if (o == null)
       null
     else {
-      if (!o.env.isEmpty)
-        assert(false); // throw new RuntimeException("Implementation error: expression not transformed")
       val r = new net.sf.jasperreports.engine.design.JRDesignExpression()
       r.setText(o.raw)
       r

@@ -5,6 +5,7 @@ sealed case class ChartLegend(
     backgroundColor: Option[java.awt.Color],
     position: net.sf.jasperreports.charts.`type`.EdgeEnum);
 
+// TODO: EnvCollection for all expressions
 sealed case class ChartTitle(
     color: Option[java.awt.Color],
     expression: Expression,

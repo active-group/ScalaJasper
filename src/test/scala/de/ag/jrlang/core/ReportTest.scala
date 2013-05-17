@@ -238,20 +238,7 @@ class ReportTest extends FunSuite {
 
 
 object ReportTest {
-  def compile(d : net.sf.jasperreports.engine.design.JasperDesign) = {
-    net.sf.jasperreports.engine.JasperCompileManager.compileReport(d);
-  }
-  
-  // -> de.ag.jrlang.util ?
-  def print(rep : net.sf.jasperreports.engine.JasperReport, params: Map[String, AnyRef]) : net.sf.jasperreports.engine.JasperPrint = {
-    val p = new java.util.HashMap[java.lang.String,java.lang.Object];
-    //p.put("ReportTitle", "Test");
-    for ((k,v) <- params)
-      p.put(k, v)
-    val ds = new net.sf.jasperreports.engine.JREmptyDataSource();
-    net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p, ds);
-    // net.sf.jasperreports.engine.JasperFillManager.fillReport(rep, p);
-  }
+
   def show(jd: net.sf.jasperreports.engine.design.JasperDesign) = {
     System.err.println("Report: ");
     val props = jd.getPropertiesMap()
@@ -260,10 +247,8 @@ object ReportTest {
     }
   }
 
-  def printToXML(d: Report, params: Map[String, AnyRef]) = {
-    val r = Compiler.compile(d);
-    val rr = compile(r);
-    val p = print(rr, params);
+  def printToXML(d: Report, args: Map[String, AnyRef]) = {
+    val p = print(d, args);
     val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)
     val xml:scala.xml.Elem = scala.xml.XML.loadString(s);
     xml

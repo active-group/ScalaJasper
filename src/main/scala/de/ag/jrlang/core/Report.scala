@@ -9,12 +9,15 @@ import scala.collection.JavaConversions._
 sealed case class FloatingBand(
     band : Option[Band],
     floating : Boolean)
-  extends StyleFoldable[FloatingBand] {
+  extends StyleFoldable[FloatingBand] with EnvCollector {
     def foldStyles(st: StylesMap) = {
       val (band_, st_) = StyleFoldable.foldOption(band, st);
       (copy(band = band_), st_)
     }
-  }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    band.collectEnv(e0)
+}
 
 object FloatingBand {
   val empty = new FloatingBand(
@@ -33,12 +36,15 @@ sealed case class SummaryBand(
     band : Option[Band],
     newPage : Boolean,
     withPageHeaderAndFooter : Boolean)
-  extends StyleFoldable[SummaryBand] {
+  extends StyleFoldable[SummaryBand] with EnvCollector {
     def foldStyles(st: StylesMap) = {
       val (band_, st_) = StyleFoldable.foldOption(band, st);
       (copy(band = band_), st_)
     }
-  }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    band.collectEnv(e0)
+}
 
 
 object SummaryBand {
@@ -51,12 +57,15 @@ object SummaryBand {
 sealed case class TitleBand(
     band : Option[Band],
     newPage : Boolean)
-  extends StyleFoldable[TitleBand] {
+  extends StyleFoldable[TitleBand] with EnvCollector {
     def foldStyles(st: StylesMap) = {
       val (band_, st_) = StyleFoldable.foldOption(band, st);
       (copy(band = band_), st_)
     }
-  }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    band.collectEnv(e0)
+}
 
 object TitleBand {
   val empty = new TitleBand(
@@ -72,7 +81,7 @@ sealed case class Page(
     footer : Option[Band],
     header : Option[Band],
     background : Option[Band]
-) extends StyleFoldable[Page] {
+) extends StyleFoldable[Page] with EnvCollector {
     def foldStyles(st0: StylesMap) = {
       val (footer_, st1) = StyleFoldable.foldOption(footer, st0);
       val (header_, st2) = StyleFoldable.foldOption(header, st1);
@@ -83,7 +92,10 @@ sealed case class Page(
           background = background_),
           st3)
     }
-  }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    footer.collectEnv(header.collectEnv(background.collectEnv(e0)))
+}
 
 object Page {
   val empty = {
@@ -113,13 +125,16 @@ sealed case class Columns(
     spacing : Int,
     width : Int,
     printOrder : net.sf.jasperreports.engine.`type`.PrintOrderEnum
-) extends StyleFoldable[Columns] {
+) extends StyleFoldable[Columns] with EnvCollector {
   def foldStyles(st0: StylesMap) = {
      val (footer_, st1) = footer.foldStyles(st0);
      val (header_, st2) = StyleFoldable.foldOption(header, st1)
      (copy(footer = footer_, header = header_),
          st2)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    footer.collectEnv(header.collectEnv(e0))
 };
 
 object Columns {
@@ -156,7 +171,7 @@ sealed case class Report(
   summary : SummaryBand,
   title : TitleBand
   // UUID probably not
-) extends StyleFoldable[Report] {
+) extends StyleFoldable[Report] with EnvCollector {
   def foldStyles(st0:StylesMap) = {
     val (details_, st1) = StyleFoldable.foldAll(details, st0);
     val (columns_, st2) = columns.foldStyles(st1);
@@ -176,6 +191,26 @@ sealed case class Report(
          ),
      st7)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    details.collectEnv(
+      defaultStyle.collectEnv(
+        mainDataset.collectEnv(
+          // subDatasets? or treat that differently?
+          columns.collectEnv(
+            lastPageFooter.collectEnv(
+              noData.collectEnv(
+                page.collectEnv(
+                  summary.collectEnv(
+                    title.collectEnv(e0)
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
 }
 
 object Report {

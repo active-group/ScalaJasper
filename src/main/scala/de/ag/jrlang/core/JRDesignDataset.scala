@@ -10,7 +10,7 @@ sealed case class JRDesignScriptlet(
     description: String,
     valueClassName: String);
 
-sealed case class JRDesignGroup {
+sealed case class JRDesignGroup() {
    // ... quite a lot
   
 }
@@ -29,7 +29,10 @@ sealed case class JRDesignDataset(
     filterExpression: Option[Expression],
     whenResourceMissingType: net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum,
     customProperties: Map[String, String]
-);
+) extends EnvCollector{
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    filterExpression.collectEnv(e0)
+};
   
   /* TODO: These are more or less static (different for main and sub datasets)
   def systemParameters : Seq[net.sf.jasperreports.engine.JRParameter] =

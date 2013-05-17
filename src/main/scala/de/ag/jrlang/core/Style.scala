@@ -26,7 +26,7 @@ object Font {
       pdfEmbedded = None)
 }
 
-abstract sealed class Style extends StyleFoldable[Style] {
+abstract sealed class Style extends StyleFoldable[Style] with EnvCollector {
 }
 
 object Style {
@@ -69,6 +69,9 @@ object Style {
     }
     
     def isEmpty = (this == Internal.empty)
+
+    private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+      e0 // maybe conditional styles?
   }
   object Internal {
     val empty =
@@ -125,6 +128,8 @@ object Style {
 
   sealed case class External(reference: String) extends Style {
     def foldStyles(st0: StylesMap) = (this, st0)
+
+    private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] = e0
   }
 
   def put(src: Style, tgt:net.sf.jasperreports.engine.design.JRDesignElement) = {

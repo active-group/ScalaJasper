@@ -6,13 +6,17 @@ sealed case class Band (
     splitType : net.sf.jasperreports.engine.`type`.SplitTypeEnum,
     children : Seq[Element] // elements + groups
     // origin: probably useless (set automatically, after Band is used somewhere)
-    ) extends StyleFoldable[Band]
+    ) extends StyleFoldable[Band] with EnvCollector
 {
   def foldStyles(st0: StylesMap) = {
     val (children_, st1) = Element.foldAllStyles(children, st0);
     (copy(children = children_),
         st1)
   }
+
+  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    printWhenExpression.collectEnv(
+      children.collectEnv(e0))
 };
 
 object Band {
