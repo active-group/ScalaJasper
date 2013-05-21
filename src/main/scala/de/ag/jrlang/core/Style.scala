@@ -1,5 +1,47 @@
 package de.ag.jrlang.core
 
+// TODO: Not used yet
+sealed abstract class Align(
+                             val horizontal : net.sf.jasperreports.engine.`type`.HorizontalAlignEnum,
+                             val vertical : net.sf.jasperreports.engine.`type`.VerticalAlignEnum);
+
+object Align {
+  case object TopLeft extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP);
+  case object TopCenter extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP);
+  case object TopRight extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP);
+  case object MiddleLeft extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE);
+  case object Center extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE);
+  case object MiddleRight extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE);
+  case object BottomLeft extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM);
+  case object BottomCenter extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM);
+  case object BottomRight extends Align(
+    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
+    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM);
+
+  private[core] def putAlign(o: Align, tgt: net.sf.jasperreports.engine.JRAlignment) {
+    // TODO: should be optional - resp. corresponds to style... so use this only in Styles?!
+    tgt.setHorizontalAlignment(o.horizontal);
+    tgt.setVerticalAlignment(o.vertical);
+  }
+};
+
+
 sealed case class Font(
     fontName: Option[String],
     fontSize: Option[Int],

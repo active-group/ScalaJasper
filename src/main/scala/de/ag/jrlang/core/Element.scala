@@ -1,6 +1,7 @@
 package de.ag.jrlang.core
 
-import net.sf.jasperreports.engine.`type`.HorizontalAlignEnum
+import net.sf.jasperreports.engine.`type`.{HyperlinkTargetEnum, HyperlinkTypeEnum, HorizontalAlignEnum}
+import net.sf.jasperreports.engine.{JRAnchor, JRHyperlinkParameter, JRExpression}
 
 sealed abstract class Element extends EnvCollector
 {
@@ -25,10 +26,10 @@ object Element {
       // GenericElement, Crosstab, Chart
     }
   
-  def foldAllStyles(c: Seq[Element], st: StylesMap) : (Vector[Element], StylesMap) =
-    c.foldLeft((Vector.empty:Vector[Element], st)) {
+  def foldAllStyles(cs: Seq[Element], st: StylesMap) : (Vector[Element], StylesMap) =
+    cs.foldLeft((Vector[Element](), st)) {
       case ((c, st0), v) => {
-        val (v_, st1) = v match {
+        val (v_, st1) /*: (Element, StylesMap) */ = v match {
           case v: Ellipse => v.foldStyles(st0)
           case v: StaticText => v.foldStyles(st0)
           case v: Image => v.foldStyles(st0)
@@ -40,61 +41,46 @@ object Element {
           case v: Rectangle => v.foldStyles(st0)
           case v: ComponentElement => v.foldStyles(st0)
           case _: Element => (v, st0) // undefined, no styles
-        };
+        }
         ((c :+ v_), st1)
-      }};
+      }}
   
 }
 
-sealed case class JRHyperlinkParameter(
-    name: String,
-    valueExpression: Expression) extends EnvCollector {
-  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    valueExpression.collectEnv(e0)
-};
+abstract class Anchor extends EnvCollector;
 
-// TODO: Is that correct for Image? See XML docu, that has much less attributes.
-// Looks like a seperate API for constructing URLs - there are probably better ones for that
-sealed case class JRHyperlink( // move
-    anchorExpression: Option[Expression],
-    pageExpression: Option[Expression],
-    parameters: Seq[JRHyperlinkParameter],
-    referenceExpression: Option[Expression],
-    hyperlinkTarget: net.sf.jasperreports.engine.`type`.HyperlinkTargetEnum,
-    hyperlinkType: net.sf.jasperreports.engine.`type`.HyperlinkTypeEnum,
-    linkTarget: String,
-    linkType: String
-    ) extends EnvCollector{
-  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    anchorExpression.collectEnv(
-      pageExpression.collectEnv(
-        referenceExpression.collectEnv(
-          parameters.collectEnv(e0)
-        )
-      )
-    )
-};
+object Anchor {
+  case object None extends Anchor{
+    private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]) = e0
+  }
 
-object JRHyperlink {
-  val empty = new JRHyperlink(
-      anchorExpression = None,
-      pageExpression = None,
-      parameters = Vector.empty,
-      referenceExpression = None,
-      hyperlinkTarget = net.sf.jasperreports.engine.`type`.HyperlinkTargetEnum.NONE, // ??
-      hyperlinkType = net.sf.jasperreports.engine.`type`.HyperlinkTypeEnum.NONE, // ??
-      linkTarget = "",
-      linkType = ""
-      );
+  /** just a plain Anchor */
+  sealed case class Plain(name: Expression) extends Anchor{
+    private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]) = name.collectEnv(e0)
+  }
+
+  /** an anchor, which shows up in a table of contents on the given level (> 0) */
+  sealed case class Bookmark(level : Int, name: Expression) extends Anchor{
+    private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]) = name.collectEnv(e0)
+  }
+
+  private[core] def put(o: Anchor,
+                        setAnchorNameExpression: Expression => Unit,
+                        setBookmarkLevel: Int => Unit) = {
+    o match {
+      case Plain(name) =>
+        setAnchorNameExpression(name)
+        setBookmarkLevel(JRAnchor.NO_BOOKMARK) // = 0
+      case Bookmark(level, name) =>
+        setAnchorNameExpression(name)
+        setBookmarkLevel(level)
+      case None =>
+        setAnchorNameExpression(null)
+        setBookmarkLevel(JRAnchor.NO_BOOKMARK)
+    }
+  }
 }
 
-sealed case class JRAnchor ( // move
-    anchorNameExpression: Expression,
-    bookmarkLevel: Int
-    ) extends EnvCollector{
-  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    anchorNameExpression.collectEnv(e0)
-};
 
 abstract sealed class EvaluationTime(val value: net.sf.jasperreports.engine.`type`.EvaluationTimeEnum);
 
@@ -122,6 +108,7 @@ object EvaluationTime {
   }
 }
 
+// TODO: remove?
 sealed case class JRParagraph(
     lineSpacing: Option[net.sf.jasperreports.engine.`type`.LineSpacingEnum]
     );
@@ -263,8 +250,8 @@ sealed case class Chart(
     size : Size,
     pos : Pos,
     conditions : Conditions,
-    anchor: JRAnchor,
-    hyperlink: JRHyperlink,
+    link: Link,
+    anchor: Anchor,
     chartType : ChartType, // contains type byte, plot and dataset
     customizerClass : String,
     legend: ChartLegend,
@@ -275,7 +262,7 @@ sealed case class Chart(
     renderType: String,
     evaluation: EvaluationTime) extends Element{
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    List(conditions, anchor, hyperlink).collectEnv(e0)
+    List(conditions, anchor, link, anchor).collectEnv(e0)
 };
 
 sealed case class Break(
@@ -515,46 +502,6 @@ object LineBox {
   }
 }
 
-sealed abstract class Align(
-    val horizontal : net.sf.jasperreports.engine.`type`.HorizontalAlignEnum,
-    val vertical : net.sf.jasperreports.engine.`type`.VerticalAlignEnum);
-
-object Align {
-  case object TopLeft extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP);
-  case object TopCenter extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP);
-  case object TopRight extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP);
-  case object MiddleLeft extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE);
-  case object Center extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE);
-  case object MiddleRight extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE);
-  case object BottomLeft extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM);
-  case object BottomCenter extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM);
-  case object BottomRight extends Align(
-      net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
-      net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM);
-  
-  private[core] def putAlign(o: Align, tgt: net.sf.jasperreports.engine.JRAlignment) {
-    // TODO: should be optional - resp. corresponds to style... so use this only in Styles?!
-    tgt.setHorizontalAlignment(o.horizontal);
-    tgt.setVerticalAlignment(o.vertical);
-  }
-};
-
 sealed case class Image(
     key: String,
     style: Style,
@@ -568,8 +515,8 @@ sealed case class Image(
     lazily : Boolean, // load at fill time or export time (use href in html for example); if True image expression must be of type String
     onError : net.sf.jasperreports.engine.`type`.OnErrorTypeEnum,
     evaluationTime : EvaluationTime,
-    hyperlink : JRHyperlink, // ?? Correct?
-    // TODO? bookmarkLevel
+    link : Link,
+    anchor : Anchor,
     expression : Expression
     ) extends Element with StyleFoldable[Image]
 {
@@ -580,7 +527,7 @@ sealed case class Image(
   }
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    style.collectEnv(conditions.collectEnv(hyperlink.collectEnv(expression.collectEnv(e0))))
+    style.collectEnv(conditions.collectEnv(link.collectEnv(anchor.collectEnv(expression.collectEnv(e0)))))
 };
 
 object Image {
@@ -600,7 +547,8 @@ object Image {
       lazily = false,
       onError = net.sf.jasperreports.engine.`type`.OnErrorTypeEnum.ERROR,
       evaluationTime = EvaluationTime.Now,
-      hyperlink = JRHyperlink.empty,
+      link = Link.empty,
+      anchor = Anchor.None,
       expression = expression
       )
   }
@@ -617,8 +565,22 @@ object Image {
     r.setLazy(o.lazily);
     r.setOnErrorType(o.onError);
     EvaluationTime.putEvaluationTime(o.evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_));
-    // TODO: Hyperlink
-    r.setExpression(o.expression);
+    Link.put(o.link,
+      r.setHyperlinkType(_),
+      r.setHyperlinkReferenceExpression(_),
+      r.setHyperlinkWhenExpression(_),
+      r.setHyperlinkAnchorExpression(_),
+      r.setHyperlinkPageExpression(_),
+      r.setLinkType(_),
+      r.addHyperlinkParameter(_),
+      r.setHyperlinkTarget(_),
+      r.setLinkTarget(_),
+      r.setHyperlinkTooltipExpression(_)
+    )
+    Anchor.put(o.anchor,
+      r.setAnchorNameExpression(_),
+      r.setBookmarkLevel(_))
+    r.setExpression(o.expression)
     r
   }
 };
@@ -762,7 +724,8 @@ sealed case class TextField(
     size : Size,
     pos : Pos,
     conditions : Conditions,
-    hyperlink : JRHyperlink,
+    link : Link,
+    anchor : Anchor,
     box : LineBox,
     /** Ensure that if the specified height for the text field is not sufficient,
      *  it will automatically be increased (never decreased) in order to be able 
@@ -782,7 +745,7 @@ sealed case class TextField(
   }
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    style.collectEnv(conditions.collectEnv(hyperlink.collectEnv(expression.collectEnv(e0))))
+    style.collectEnv(conditions.collectEnv(link.collectEnv(anchor.collectEnv(expression.collectEnv(e0)))))
 
 };
 
@@ -793,7 +756,8 @@ object TextField {
     size = Size.empty,
     pos = Pos.empty,
     conditions = Conditions.empty,
-    hyperlink = JRHyperlink.empty,
+    link = Link.empty,
+    anchor = Anchor.None,
     box = LineBox.empty,
     stretchWithOverflow = false,
     evaluationTime = EvaluationTime.Now,
@@ -803,7 +767,21 @@ object TextField {
   implicit def drop(o: TextField) : net.sf.jasperreports.engine.design.JRDesignTextField = {
     val r = new net.sf.jasperreports.engine.design.JRDesignTextField();
     ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
-    // TODO: hyperlink
+    Link.put(o.link,
+      r.setHyperlinkType(_),
+      r.setHyperlinkReferenceExpression(_),
+      r.setHyperlinkWhenExpression(_),
+      r.setHyperlinkAnchorExpression(_),
+      r.setHyperlinkPageExpression(_),
+      r.setLinkType(_),
+      r.addHyperlinkParameter(_),
+      r.setHyperlinkTarget(_),
+      r.setLinkTarget(_),
+      r.setHyperlinkTooltipExpression(_)
+    )
+    Anchor.put(o.anchor,
+      r.setAnchorNameExpression(_),
+      r.setBookmarkLevel(_))
     LineBox.putLineBox(o.box, r.getLineBox());
     r.setStretchWithOverflow(o.stretchWithOverflow);
     EvaluationTime.putEvaluationTime(o.evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_));

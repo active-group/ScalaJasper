@@ -25,7 +25,7 @@ abstract sealed class JRChartDataset(value : Byte);
 sealed case class JRPieSeries(
     keyExpression: Expression,
     labelExpression: Expression,
-    sectionHyperlink: JRHyperlink,
+    sectionHyperlink: Link, // ??
     valueExpression: Expression
     );
 
@@ -35,7 +35,7 @@ sealed case class JRPieDataset(
     minPercentage: Float,
     otherKeyExpression: Expression,
     otherLabelExpression: Expression,
-    otherSectionHyperlink: JRHyperlink
+    otherSectionHyperlink: Link // ??
     ) extends JRChartDataset(net.sf.jasperreports.engine.JRChartDataset.PIE_DATASET);
 
 sealed case class JRItemLabel(
