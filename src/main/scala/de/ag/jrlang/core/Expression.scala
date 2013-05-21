@@ -32,7 +32,7 @@ sealed case class Expression private(raw: String, env: Map[JRDesignParameter, An
 object Expression {
   /** lift value v into a (java) source expression which evaluates to a report runtime */
   private def lift(v: AnyRef) = {
-    val uniqueParamName = "v__" + v.hashCode(); // Anything unique, though this is not so bad
+    val uniqueParamName = "v__" + (if (v == null) "null" else v.hashCode()); // Anything unique, though this is not so bad
     val e = "$P{" + uniqueParamName + "}";
     val p = new JRDesignParameter(
       name=uniqueParamName,

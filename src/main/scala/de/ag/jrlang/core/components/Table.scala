@@ -6,6 +6,8 @@ import de.ag.jrlang.core._
 
 import scala.collection.JavaConversions._
 import net.sf.jasperreports.engine.component.ComponentKey
+import net.sf.jasperreports.engine.JRDatasetParameter
+import net.sf.jasperreports.engine.design.{JRDesignDatasetParameter, JRDesignSubreportParameter}
 ;
 
 /** From the "Ultimate guide":
@@ -29,11 +31,25 @@ sealed case class TableCell(
   children: Seq[Element]);
 
 object TableCell {
+  def apply(height: Int, children : Seq[Element]) =
+    new TableCell(
+      style = Style.Internal.empty,
+      box = LineBox.empty,
+      height = height,
+      rowSpan = None,
+      children = children
+    )
+  // TODO: foldstyles, collectEnv
   private[core] implicit def drop(o: TableCell) : net.sf.jasperreports.components.table.DesignCell = {
-    val r = new net.sf.jasperreports.components.table.DesignCell();
-    r.setHeight(o.height);
-    // TODO rest
-    r
+    if (o == null)
+      null // allowed for getOrElse...
+    else {
+      val r = new net.sf.jasperreports.components.table.DesignCell()
+      r.setHeight(o.height)
+      ElementUtils.addChildren(o.children, r.addElement(_), r.addElementGroup(_))
+      // TODO rest
+      r
+    }
   }
 }
 // -> drop DesignCell
@@ -55,38 +71,38 @@ object TableGroupCell {
 }
 
 abstract sealed class AbstractColumn(
-                                      header: TableCell,
-                                      footer: TableCell,
+                                      header: Option[TableCell],
+                                      footer: Option[TableCell],
                                       groupHeaders : Seq[TableGroupCell],
                                       groupFooters : Seq[TableGroupCell],
                                       // no idea what 'tableHeader' and 'tableFooter' (of a column!) are
-                                      tableHeader: TableCell,
-                                      tableFooter: TableCell,
+                                      tableHeader: Option[TableCell],
+                                      tableFooter: Option[TableCell],
                                       width: Int,
-                                      printWhenExpression: Expression) {
+                                      printWhenExpression: Option[Expression]) {
   implicit def drop() : net.sf.jasperreports.components.table.BaseColumn
 
   protected def fill(tgt: net.sf.jasperreports.components.table.StandardBaseColumn) = {
-    tgt.setColumnHeader(header);
-    tgt.setColumnFooter(footer);
+    tgt.setColumnHeader(header.getOrElse(null));
+    tgt.setColumnFooter(footer.getOrElse(null));
     tgt.setGroupHeaders(groupHeaders);
     tgt.setGroupFooters(groupFooters);
-    tgt.setTableHeader(tableHeader);
-    tgt.setTableFooter(tableFooter);
+    tgt.setTableHeader(tableHeader.getOrElse(null));
+    tgt.setTableFooter(tableFooter.getOrElse(null));
     tgt.setWidth(width);
     tgt.setPrintWhenExpression(printWhenExpression);
   }
 }
 
 sealed case class TableColumn(
-  header: TableCell,
-  footer: TableCell,
+  header: Option[TableCell],
+  footer: Option[TableCell],
   groupHeaders : Seq[TableGroupCell],
   groupFooters : Seq[TableGroupCell],
-  tableHeader: TableCell,
-  tableFooter: TableCell,
+  tableHeader: Option[TableCell],
+  tableFooter: Option[TableCell],
   width: Int,
-  printWhenExpression: Expression,
+  printWhenExpression: Option[Expression],
   detail: TableCell)
   extends AbstractColumn(header, footer, groupHeaders, groupFooters, tableHeader, tableFooter, width, printWhenExpression) {
 
@@ -96,18 +112,31 @@ sealed case class TableColumn(
     r.setDetailCell(detail)
     r
   }
+}
 
+object TableColumn {
+  def apply(width : Int, detail : TableCell) =
+    new TableColumn(
+      header = None,
+      footer = None,
+      groupHeaders = Vector.empty,
+      groupFooters = Vector.empty,
+      tableHeader = None,
+      tableFooter = None,
+      width = width,
+      printWhenExpression = None,
+      detail = detail)
 }
 
 sealed case class TableColumnGroup(
-  header: TableCell,
-  footer: TableCell,
+  header: Option[TableCell],
+  footer: Option[TableCell],
   groupHeaders : Seq[TableGroupCell],
   groupFooters : Seq[TableGroupCell],
-  tableHeader: TableCell,
-  tableFooter: TableCell,
+  tableHeader: Option[TableCell],
+  tableFooter: Option[TableCell],
   width: Int,
-  printWhenExpression: Expression,
+  printWhenExpression: Option[Expression],
   columns: Seq[AbstractColumn])
   extends AbstractColumn(header, footer, groupHeaders, groupFooters, tableHeader, tableFooter, width, printWhenExpression) {
 
@@ -120,17 +149,17 @@ sealed case class TableColumnGroup(
 }
 
 sealed case class Table(columns : Seq[AbstractColumn],
-                        // datasetRun: JRDatasetRun,
+                        datasetRun: DatasetRun,
                         whenNoData: WhenNoDataTypeTableEnum) extends Component {
   override implicit def drop() : (net.sf.jasperreports.components.table.StandardTable, net.sf.jasperreports.engine.component.ComponentKey) = {
     val r = new net.sf.jasperreports.components.table.StandardTable()
     r.setColumns(columns map { c => c.drop() })
     r.setWhenNoDataType(whenNoData)
-    // TODO datasetRun?
-    val dr = new net.sf.jasperreports.engine.design.JRDesignDatasetRun();
-    dr.setDatasetName("dummy");
 
-    r.setDatasetRun(dr)
+    // "If no dataset run is specified for a chart or crosstab, the main dataset of the report is used."
+    // Apparently, that is not true for tables - a NPE is raised when you try it - so you cannot have a table of the main dataset
+
+    r.setDatasetRun(datasetRun)
     (r, new ComponentKey("http://jasperreports.sourceforge.net/jasperreports/components", "noprefix", "table"))
   }
 }

@@ -158,8 +158,8 @@ sealed case class Report(
   details: Seq[Band],
   defaultStyle: Style.Internal,
   templates : IndexedSeq[jre.JRReportTemplate],
-  subDatasets: Map[String, JRDesignDataset],
-  mainDataset: JRDesignDataset,
+  subDatasets: Map[String, Dataset],
+  mainDataset: Dataset,
   imports : Set[String],
   columns : Columns,
   // formatFactoryClass
@@ -221,7 +221,7 @@ object Report {
       defaultStyle = Style.Internal.empty,
       templates = Vector.empty,
       subDatasets = Map.empty, // TODO: Check if this is a candidate for collecting from subelements (like styles)
-      mainDataset = JRDesignDataset.empty,
+      mainDataset = Dataset.empty,
       imports = Set.empty, // "style templates"
       columns = Columns.empty,
       ignorePagination = false,
@@ -253,7 +253,11 @@ object Report {
     // TODO for (v <- mainDataset.scriptlets) r.addScriptlet(v);
     for (v <- o.mainDataset.parameters) r.addParameter(v);
     // TODO for (v <- mainDataset.variables) r.addVariable(v);
-    // TODO subDatasets
+    for ((name, s) <- o.subDatasets) {
+      val ds : net.sf.jasperreports.engine.design.JRDesignDataset = s
+      ds.setName(name)
+      r.addDataset(ds)
+    }
     for (s <- o.imports) r.addImport(s); // Java imports for expressions - remove?
     r.setColumnCount(o.columns.count);
     r.setColumnDirection(o.columns.direction);

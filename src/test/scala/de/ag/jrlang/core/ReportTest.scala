@@ -159,7 +159,7 @@ class ReportTest extends FunSuite {
                 TextField(Expression.raw("$P{myarg1}")).copy(size = Size(width=200, height=50, stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH))
                 ));
     val r = Report("text-parameter").copy(
-        mainDataset = JRDesignDataset.empty.copy(
+        mainDataset = Dataset.empty.copy(
             parameters = Vector(
                 JRDesignParameter("myarg1", Some(Expression.raw("\"mydefault\"")))
                 )),
@@ -282,14 +282,20 @@ object ReportTest {
 
   def removeAttr(n: String, xml:scala.xml.Node) =
     xml match {
-      case e:scala.xml.Elem => removeElemAttr(n, e)
+      case e:scala.xml.Elem => removeElemAttr({_ => true}, n, e)
       case x => x
     }
-  def removeElemAttr(n: String, xml:scala.xml.Elem) : scala.xml.Elem =
+  def removeElemAttr(node: String => Boolean, attr: String, xml:scala.xml.Elem) : scala.xml.Elem =
     xml.copy(child = xml.child.foldLeft(Vector[scala.xml.Node]()) { case(r, e) =>
       e match {
-        case v:scala.xml.Elem => r :+ removeElemAttr(n, v)
+        case v:scala.xml.Elem => r :+ removeElemAttr(node, attr, v)
         case x => r :+ x
       }
-    }, attributes = xml.attributes.remove(n))
+    }, attributes = if (node(xml.label)) xml.attributes.remove(attr) else xml.attributes)
+
+  def removeElemAttr(attrName: String, xml:scala.xml.Elem) : scala.xml.Elem =
+    removeElemAttr({_ => true}, attrName, xml)
+
+  def removeElemAttr(nodeName: String, attrName: String, xml:scala.xml.Elem) : scala.xml.Elem =
+    removeElemAttr({n => n == nodeName}, attrName, xml)
 }

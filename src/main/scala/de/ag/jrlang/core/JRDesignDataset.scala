@@ -1,5 +1,30 @@
 package de.ag.jrlang.core
 
+import net.sf.jasperreports.engine.JRField
+import net.sf.jasperreports.engine.design.JRDesignField
+
+// TODO: global type
+sealed case class DatasetRun(datasetName: String,
+                             // TODO: more, parameters...?
+                             dataSourceExpression: Expression)
+// TODO: EnvCollector
+
+object DatasetRun {
+  implicit def drop(o: DatasetRun) = {
+    // experimental
+    val r = new net.sf.jasperreports.engine.design.JRDesignDatasetRun()
+    r.setDatasetName(o.datasetName)
+    r.setDataSourceExpression(o.dataSourceExpression)
+    /*dr.addParameter({ val p = new JRDesignDatasetParameter(); p.setName("p1");
+      //p.setExpression(Expression.raw("new java.util.ArrayList()"));
+      //p.setExpression(Expression.call({ _:AnyRef => asJavaList(Vector("a", "b")) }, Expression.const(null)));
+      p.setExpression(Expression.raw("Arrays.asList(new String[]{\"a\", \"b\"})"))
+      p})*/
+    r
+  }
+}
+
+
 sealed case class JRDesignSortField(
     name: String,
     order: net.sf.jasperreports.engine.`type`.SortOrderEnum,
@@ -15,7 +40,7 @@ sealed case class JRDesignGroup() {
   
 }
 
-sealed case class JRDesignDataset(
+sealed case class Dataset(
     query: JRDesignQuery,
     parameters : Seq[JRDesignParameter], // without system parameters!  // Map-Like
     variables : Seq[JRDesignVariable], // without system variables!  // Map-Like
@@ -44,8 +69,8 @@ sealed case class JRDesignDataset(
 
   */ 
 
-object JRDesignDataset {
-  val empty = new JRDesignDataset(
+object Dataset {
+  val empty = new Dataset(
       query = JRDesignQuery.empty,
       parameters = Vector.empty,
       variables = Vector.empty,
@@ -59,4 +84,15 @@ object JRDesignDataset {
       whenResourceMissingType = net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum.NULL, //??
       customProperties = Map.empty
       )
+
+  implicit def drop(o: Dataset): net.sf.jasperreports.engine.design.JRDesignDataset = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignDataset(false); // isMain = false
+    // TODO: Common code with Report?!
+    for (p <- o.parameters)
+      r.addParameter(p);
+    for ((n,c) <- o.fields)
+      r.addField({ val f = new JRDesignField(); f.setName(n); f.setValueClassName(c); f })
+    // TODO: rest
+    r;
+  }
 }

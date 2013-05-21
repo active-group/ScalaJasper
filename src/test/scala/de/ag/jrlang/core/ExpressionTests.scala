@@ -28,7 +28,7 @@ class ExpressionTests extends FunSuite {
     val fnClassName = "scala.Function1"
     val args = Map("fn0" -> fn0);
     val r = Report("test").copy(
-      mainDataset = JRDesignDataset.empty.copy(parameters = List(JRDesignParameter("fn0").copy(valueClassName = fnClassName))),
+      mainDataset = Dataset.empty.copy(parameters = List(JRDesignParameter("fn0").copy(valueClassName = fnClassName))),
       page = Page.empty.copy(
         header = Some(Band.empty.copy(
           height = 20,
@@ -58,7 +58,7 @@ class ExpressionTests extends FunSuite {
     val params = pargs map { case(p, _) => p } toList;
     val args = pargs map { case(p, v) => (p.name, v) } toMap;
     val r = Report("test").copy(
-      mainDataset = JRDesignDataset.empty.copy(parameters = params),
+      mainDataset = Dataset.empty.copy(parameters = params),
       page = Page.empty.copy(
         header = Some(Band.empty.copy(
           height = 20,
