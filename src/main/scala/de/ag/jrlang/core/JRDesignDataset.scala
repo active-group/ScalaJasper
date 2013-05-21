@@ -3,9 +3,13 @@ package de.ag.jrlang.core
 import net.sf.jasperreports.engine.JRField
 import net.sf.jasperreports.engine.design.JRDesignField
 
-// TODO: global type
-sealed case class DatasetRun(datasetName: String,
-                             // TODO: more, parameters...?
+/** A dataset run declaration supplies the values for the dataset parameters as well as the data source through which
+  * the dataset will iterate. Optionally, a java.sql.Connection can be passed to the dataset instead of a JRDataSource
+  * instance, when there is a SQL query associated with the dataset. */
+// removing the connection+query option altogether could simplify things a lot; we have the better option of specifying
+// a function call as datasourceExpression, which returns a JRResultSetDataSource at runtime.
+ sealed case class DatasetRun(datasetName: String, // replace by dataset definition (see Dataset)
+                             // TODO: more, parameters(=arguments)...?
                              dataSourceExpression: Expression)
 // TODO: EnvCollector
 
@@ -40,6 +44,10 @@ sealed case class JRDesignGroup() {
   
 }
 
+// A dataset is a sort of parametrized schema definition of data, or alternatively of an sql query expression
+// We could/should try to derive all subdatasets of a report by moving the definition to all places that reference
+// subdatasets by name (and generate the names) - the places are all local; in datasetRuns within components,
+// charts, crosstabs; and maybe more? Like Style.Internal and External.. make DatasetRun.Implicit/Explicit or .Reference/.Schema
 sealed case class Dataset(
     query: JRDesignQuery,
     parameters : Seq[JRDesignParameter], // without system parameters!  // Map-Like
@@ -56,6 +64,8 @@ sealed case class Dataset(
     customProperties: Map[String, String]
 ) extends EnvCollector{
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
+    // correct? take care about which expressions are evaluated in the report environment, and those that are
+    // evaluated in the sub-data environment.
     filterExpression.collectEnv(e0)
 };
   

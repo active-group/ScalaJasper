@@ -1,7 +1,7 @@
 package de.ag.jrlang.core
 
 sealed case class JRDesignQuery(
-    // chunks?? don't understand that.
+    // chunks?? don't understand that. must be something around building sql-queries that use report parameters
     language: String,
     text: String);
 
