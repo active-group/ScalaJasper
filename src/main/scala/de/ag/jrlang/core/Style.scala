@@ -68,10 +68,117 @@ object Font {
       pdfEmbedded = None)
 }
 
+sealed case class Pen(
+                       lineColor: Option[java.awt.Color],
+                       lineStyle: Option[net.sf.jasperreports.engine.`type`.LineStyleEnum],
+                       lineWidth: Option[Float]);
+
+object Pen {
+  val lineWidth0 = net.sf.jasperreports.engine.JRPen.LINE_WIDTH_0;
+  val lineWidth1 = net.sf.jasperreports.engine.JRPen.LINE_WIDTH_1;
+
+  val empty = new Pen(None, None, None);
+
+  private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.JRPen) = {
+    tgt.setLineColor(o.lineColor.getOrElse(null));
+    tgt.setLineStyle(o.lineStyle.getOrElse(null));
+    var w : java.lang.Float = null;
+    if (o.lineWidth.isDefined) w = o.lineWidth.get;
+    tgt.setLineWidth(w);
+  }
+}
+
+sealed case class BoxPen(
+                          top : Pen,
+                          left : Pen,
+                          bottom : Pen,
+                          right : Pen) {
+
+  def isUniform = (top == left) && (left == bottom) && (bottom == right)
+}
+
+object BoxPen {
+  val empty = new BoxPen(Pen.empty, Pen.empty, Pen.empty, Pen.empty);
+
+  /** Creates a box pen that uses the same pen on all sides of the box */
+  implicit def uniform(pen: Pen) = new BoxPen(pen, pen, pen, pen);
+
+  private[core] def putBoxPen(o: BoxPen, tgt: net.sf.jasperreports.engine.JRLineBox) = {
+    // we assume tgt is default-initialized
+    if (o.isUniform) // all pens equal?
+      Pen.putPen(o.top, tgt.getPen())
+    else {
+      Pen.putPen(o.top, tgt.getTopPen());
+      Pen.putPen(o.left, tgt.getLeftPen());
+      Pen.putPen(o.bottom, tgt.getBottomPen());
+      Pen.putPen(o.right, tgt.getRightPen());
+    }
+  }
+}
+
+sealed case class BoxPadding(
+                              top: Option[Int],
+                              left: Option[Int],
+                              bottom: Option[Int],
+                              right: Option[Int]
+                              ) {
+  def isUniform = (top == left) && (left == bottom) && (bottom == right)
+}
+object BoxPadding {
+  val empty = new BoxPadding(None, None, None, None);
+
+  val none : BoxPadding = 0
+
+  implicit def uniform(padding: Int) : BoxPadding =
+    new BoxPadding(Some(padding), Some(padding), Some(padding), Some(padding))
+
+  private[core] def putBoxPadding(o: BoxPadding, tgt: net.sf.jasperreports.engine.JRLineBox) = {
+    // we assume tgt is default-initialized
+    def optInt(i: Option[Int]) : java.lang.Integer = if (i.isDefined) i.get else null
+    if (o.isUniform)
+      tgt.setPadding(optInt(o.top))
+    else {
+      tgt.setTopPadding(optInt(o.top))
+      tgt.setLeftPadding(optInt(o.left))
+      tgt.setBottomPadding(optInt(o.bottom))
+      tgt.setRightPadding(optInt(o.right))
+    }
+  }
+}
+
+sealed case class LineBox(
+                           pen: BoxPen,
+                           padding : BoxPadding
+                           // style is a fake property, taken from parent "BoxContainer"
+                           );
+object LineBox {
+  val empty = new LineBox(
+    pen = BoxPen.empty,
+    padding = BoxPadding.empty);
+
+  private[core] def putLineBox(o: LineBox, tgt: net.sf.jasperreports.engine.JRLineBox) {
+    BoxPen.putBoxPen(o.pen, tgt);
+    BoxPadding.putBoxPadding(o.padding, tgt);
+  }
+}
+
+// TODO: remove?
+sealed case class JRParagraph(
+                               lineSpacing: Option[net.sf.jasperreports.engine.`type`.LineSpacingEnum]
+                               )
+object JRParagraph {
+  val empty = JRParagraph(
+    lineSpacing = None)
+}
+
+
 abstract sealed class Style extends StyleFoldable[Style] with EnvCollector {
 }
 
 object Style {
+  /** inherit all style definitions from 'environment' or the default style, depending on the element */
+  val inherit = Internal.empty
+
   sealed case class Internal(
       // name is isDefault intentionally left out (see top level JaperDesign)
       parentStyle: Option[Style],
@@ -94,6 +201,8 @@ object Style {
       rotation: Option[net.sf.jasperreports.engine.`type`.RotationEnum],
       scaleImage: Option[net.sf.jasperreports.engine.`type`.ScaleImageEnum],
       verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum],
+      line: Pen,
+      box: LineBox,
       fill: Option[net.sf.jasperreports.engine.`type`.FillEnum]
       // blankWhenNull missing
       ) extends Style {
@@ -132,7 +241,9 @@ object Style {
           rotation = None,
           scaleImage = None,
           verticalAlignment = None,
-          fill = None);
+          line = Pen.empty,
+          box = LineBox.empty,
+          fill = None)
     
     implicit def drop(o:Internal) : net.sf.jasperreports.engine.design.JRDesignStyle =
       o.obj
@@ -164,6 +275,13 @@ object Style {
       r.setPdfEncoding(o.font.pdfEncoding.getOrElse(null));
       r.setPdfFontName(o.font.pdfFontName.getOrElse(null));
       r.setPdfEmbedded(optBool(o.font.pdfEmbedded));
+
+      Pen.putPen(o.line, r.getLinePen())
+      LineBox.putLineBox(o.box, r.getLineBox())
+      r.setScaleImage(o.scaleImage.getOrElse(null))
+      r.setRadius(if (o.radius.isDefined) (o.radius.get : java.lang.Integer) else null)
+      // TODO: more missing?
+      //r.setBlankWhenNull()
       r
     }
   }

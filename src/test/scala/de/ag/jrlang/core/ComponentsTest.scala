@@ -18,14 +18,14 @@ class ComponentsTest extends FunSuite {
       Band.empty.copy(
         height = 200,
         children = Vector(
-          ComponentElement.empty.copy(
-            pos = Pos.empty.copy(x = 0, y = 0),
-            size = Size.empty.copy(height = 100),
+          ComponentElement(
+            pos = Pos.float(x = 0, y = 0),
+            size = Size.fixed(height = 100, width = 400),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
               datasetRun = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Expression.P("table_datasource")),
               columns = List(TableColumn(width = 100,
                 detail = TableCell(height = 50, children = List(
-                  TextField(Expression.F("f1")).copy(size = Size.empty.copy(height = 15, width=100), pos = Pos.empty.copy(x = 0, y = 0)))
+                  TextField(Size.fixed(15, 100), Pos.float(0, 0), Expression.F("f1")))
                 ))))
         ))
       )),

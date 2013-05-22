@@ -66,15 +66,16 @@ class ReportTest extends FunSuite {
     val myband = Band.empty.copy(
             height = 20,
             children = Vector(
-                Ellipse.empty.copy(
+                Ellipse(
                     style = style2,
-                    pos = Pos.empty.copy(x = 0, y = 0),
-                    size = Size.empty.copy(width=55, height = 15)
+                    pos = Pos.float(x = 0, y = 0),
+                    size = Size.fixed(width=55, height = 15)
                     ),
-                StaticText("Hello").copy(
+                StaticText(
+                    text = "Hello",
                     style = style2,
-                    pos = Pos.empty.copy(x = 0, y = 0),
-                    size = Size.empty.copy(width=55, height = 15)
+                    pos = Pos.float(x = 0, y = 0),
+                    size = Size.fixed(width=55, height = 15)
                     )
                 ));
     val r = Report("hello-world-report").copy(
@@ -119,10 +120,11 @@ class ReportTest extends FunSuite {
     val myband = Band.empty.copy(
             height = 200,
             children = Vector(
-                Image(Expression.const("src/test/resources/butterfly.jpg"),
-                    net.sf.jasperreports.engine.`type`.ScaleImageEnum.FILL_FRAME).copy(
-                        lazily = true,
-                        size = Size.empty.copy(height = 150, width = 150))
+                Image(expression = Expression.const("src/test/resources/butterfly.jpg"),
+                      style = mystyle.copy(scaleImage = Some(net.sf.jasperreports.engine.`type`.ScaleImageEnum.RETAIN_SHAPE)),
+                      lazily = true,
+                      pos = Pos.float(0, 0),
+                      size = Size.fixed(height = 150, width = 150))
                 ));
     val r = Report("myfirstimage").copy(
         defaultStyle = mystyle,
@@ -139,9 +141,10 @@ class ReportTest extends FunSuite {
   <origin band="pageHeader"/>
   <origin band="detail"/>
   <style name="default" isDefault="true" />
+  <style name="autodef0" scaleImage="RetainShape"></style>
   <page>
-    <image hAlign="Left" isLazy="true" scaleImage="FillFrame" vAlign="Top">
-      <reportElement height="150" origin="0" srcId="1" width="150" x="20" y="30" />
+    <image hAlign="Left" isLazy="true" scaleImage="RetainShape" vAlign="Top">
+      <reportElement style="autodef0" height="150" origin="0" srcId="1" width="150" x="20" y="30" />
       <imageSource>src/test/resources/butterfly.jpg</imageSource>
     </image>
   </page>
@@ -156,8 +159,10 @@ class ReportTest extends FunSuite {
     val myband = Band.empty.copy(
             height = 200,
             children = Vector(
-                TextField(Expression.raw("$P{myarg1}")).copy(size = Size(width=200, height=50, stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH))
-                ));
+                TextField(expression = Expression.raw("$P{myarg1}"),
+                  size = Size.fixed(width=200, height=50),
+                  pos = Pos.float(40, 80))
+                ))
     val r = Report("text-parameter").copy(
         mainDataset = Dataset.empty.copy(
             parameters = Vector(
@@ -180,7 +185,7 @@ class ReportTest extends FunSuite {
   <style name="default" isDefault="true" />
   <page>
     <text leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-      <reportElement height="50" origin="0" srcId="1" width="200" x="20" y="30">
+      <reportElement height="50" origin="0" srcId="1" width="200" x="60" y="110">
       </reportElement>
       <textContent>mydefault</textContent>
     </text>

@@ -1,11 +1,8 @@
 package de.ag.jrlang.core
 
-import net.sf.jasperreports.engine.`type`.{HyperlinkTargetEnum, HyperlinkTypeEnum, HorizontalAlignEnum}
-import net.sf.jasperreports.engine.{JRAnchor, JRHyperlinkParameter, JRExpression}
+import net.sf.jasperreports.engine.JRAnchor
 
 sealed abstract class Element extends EnvCollector
-{
-};
 
 object Element {
   // could probably do the 'implicit CanBuildFrom' technique here; but not worth it.
@@ -47,7 +44,7 @@ object Element {
   
 }
 
-abstract class Anchor extends EnvCollector;
+abstract class Anchor extends EnvCollector
 
 object Anchor {
   case object None extends Anchor{
@@ -66,7 +63,7 @@ object Anchor {
 
   private[core] def put(o: Anchor,
                         setAnchorNameExpression: Expression => Unit,
-                        setBookmarkLevel: Int => Unit) = {
+                        setBookmarkLevel: Int => Unit) {
     o match {
       case Plain(name) =>
         setAnchorNameExpression(name)
@@ -82,16 +79,16 @@ object Anchor {
 }
 
 
-abstract sealed class EvaluationTime(val value: net.sf.jasperreports.engine.`type`.EvaluationTimeEnum);
+abstract sealed class EvaluationTime(val value: net.sf.jasperreports.engine.`type`.EvaluationTimeEnum)
 
 object EvaluationTime {
-  case object Auto extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.AUTO);
-  case object Band extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.BAND);
-  case object Column extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.COLUMN);
-  sealed case class Group(group: JRDesignGroup) extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.GROUP);
-  case object Now extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.NOW);
-  case object Page extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.PAGE);
-  case object Report extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.REPORT);
+  case object Auto extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.AUTO)
+  case object Band extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.BAND)
+  case object Column extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.COLUMN)
+  sealed case class Group(group: JRDesignGroup) extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.GROUP)
+  case object Now extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.NOW)
+  case object Page extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.PAGE)
+  case object Report extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.REPORT)
 
   private[core] def putEvaluationTime(
       o: EvaluationTime,
@@ -99,22 +96,13 @@ object EvaluationTime {
       setGroup: net.sf.jasperreports.engine.JRGroup => Unit) = {
     o match {
       case Group(g) => {
-        setTime(o.value);
+        setTime(o.value)
         // TODO setGroup(g);
       }
       case _ => 
-        setTime(o.value);
+        setTime(o.value)
     }
   }
-}
-
-// TODO: remove?
-sealed case class JRParagraph(
-    lineSpacing: Option[net.sf.jasperreports.engine.`type`.LineSpacingEnum]
-    );
-object JRParagraph {
-  val empty = JRParagraph(
-      lineSpacing = None);
 }
 
 /*
@@ -128,48 +116,67 @@ object PrintWhen {
 sealed case class Size(
     height: Int,
     width: Int,
-    stretchType: net.sf.jasperreports.engine.`type`.StretchTypeEnum
-    );
+    stretchType: net.sf.jasperreports.engine.`type`.StretchTypeEnum)
+
 object Size {
-  val empty = new Size(
-      height = 0,
-      width = 0,
-      stretchType = net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH //??
-      );
+  /**
+   * The element preserves its original specified height.
+   */
+  def fixed(height: Int, width: Int) = Size(height, width, net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH)
+
+  /**
+   * The element stretches to the tallest element in it's group (@see ElementGroup).
+   */
+  def relativeToTallest(height: Int, width: Int) = Size(height, width, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
+
+  /**
+   * The element will adapt its height to match the new height of the report section it placed on, which has been
+   * affected by stretch.
+   */
+  def relativeToBand(height: Int, width: Int) = Size(height, width, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
+
 }
 
 sealed case class Pos(
-    x: Int, // x and y are mandatory?!
+    x: Int,
     y: Int,
-    positionType: net.sf.jasperreports.engine.`type`.PositionTypeEnum
-    );
+    positionType: net.sf.jasperreports.engine.`type`.PositionTypeEnum)
+
 object Pos {
-  val empty = new Pos(
-      x = 0,
-      y = 0,
-      positionType = net.sf.jasperreports.engine.`type`.PositionTypeEnum.FLOAT // ??
-     );
+  /**
+   * The element will float in its parent section if it is pushed downwards by other elements fount above it.
+   * It will try to conserve the distance between it and the neighboring elements placed immediately above.
+   */
+  def float(x: Int, y: Int) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FLOAT)
+
+  /**
+   * The element will simply ignore what happens to the other section elements and tries to
+   * conserve the y offset measured from the top of its parent report section.
+   */
+  def fixedTop(x: Int, y: Int) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FIX_RELATIVE_TO_TOP)
+
+  /**
+   * If the height of the parent report section is affected by elements that stretch, the current element will try to
+   * conserve the original distance between its bottom margin and the bottom of the band.
+   */
+  def fixedBottom(x: Int, y: Int) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FIX_RELATIVE_TO_BOTTOM)
 }
 
 sealed case class Conditions(
-    printInFirstWholeBand: Boolean,
-    printWhenExpression: Option[Expression],
-    printRepeatedValues: Boolean,
-    printWhenDetailOverflows: Boolean,
+    printInFirstWholeBand: Boolean = false,
+    printWhenExpression: Option[Expression] = None,
+    printRepeatedValues: Boolean = true, // important!!
+    printWhenDetailOverflows: Boolean = false,
     // TODO printWhenGroupChanges? is a JRGroup - probably needs a reference to a group defined elsewhere
-    removeLineWhenBlank: Boolean
-    ) extends EnvCollector{
+    removeLineWhenBlank: Boolean = false)
+  extends EnvCollector{
+
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     printWhenExpression.collectEnv(e0)
-};
+}
+
 object Conditions {
-  val empty = new Conditions(
-      printInFirstWholeBand = false,
-      printWhenExpression = None,
-      printRepeatedValues = true, // important!!
-      printWhenDetailOverflows = false,
-      removeLineWhenBlank = false
-      );
+  val default = Conditions()
 }
 
 private[core] object ElementUtils {
@@ -181,18 +188,18 @@ private[core] object ElementUtils {
       size:Size,
       conditions:Conditions,
       // custom properties?
-      tgt:net.sf.jasperreports.engine.design.JRDesignElement) = {  
-    tgt.setKey(if (key == "") null else key); // don't know if it's important to be null
-    tgt.setHeight(size.height);
-    tgt.setWidth(size.width);
-    tgt.setStretchType(size.stretchType);
-    tgt.setX(pos.x);
-    tgt.setY(pos.y);
-    tgt.setPositionType(pos.positionType);
-    tgt.setPrintWhenExpression(conditions.printWhenExpression); // TODO: put these
-    tgt.setPrintRepeatedValues(conditions.printRepeatedValues); // two in one; as only one can be used (expression has precedence)
-    tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand);
-    tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows);
+      tgt:net.sf.jasperreports.engine.design.JRDesignElement) {
+    tgt.setKey(if (key == "") null else key) // don't know if it's important to be null
+    tgt.setHeight(size.height)
+    tgt.setWidth(size.width)
+    tgt.setStretchType(size.stretchType)
+    tgt.setX(pos.x)
+    tgt.setY(pos.y)
+    tgt.setPositionType(pos.positionType)
+    tgt.setPrintWhenExpression(conditions.printWhenExpression) // TODO: put these
+    tgt.setPrintRepeatedValues(conditions.printRepeatedValues) // two in one; as only one can be used (expression has precedence)
+    tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand)
+    tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows)
 
     // might take colors and mode out of the style - if it's worth it
     // forecolor: Option[java.awt.Color],
@@ -204,13 +211,13 @@ private[core] object ElementUtils {
     style match {
       // after global style folding, it should always be External or empty
       case s : Style.Internal => {
-        var so : net.sf.jasperreports.engine.design.JRDesignStyle = null;
-        if (!s.isEmpty) so = s;
+        var so : net.sf.jasperreports.engine.design.JRDesignStyle = null
+        if (!s.isEmpty) so = s
         tgt.setStyle(so)
         tgt.setStyleNameReference(null)
       }
       case s : Style.External => {
-        tgt.setStyle(null);
+        tgt.setStyle(null)
         tgt.setStyleNameReference(s.reference)
       }
     }
@@ -234,11 +241,11 @@ private[core] object ElementUtils {
           addElement(eo);
         }
       }*/
-      val co : net.sf.jasperreports.engine.JRChild = Element.drop(c);
+      val co : net.sf.jasperreports.engine.JRChild = Element.drop(c)
       co match {
         case g : net.sf.jasperreports.engine.design.JRDesignElementGroup => addElementGroup(g)
         case e : net.sf.jasperreports.engine.design.JRDesignElement => addElement(e)
-        case _ => throw new RuntimeException("Unexpected type of child: " + co.getClass())
+        case _ => throw new RuntimeException("Unexpected type of child: " + co.getClass)
       }
     }
   }
@@ -260,125 +267,115 @@ sealed case class Chart(
     title: ChartTitle,
     subtitle: ChartSubtitle,
     renderType: String,
-    evaluation: EvaluationTime) extends Element{
+    evaluation: EvaluationTime)
+  extends Element {
+
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     List(conditions, anchor, link, anchor).collectEnv(e0)
-};
+}
 
 sealed case class Break(
     key: String,
-    // style and size (?) don't make any sense
-    // style: Style,
-    // size : Size,
     pos : Pos,
     conditions : Conditions,
-    breakType : net.sf.jasperreports.engine.`type`.BreakTypeEnum
-    )
-    extends Element with StyleFoldable[Break] {
-  override def foldStyles(st0 : StylesMap) = {
-    (this, st0); // no styles
-  }
+    breakType : net.sf.jasperreports.engine.`type`.BreakTypeEnum)
+  extends Element with StyleFoldable[Break] {
+
+  private[core] override def foldStyles(st0 : StylesMap) =
+    (this, st0) // no styles
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     conditions.collectEnv(e0)
 }
 object Break {
-  /** A default page break */
-  val page = new Break(
-      key = "",
-      pos = Pos.empty,
-      conditions = Conditions.empty,
-      breakType = net.sf.jasperreports.engine.`type`.BreakTypeEnum.PAGE);
+  /** Creates a page break */
+  def page(pos: Pos, conditions: Conditions = Conditions.default, key:String = "") = new Break(
+      key = key,
+      pos = pos,
+      conditions = conditions,
+      breakType = net.sf.jasperreports.engine.`type`.BreakTypeEnum.PAGE)
   
-  /** A default column break */
-  val column =  new Break(
-      key = "",
-      pos = Pos.empty,
-      conditions = Conditions.empty,
-      breakType = net.sf.jasperreports.engine.`type`.BreakTypeEnum.COLUMN);
-  
-  val empty = page;
+  /** Creates a column break */
+  def column(pos: Pos, conditions: Conditions = Conditions.default, key:String = "") = new Break(
+      key = key,
+      pos = pos,
+      conditions = conditions,
+      breakType = net.sf.jasperreports.engine.`type`.BreakTypeEnum.COLUMN)
   
   implicit def drop(o: Break): net.sf.jasperreports.engine.design.JRDesignBreak = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignBreak();
-    ElementUtils.putReportElement(key = o.key, style=Style.Internal.empty, pos=o.pos, size=Size.empty, conditions=o.conditions, r);
-    r.setType(o.breakType);
+    val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
+    ElementUtils.putReportElement(key = o.key, style=Style.Internal.empty, pos=o.pos, size=Size.fixed(0, 0), conditions=o.conditions, r)
+    r.setType(o.breakType)
     r
   }
 }
 
 /** The only reason to group your report elements is to customize their stretch behavior. */
 sealed case class ElementGroup( // different from a "group"!
-    children: Seq[Element]
-    ) extends Element with StyleFoldable[ElementGroup] {
-  override def foldStyles(st0 : StylesMap) = {
-    val (children_, st1) = Element.foldAllStyles(children, st0);
-    (copy(children = children_),
+    content: Seq[Element])
+  extends Element with StyleFoldable[ElementGroup] {
+
+  private[core] override def foldStyles(st0 : StylesMap) = {
+    val (children_, st1) = Element.foldAllStyles(content, st0)
+    (copy(content = children_),
         st1)
   }
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    children.collectEnv(e0)
-};
+    content.collectEnv(e0)
+}
 
 object ElementGroup {
   val empty = new ElementGroup(Vector.empty)
   
   implicit def dropElementGroup(o:ElementGroup) : net.sf.jasperreports.engine.design.JRDesignElementGroup = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignElementGroup();
-    ElementUtils.addChildren(o.children, r.addElement(_), r.addElementGroup(_));
+    val r = new net.sf.jasperreports.engine.design.JRDesignElementGroup()
+    ElementUtils.addChildren(o.content, r.addElement(_), r.addElementGroup(_))
     r
   }
 }
 
 sealed case class Frame(
-    key: String,
-    style: Style,
     size : Size,
     pos : Pos,
-    conditions : Conditions,
-    children: Seq[Element]
-    ) extends Element with StyleFoldable[Frame] {
-  override def foldStyles(st0 : StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
-    val (children_, st2) = Element.foldAllStyles(children, st0);
-    (copy(style = style_, children = children_),
+    content: Seq[Element],
+    style: Style = Style.inherit,
+    conditions: Conditions = Conditions.default,
+    key: String = "")
+  extends Element with StyleFoldable[Frame] {
+
+  private[core] override def foldStyles(st0 : StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0)
+    val (children_, st2) = Element.foldAllStyles(content, st1)
+    (copy(style = style_, content = children_),
         st2)
   }
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    style.collectEnv(conditions.collectEnv(children.collectEnv(e0)))
+    style.collectEnv(conditions.collectEnv(content.collectEnv(e0)))
 
-};
+}
 
 object Frame {
-  val empty = new Frame(
-      key = "",
-      style = Style.Internal.empty,
-      size = Size.empty,
-      pos = Pos.empty,
-      conditions = Conditions.empty,
-      children = Vector.empty);
-  
+
   implicit def drop(o:Frame) : net.sf.jasperreports.engine.design.JRDesignFrame = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignFrame();
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
-    ElementUtils.addChildren(o.children, r.addElement(_), r.addElementGroup(_));
+    val r = new net.sf.jasperreports.engine.design.JRDesignFrame()
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
+    ElementUtils.addChildren(o.content, r.addElement(_), r.addElementGroup(_))
     r
   }
 }
 
 sealed case class Ellipse(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions,
-    pen : Option[net.sf.jasperreports.engine.`type`.PenEnum]
-) extends Element with StyleFoldable[Ellipse]
-{
-  def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+    size: Size,
+    pos: Pos,
+    style: Style = Style.inherit,
+    conditions: Conditions = Conditions.default,
+    key: String = "")
+  extends Element with StyleFoldable[Ellipse] {
+
+  private[core] def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0)
     (copy(style = style_),
         st1)
   }
@@ -387,184 +384,58 @@ sealed case class Ellipse(
     conditions.collectEnv(
       style.collectEnv(e0)
     )
-};
+}
 
 object Ellipse {
-  val empty = new Ellipse(
-      key = "",
-      style = Style.Internal.empty,
-      size = Size.empty,
-      pos = Pos.empty,
-      conditions = Conditions.empty,
-      pen = None
-      )
 
   implicit def drop(o: Ellipse) : net.sf.jasperreports.engine.design.JRDesignEllipse = {
     // Unlike other elements (e.g. TextField), the ellipse is missing a default constructor;
     // setting JRDefaultStyleProvider to null like the others do.
-    val r = new net.sf.jasperreports.engine.design.JRDesignEllipse(null);
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    val r = new net.sf.jasperreports.engine.design.JRDesignEllipse(null)
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
     r
   }
 }
 
-sealed case class Pen(
-    lineColor: Option[java.awt.Color],
-    lineStyle: Option[net.sf.jasperreports.engine.`type`.LineStyleEnum],
-    lineWidth: Option[Float]);
-
-object Pen {
-  val lineWidth0 = net.sf.jasperreports.engine.JRPen.LINE_WIDTH_0;
-  val lineWidth1 = net.sf.jasperreports.engine.JRPen.LINE_WIDTH_1;
-  
-  val empty = new Pen(None, None, None);
-  
-  private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.JRPen) = {
-    tgt.setLineColor(o.lineColor.getOrElse(null));
-    tgt.setLineStyle(o.lineStyle.getOrElse(null));
-    var w : java.lang.Float = null;
-    if (o.lineWidth.isDefined) w = o.lineWidth.get;
-    tgt.setLineWidth(w);
-  }
-}
-
-sealed case class BoxPen(
-    top : Pen,
-    left : Pen,
-    bottom : Pen,
-    right : Pen) {
-
-  def isUniform = (top == left) && (left == bottom) && (bottom == right)
-
-}
-object BoxPen {
-  val empty = new BoxPen(Pen.empty, Pen.empty, Pen.empty, Pen.empty);
-  
-  /** Creates a pen that is used on all sides of box */
-  implicit def uniform(pen: Pen) = new BoxPen(pen, pen, pen, pen);
-
-  private[core] def putBoxPen(o: BoxPen, tgt: net.sf.jasperreports.engine.JRLineBox) = {
-    // we assume tgt is default-initialized
-    if (o.isUniform) // all pens equal?
-      Pen.putPen(o.top, tgt.getPen())
-    else {
-      Pen.putPen(o.top, tgt.getTopPen());
-      Pen.putPen(o.left, tgt.getLeftPen());
-      Pen.putPen(o.bottom, tgt.getBottomPen());
-      Pen.putPen(o.right, tgt.getRightPen());
-    }
-  }
-}
-
-sealed case class BoxPadding(
-    top: Option[Int],
-    left: Option[Int],
-    bottom: Option[Int],
-    right: Option[Int]
-    ) {
-  def isUniform = (top == left) && (left == bottom) && (bottom == right)
-}
-object BoxPadding {
-  val empty = new BoxPadding(None, None, None, None);
-
-  val none : BoxPadding = 0
-  
-  implicit def uniform(padding: Int) : BoxPadding =
-    new BoxPadding(Some(padding), Some(padding), Some(padding), Some(padding))
-  
-  private[core] def putBoxPadding(o: BoxPadding, tgt: net.sf.jasperreports.engine.JRLineBox) = {
-    // we assume tgt is default-initialized
-    def optInt(i: Option[Int]) : java.lang.Integer = if (i.isDefined) i.get else null
-    if (o.isUniform)
-      tgt.setPadding(optInt(o.top))
-    else {
-      tgt.setTopPadding(optInt(o.top))
-      tgt.setLeftPadding(optInt(o.left))
-      tgt.setBottomPadding(optInt(o.bottom))
-      tgt.setRightPadding(optInt(o.right))
-    }
-  }
-}
-
-sealed case class LineBox(
-    pen: BoxPen,
-    padding : BoxPadding
-    // style is a fake property, taken from parent "BoxContainer"
-    );
-object LineBox {
-  val empty = new LineBox(
-      pen = BoxPen.empty,
-      padding = BoxPadding.empty);
-  
-  private[core] def putLineBox(o: LineBox, tgt: net.sf.jasperreports.engine.JRLineBox) {
-    BoxPen.putBoxPen(o.pen, tgt);
-    BoxPadding.putBoxPadding(o.padding, tgt);
-  }
-}
-
 sealed case class Image(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions,
-    box : LineBox,
-    scale : net.sf.jasperreports.engine.`type`.ScaleImageEnum,
-    // already in Style: align : Align, // only applicable on scale=Clip or scale=RetainShape
-    usingCache : Option[Boolean], // default depends on type of image expression
-    lazily : Boolean, // load at fill time or export time (use href in html for example); if True image expression must be of type String
-    onError : net.sf.jasperreports.engine.`type`.OnErrorTypeEnum,
-    evaluationTime : EvaluationTime,
-    link : Link,
-    anchor : Anchor,
-    expression : Expression
+    size: Size,
+    pos: Pos,
+    expression : Expression,
+    style: Style = Style.inherit,
+    conditions: Conditions = Conditions.default,
+    key: String = "",
+    /** default depends on type of image expression */
+    usingCache: Option[Boolean] = None,
+    /** load at fill time or export time (use href in html for example); if True image expression must be of
+      * type String */
+    lazily: Boolean = false,
+    onError: net.sf.jasperreports.engine.`type`.OnErrorTypeEnum = net.sf.jasperreports.engine.`type`.OnErrorTypeEnum.ERROR,
+    evaluationTime: EvaluationTime = EvaluationTime.Now,
+    link: Link = Link.empty,
+    anchor: Anchor = Anchor.None
     ) extends Element with StyleFoldable[Image]
 {
   def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+    val (style_, st1) = style.foldStyles(st0)
     (copy(style = style_),
         st1)
   }
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(link.collectEnv(anchor.collectEnv(expression.collectEnv(e0)))))
-};
+}
 
 object Image {
-  def apply(
-      expression: Expression,
-      scale: net.sf.jasperreports.engine.`type`.ScaleImageEnum) = {
-    new Image(
-      key = "",
-      style = Style.Internal.empty,
-      size = Size.empty,
-      pos = Pos.empty,
-      conditions = Conditions.empty,
-      box = LineBox.empty,
-      scale = scale,
-      // align = Align.TopLeft,
-      usingCache = None,
-      lazily = false,
-      onError = net.sf.jasperreports.engine.`type`.OnErrorTypeEnum.ERROR,
-      evaluationTime = EvaluationTime.Now,
-      link = Link.empty,
-      anchor = Anchor.None,
-      expression = expression
-      )
-  }
 
   implicit def drop(o: Image) : net.sf.jasperreports.engine.design.JRDesignImage = {
     // Unlike other elements (e.g. TextField), the ellipse is missing a default constructor;
     // setting JRDefaultStyleProvider to null like the others do.
-    val r = new net.sf.jasperreports.engine.design.JRDesignImage(null);
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
-    LineBox.putLineBox(o.box, r.getLineBox());
-    r.setScaleImage(o.scale);
-    // use style Align.putAlign(o.align, r);
-    r.setUsingCache(if (o.usingCache.isDefined) (o.usingCache.get : java.lang.Boolean) else null);
-    r.setLazy(o.lazily);
-    r.setOnErrorType(o.onError);
-    EvaluationTime.putEvaluationTime(o.evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_));
+    val r = new net.sf.jasperreports.engine.design.JRDesignImage(null)
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
+    r.setUsingCache(if (o.usingCache.isDefined) (o.usingCache.get : java.lang.Boolean) else null)
+    r.setLazy(o.lazily)
+    r.setOnErrorType(o.onError)
+    EvaluationTime.putEvaluationTime(o.evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_))
     Link.put(o.link,
       r.setHyperlinkType(_),
       r.setHyperlinkReferenceExpression(_),
@@ -583,163 +454,119 @@ object Image {
     r.setExpression(o.expression)
     r
   }
-};
+}
 
 sealed case class Line(
-    key: String,
-    style: Style,
     size : Size,
     pos : Pos,
-    conditions : Conditions,
-    // PenEnum is not used anymore
-    pen : Pen,
+    style: Style = Style.inherit,
+    conditions : Conditions = Conditions.default,
+    key: String = "",
     /** The direction attribute determines which one of the two diagonals of the rectangle
-     *  should be drawn:
-     *  - direction="TopDown" draws a diagonal line from the top-left corner of the
-     *    rectangle to the bottom-right corner.
-     *  - direction="BottomUp" draws a diagonal line from the bottom-left corner to
-     *    the upper-right corner.
-     *  The default direction for a line is top-down. */
-    direction: net.sf.jasperreports.engine.`type`.LineDirectionEnum
-    ) extends Element with StyleFoldable[Line] with EnvCollector {
+      *  should be drawn:
+      *  - direction="TopDown" draws a diagonal line from the top-left corner of the
+      *    rectangle to the bottom-right corner.
+      *  - direction="BottomUp" draws a diagonal line from the bottom-left corner to
+      *    the upper-right corner.
+      *  The default direction for a line is top-down. */
+    direction: net.sf.jasperreports.engine.`type`.LineDirectionEnum = net.sf.jasperreports.engine.`type`.LineDirectionEnum.TOP_DOWN)
+  extends Element with StyleFoldable[Line] with EnvCollector {
+
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
 
   private[core] def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+    val (style_, st1) = style.foldStyles(st0)
     (copy(style = style_),
       st1)
   }
-};
+}
 
 object Line {
-  val empty = new Line(
-    key = "",
-    style = Style.Internal.empty,
-    size = Size.empty, // width and height must by > 0 (Jasper 'automagically' adjusts it)
-    pos = Pos.empty,
-    conditions = Conditions.empty,
-    pen = Pen.empty,
-    direction = net.sf.jasperreports.engine.`type`.LineDirectionEnum.BOTTOM_UP
-  )
 
   implicit def drop(o: Line) : net.sf.jasperreports.engine.design.JRDesignLine = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignLine();
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
-    // LineBox.putLineBox(o.box, r..getLineBox());
-    Pen.putPen(o.pen, r.getLinePen());
-    r.setDirection(o.direction);
+    val r = new net.sf.jasperreports.engine.design.JRDesignLine()
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
+    r.setDirection(o.direction)
     r
   }
 }
 
 sealed case class Rectangle(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions,
-    pen : Pen,
-    /** The radius attribute specifies the radius for the arcs used to draw the corners
-     *  of the rectangle. The default value is 0, meaning that the rectangle has normal,
-     *  square corners. When None is specified, the radius is derived from the associated style.
-     */
-    radius: Option[Int] // TODO: remove, use style
-    ) extends Element with StyleFoldable[Rectangle] with EnvCollector {
+    size: Size,
+    pos: Pos,
+    style: Style = Style.inherit,
+    conditions: Conditions = Conditions.default,
+    key: String = "")
+  extends Element with StyleFoldable[Rectangle] with EnvCollector {
+
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
 
   private[core] def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+    val (style_, st1) = style.foldStyles(st0)
     (copy(style = style_),
       st1)
   }
-};
+}
 
 object Rectangle {
-  val empty = new Rectangle(
-    key = "",
-    style = Style.Internal.empty,
-    size = Size.empty, // width and height must by > 0 (Jasper 'automagically' adjusts it)
-    pos = Pos.empty,
-    conditions = Conditions.empty,
-    pen = Pen.empty,
-    radius = None
-  )
-
   implicit def drop(o: Rectangle) : net.sf.jasperreports.engine.design.JRDesignRectangle = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignRectangle();
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
-    // LineBox.putLineBox(o.box, r..getLineBox());
-    Pen.putPen(o.pen, r.getLinePen());
-    r.setRadius(if (o.radius.isDefined) (o.radius.get : java.lang.Integer) else null);
+    val r = new net.sf.jasperreports.engine.design.JRDesignRectangle()
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
     r
   }
 }
 
 sealed case class StaticText(
-    text: String,
-    key: String,
-    style: Style,
     size : Size,
     pos : Pos,
-    conditions : Conditions,
-    box : LineBox
-    // TODO ? paragraph
-    ) extends Element with StyleFoldable[StaticText]
-{
-  def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+    text: String,
+    key: String = "",
+    style: Style = Style.inherit,
+    conditions: Conditions = Conditions.default)
+  extends Element with StyleFoldable[StaticText] {
+
+  private[core] def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0)
     (copy(style = style_),
         st1)
   }
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
-
-};
+}
 
 object StaticText {
-  def apply(text: String) = new StaticText(
-      text = text,
-      key = "",
-      style = Style.Internal.empty,
-      size = Size.empty,
-      pos = Pos.empty,
-      conditions = Conditions.empty,
-      box = LineBox.empty);
-  
+
   implicit def drop(o: StaticText) : net.sf.jasperreports.engine.design.JRDesignStaticText = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignStaticText();
-    r.setText(o.text);
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
-    LineBox.putLineBox(o.box, r.getLineBox());
+    val r = new net.sf.jasperreports.engine.design.JRDesignStaticText()
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
+    r.setText(o.text)
     r
   }
 }
 
 sealed case class TextField(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions,
-    link : Link,
-    anchor : Anchor,
-    box : LineBox,
-    /** Ensure that if the specified height for the text field is not sufficient,
-     *  it will automatically be increased (never decreased) in order to be able 
-     *  to display the entire text content. */
-    stretchWithOverflow: Boolean,
-    evaluationTime: EvaluationTime,
+    size: Size,
+    pos: Pos,
     expression: Expression,
-    // Use Style for pattern, blankWhenNull, rotation, textAlignment, (styledText=Style.markup)
-    paragraph: JRParagraph
-    // TODO: What is patternExpression (with regards to Style pattern)
-    ) extends Element with StyleFoldable[TextField]
-{
-  def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+    key: String = "",
+    style: Style = Style.inherit,
+    conditions: Conditions = Conditions.default,
+    link: Link = Link.empty,
+    anchor: Anchor = Anchor.None,
+    /** Ensure that if the specified height for the text field is not sufficient,
+      *  it will automatically be increased (never decreased) in order to be able
+      *  to display the entire text content. */
+    stretchWithOverflow: Boolean = false,
+    evaluationTime: EvaluationTime = EvaluationTime.Now,
+    // Not sure: optionally overrides the static pattern in style.pattern
+    patternExpression: Option[Expression] = None)
+  extends Element with StyleFoldable[TextField] {
+
+  private[core] def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0)
     (copy(style = style_),
         st1)
   }
@@ -747,26 +574,13 @@ sealed case class TextField(
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(link.collectEnv(anchor.collectEnv(expression.collectEnv(e0)))))
 
-};
+}
 
 object TextField {
-  def apply(expression : Expression) = new TextField(
-    key = "",
-    style = Style.Internal.empty,
-    size = Size.empty,
-    pos = Pos.empty,
-    conditions = Conditions.empty,
-    link = Link.empty,
-    anchor = Anchor.None,
-    box = LineBox.empty,
-    stretchWithOverflow = false,
-    evaluationTime = EvaluationTime.Now,
-    expression = expression,
-    paragraph = JRParagraph.empty)
-  
+
   implicit def drop(o: TextField) : net.sf.jasperreports.engine.design.JRDesignTextField = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignTextField();
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    val r = new net.sf.jasperreports.engine.design.JRDesignTextField()
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
     Link.put(o.link,
       r.setHyperlinkType(_),
       r.setHyperlinkReferenceExpression(_),
@@ -782,104 +596,77 @@ object TextField {
     Anchor.put(o.anchor,
       r.setAnchorNameExpression(_),
       r.setBookmarkLevel(_))
-    LineBox.putLineBox(o.box, r.getLineBox());
-    r.setStretchWithOverflow(o.stretchWithOverflow);
-    EvaluationTime.putEvaluationTime(o.evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_));
-    r.setExpression(o.expression);
-    // TODO: paragraph (line spacing)
+    r.setStretchWithOverflow(o.stretchWithOverflow)
+    EvaluationTime.putEvaluationTime(o.evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_))
+    r.setExpression(o.expression)
+    r.setPatternExpression(o.patternExpression.getOrElse(null))
     r
   }
 }
 
-// --> JRDesignDatasetParameter
-sealed case class ParameterValue(
-    name: String,
-    valueExpression: Expression
-    ) extends EnvCollector{
-  private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    valueExpression.collectEnv(e0)
-};
-object ParameterValue {
-  private[core] def put(o: ParameterValue, tgt: net.sf.jasperreports.engine.design.JRDesignDatasetParameter) = {
-    tgt.setName(o.name);
-    tgt.setExpression(o.valueExpression);
-  }
-}
-
 sealed case class Subreport(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions,
-    // TODO custom properties?
-    /* The location (filename etc.) */
-    subreportExpression : Expression,
-    usingCache : Option[Boolean], // default depends on subreportExpression type
-    parametersMapExpression: Option[Expression],
-    parameters: Seq[ParameterValue] // adds to the map created by mapExpression; overrides individual parameters
-    // TODO returnValue
-    // TODO connection, datasource
-    ) extends Element with StyleFoldable[Subreport]
+   size: Size,
+   pos: Pos,
+   /** The location (filename etc.) */
+   subreportExpression: Expression,
+   style: Style = Style.inherit,
+   conditions: Conditions = Conditions.default,
+   key: String = "",
+   /** adds to the map created by argumentsMapExpression; overrides individual parameters */
+   arguments: Map[String, Expression] = Map.empty,
+   argumentsMapExpression: Option[Expression] = None,
+   /** default depends on subreportExpression type */
+   usingCache: Option[Boolean] = None
+   // TODO custom properties?
+   // TODO returnValue
+   // TODO connection, datasource -- simialy/same as Data (-Run, -Source)?
+   ) extends Element with StyleFoldable[Subreport]
 {
   def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+    val (style_, st1) = style.foldStyles(st0)
     (copy(style = style_),
         st1)
   }
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-    style.collectEnv(conditions.collectEnv(parametersMapExpression.collectEnv(
-      subreportExpression.collectEnv(parameters.collectEnv(e0)))))
+    style.collectEnv(conditions.collectEnv(argumentsMapExpression.collectEnv(
+      subreportExpression.collectEnv((arguments.values toSeq).collectEnv(e0)))))
 
-};
+}
 
 object Subreport {
   /** Quite common expression that passes all parameters of the main report to the subreport.
    *  The map does not need to be copied anymore (since JasperReports 3.0.1) 
    */
-  val inheritParametersExpression = "$R{REPORT_PARAMETERS_MAP}"
-  
-  def apply(subreportExpression: Expression, parameters: Seq[ParameterValue] = Vector.empty) = {
-    new Subreport(
-        key = "",
-        style = Style.Internal.empty,
-        size = Size.empty,
-        pos = Pos.empty,
-        conditions = Conditions.empty,
-        subreportExpression = subreportExpression,
-        usingCache = None,
-        parametersMapExpression = None,
-        parameters = parameters
-        );
-  }
-  
+  val inheritParametersExpression = Expression.R("REPORT_PARAMETERS_MAP")
+
   def drop(o: Subreport) : net.sf.jasperreports.engine.design.JRDesignSubreport = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignSubreport(null);
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
-    r.setExpression(o.subreportExpression);
-    r.setUsingCache(if (o.usingCache.isDefined) (o.usingCache.get : java.lang.Boolean) else null);
-    r.setParametersMapExpression(o.parametersMapExpression);
-    for (p <- o.parameters) {
-      val po = new net.sf.jasperreports.engine.design.JRDesignSubreportParameter();
-      ParameterValue.put(p, po);
-      r.addParameter(po);
+    val r = new net.sf.jasperreports.engine.design.JRDesignSubreport(null)
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
+    r.setExpression(o.subreportExpression)
+    r.setUsingCache(if (o.usingCache.isDefined) (o.usingCache.get : java.lang.Boolean) else null)
+    r.setParametersMapExpression(o.argumentsMapExpression)
+    for ((n,e) <- o.arguments) {
+      val po = new net.sf.jasperreports.engine.design.JRDesignSubreportParameter()
+      po.setName(n)
+      po.setExpression(e)
     }
     r
   }
 }
 
-sealed case class ComponentElement(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions,
-    component: net.sf.jasperreports.engine.component.Component,
-    componentKey: net.sf.jasperreports.engine.component.ComponentKey // needed?
-    ) extends Element with StyleFoldable[ComponentElement] with EnvCollector {
-  def foldStyles(st0: StylesMap) = {
-    val (style_, st1) = style.foldStyles(st0);
+sealed case class ComponentElement(size : Size,
+                                   pos : Pos,
+                                   component: net.sf.jasperreports.engine.component.Component,
+                                   // automatically set for internal components
+                                   componentKey: net.sf.jasperreports.engine.component.ComponentKey = null,
+                                   style: Style = Style.inherit,
+                                   conditions: Conditions = Conditions.default,
+                                   key: String = "")
+  extends Element with StyleFoldable[ComponentElement] with EnvCollector {
+
+  private[core] def foldStyles(st0: StylesMap) = {
+    val (style_, st1) = style.foldStyles(st0)
     // TODO: type test on Component, then more in there
     (copy(style = style_),
       st1)
@@ -887,28 +674,21 @@ sealed case class ComponentElement(
 
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
-};
+}
 
 object ComponentElement {
-  val empty = new ComponentElement(
-    key = "",
-    style = Style.Internal.empty,
-    size = Size.empty,
-    pos = Pos.empty,
-    conditions = Conditions.empty,
-    component = null,
-    componentKey = null // automatically set for internal components
-  )
 
   implicit def drop(o: ComponentElement) : net.sf.jasperreports.engine.design.JRDesignComponentElement = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignComponentElement();
-    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r);
+    val r = new net.sf.jasperreports.engine.design.JRDesignComponentElement()
+    ElementUtils.putReportElement(o.key, o.style, o.pos, o.size, o.conditions, r)
     val (transcomp, transkey) = o.component match {
-      case no : components.Component => no.drop();
-      case _ => (o.component, o.componentKey);
+      case no : components.Component => no.drop()
+      case _ =>
+        assert(o.componentKey != null) // exception? user's fault...
+        (o.component, o.componentKey)
     }
-    r.setComponent(transcomp);
-    r.setComponentKey(transkey);
+    r.setComponent(transcomp)
+    r.setComponentKey(transkey)
     r
   }
 }
@@ -924,7 +704,7 @@ sealed case class Crosstab(
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
 
-};
+}
 
 sealed case class GenericElement(
     key: String,
@@ -936,5 +716,5 @@ sealed case class GenericElement(
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     style.collectEnv(conditions.collectEnv(e0))
 
-};
+}
 

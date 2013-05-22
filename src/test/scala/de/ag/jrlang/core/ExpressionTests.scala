@@ -33,10 +33,11 @@ class ExpressionTests extends FunSuite {
         header = Some(Band.empty.copy(
           height = 20,
           children = Vector(
-            StaticText("Hello").copy(
-              pos = Pos.empty.copy(x = 0, y = 0),
-              size = Size.empty.copy(width=55, height = 15),
-              conditions = Conditions.empty.copy(printWhenExpression=Some(Expression.raw("$P{fn0}.apply($P{REPORT_PARAMETERS_MAP})")))
+            StaticText(
+              text = "Hello",
+              pos = Pos.float(x = 0, y = 0),
+              size = Size.fixed(width=55, height = 15),
+              conditions = Conditions(printWhenExpression=Some(Expression.raw("$P{fn0}.apply($P{REPORT_PARAMETERS_MAP})")))
             )
           )))
         // footer
@@ -63,10 +64,11 @@ class ExpressionTests extends FunSuite {
         header = Some(Band.empty.copy(
           height = 20,
           children = Vector(
-            StaticText("Hello").copy(
-              pos = Pos.empty.copy(x = 0, y = 0),
-              size = Size.empty.copy(width=55, height = 15),
-              conditions = Conditions.empty.copy(
+            StaticText(
+              text = "Hello",
+              pos = Pos.float(x = 0, y = 0),
+              size = Size.fixed(width=55, height = 15),
+              conditions = Conditions(
                 printWhenExpression=Some(expr1.copy(env=Map.empty)))
             )
           )))
@@ -93,10 +95,11 @@ class ExpressionTests extends FunSuite {
         header = Some(Band.empty.copy(
           height = 20,
           children = Vector(
-            StaticText("Hello").copy(
-              pos = Pos.empty.copy(x = 0, y = 0),
-              size = Size.empty.copy(width=55, height = 15),
-              conditions = Conditions.empty.copy(
+            StaticText(
+              text = "Hello",
+              pos = Pos.float(x = 0, y = 0),
+              size = Size.fixed(width=55, height = 15),
+              conditions = Conditions(
                 printWhenExpression=Some(Expression.call(fn0, Expression.P("REPORT_PARAMETERS_MAP"))))
             )
           )))
