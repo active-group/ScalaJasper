@@ -1,40 +1,53 @@
 package de.ag.jrlang.core
 
 import net.sf.jasperreports.engine.JRField
-import net.sf.jasperreports.engine.design.JRDesignField
+import net.sf.jasperreports.engine.design.{JRDesignDatasetParameter, JRDesignField}
+
+abstract sealed class Data;
 
 /** A dataset run declaration supplies the values for the dataset parameters as well as the data source through which
   * the dataset will iterate. Optionally, a java.sql.Connection can be passed to the dataset instead of a JRDataSource
   * instance, when there is a SQL query associated with the dataset. */
 // removing the connection+query option altogether could simplify things a lot; we have the better option of specifying
 // a function call as datasourceExpression, which returns a JRResultSetDataSource at runtime.
- sealed case class DatasetRun(datasetName: String, // replace by dataset definition (see Dataset)
-                             // TODO: more, parameters(=arguments)...?
-                             dataSourceExpression: Expression)
+ sealed case class DatasetRun(datasetName: String,
+                              arguments: Map[String, Expression],
+                              dataSourceExpression: Expression) extends Data
 // TODO: EnvCollector
 
 object DatasetRun {
   implicit def drop(o: DatasetRun) = {
-    // experimental
     val r = new net.sf.jasperreports.engine.design.JRDesignDatasetRun()
     r.setDatasetName(o.datasetName)
+    for ((n, e) <- o.arguments) {
+      val p = new JRDesignDatasetParameter()
+      p.setName(n)
+      p.setExpression(e)
+      r.addParameter(p)
+    }
     r.setDataSourceExpression(o.dataSourceExpression)
-    /*dr.addParameter({ val p = new JRDesignDatasetParameter(); p.setName("p1");
-      //p.setExpression(Expression.raw("new java.util.ArrayList()"));
-      //p.setExpression(Expression.call({ _:AnyRef => asJavaList(Vector("a", "b")) }, Expression.const(null)));
-      p.setExpression(Expression.raw("Arrays.asList(new String[]{\"a\", \"b\"})"))
-      p})*/
     r
   }
 }
 
+sealed case class DataQuery(fields: Map[String,String],
+                            sortFields: Seq[SortField],
+                            filter: Expression,
+                            groups: Seq[JRDesignGroup],
+                            resourceBundle: String, // ??
+                            scriptlets : IndexedSeq[Scriptlet], // Map-Like
+                            scriptletClassName: String
+                            )
 
-sealed case class JRDesignSortField(
+sealed case class DataDef(query : DataQuery, source : Expression) extends Data
+// translate this to a DatasetRun and a new Dataset
+
+sealed case class SortField(
     name: String,
     order: net.sf.jasperreports.engine.`type`.SortOrderEnum,
     fieldType: net.sf.jasperreports.engine.`type`.SortFieldTypeEnum);
 
-sealed case class JRDesignScriptlet(
+sealed case class Scriptlet(
     name: String,
     description: String,
     valueClassName: String);
@@ -53,9 +66,9 @@ sealed case class Dataset(
     parameters : Seq[JRDesignParameter], // without system parameters!  // Map-Like
     variables : Seq[JRDesignVariable], // without system variables!  // Map-Like
     fields : Map[String,String], // maps Name -> ClassName
-    sortFields : Seq[JRDesignSortField],
+    sortFields : Seq[SortField],
   // setQuery?
-    scriptlets : IndexedSeq[JRDesignScriptlet], // Map-Like
+    scriptlets : IndexedSeq[Scriptlet], // Map-Like
     scriptletClassName: String,
     groups : Seq[JRDesignGroup], // Map-Like
     resourceBundle: String,
@@ -66,8 +79,9 @@ sealed case class Dataset(
   private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
     // correct? take care about which expressions are evaluated in the report environment, and those that are
     // evaluated in the sub-data environment.
-    filterExpression.collectEnv(e0)
-};
+    // not correct: filterExpression.collectEnv(e0)
+    e0
+}
   
   /* TODO: These are more or less static (different for main and sub datasets)
   def systemParameters : Seq[net.sf.jasperreports.engine.JRParameter] =

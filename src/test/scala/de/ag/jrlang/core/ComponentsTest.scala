@@ -22,7 +22,7 @@ class ComponentsTest extends FunSuite {
             pos = Pos.empty.copy(x = 0, y = 0),
             size = Size.empty.copy(height = 100),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
-              datasetRun = DatasetRun(datasetName = "dummy", dataSourceExpression = Expression.P("table_datasource")),
+              datasetRun = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Expression.P("table_datasource")),
               columns = List(TableColumn(width = 100,
                 detail = TableCell(height = 50, children = List(
                   TextField(Expression.F("f1")).copy(size = Size.empty.copy(height = 15, width=100), pos = Pos.empty.copy(x = 0, y = 0)))
@@ -38,8 +38,8 @@ class ComponentsTest extends FunSuite {
       ))
     )
     val data : Array[java.util.Map[java.lang.String,AnyRef]] =
-      Array(asJavaMap(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef])),
-            asJavaMap(Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]))
+      Array(mapAsJavaMap(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef])),
+            mapAsJavaMap(Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]))
             );
     val args = Map("table_datasource" -> new JRMapArrayDataSource(data.asInstanceOf[Array[AnyRef]]))
 
