@@ -1,7 +1,7 @@
 package de.ag.jrlang.core
 
 sealed case class Band (
-    height : Int,
+    height : Int, // calculate from content, under some circumstances?
     printWhenExpression : Option[Expression],
     splitType : net.sf.jasperreports.engine.`type`.SplitTypeEnum,
     children : Seq[Element] // elements + groups

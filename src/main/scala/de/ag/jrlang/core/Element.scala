@@ -2,7 +2,10 @@ package de.ag.jrlang.core
 
 import net.sf.jasperreports.engine.JRAnchor
 
-sealed abstract class Element extends EnvCollector
+sealed abstract class Element extends EnvCollector {
+  def +(e: Element) = ElementGroup(content = Vector(this, e)) // TODO: Optimize if one is a group already
+  // more... side-by-side, move etc....?
+}
 
 object Element {
   // could probably do the 'implicit CanBuildFrom' technique here; but not worth it.

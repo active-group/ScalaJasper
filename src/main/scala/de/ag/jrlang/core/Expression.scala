@@ -30,18 +30,18 @@ sealed case class Expression private(raw: String, env: Map[JRDesignParameter, An
 }
 
 object Expression {
-  /** lift value v into a (java) source expression which evaluates to a report runtime */
+  /** lift value v into a (java) source expression which evaluates to it at report runtime */
   private def lift(v: AnyRef) = {
     val uniqueParamName = "v__" + (if (v == null) "null" else v.hashCode()); // Anything unique, though this is not so bad
-    val e = "$P{" + uniqueParamName + "}";
+    val e = "$P{" + uniqueParamName + "}"
     val p = new JRDesignParameter(
       name=uniqueParamName,
       isForPrompting=false,
       defaultValueExpression=None,
       nestedTypeName="",
       valueClassName="Object",
-      description="");
-    val a = v;
+      description="")
+    val a = v
     Expression(e, Map(p -> a))
   }
 
@@ -67,21 +67,17 @@ object Expression {
   def call[T1, T2, T3, T4](fn : (T1, T2, T3, T4) => Any, arg1 : Expression, arg2 : Expression, arg3 : Expression, arg4 : Expression) : Expression =
     call1(call({(a1:T1, a2:T2, a3:T3) => { a4:T4 => fn(a1, a2, a3, a4)}}, arg1, arg2, arg3), arg4)
 
-  private def escape(name: String) = name.replaceAllLiterally("$", "$$");
+  private def escape(name: String) = name.replaceAllLiterally("$", "$$")
   private def std(id: String, name: String) = raw("$" + id + "{" + escape(name) + "}")
 
   /** Parameter values, some built-in, some user defined */
   def P(name: String) = std("P", name)
   /** Resource values */
-  def R(name: String) = std("R", name);
+  def R(name: String) = std("R", name)
   /** Field values */
-  def F(name: String) = std("F", name);
+  def F(name: String) = std("F", name)
 
   def const(s: AnyRef) : Expression =
-  // TODO: proper escaping; Java syntax - resp. if it depends on language, don't offer this.
-  // raw("\"" + s + "\"");
-  // or this:
-  //  call({ _ => s }, raw(null))
      lift(s)
 
   def raw(r: String) : Expression = Expression(r)
@@ -100,7 +96,7 @@ object Expression {
     if (o.isDefined)
       dropExpression(o.get)
     else
-      null;
+      null
   }
 };
 
