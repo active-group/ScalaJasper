@@ -239,8 +239,8 @@ object Style {
       verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum] = None,
       line: Pen = Pen.empty,
       box: LineBox = LineBox.empty,
-      fill: Option[net.sf.jasperreports.engine.`type`.FillEnum] = None
-      // blankWhenNull missing
+      fill: Option[net.sf.jasperreports.engine.`type`.FillEnum] = None,
+      blankWhenNull: Option[Boolean] = None
       ) extends Style {
 
     def isEmpty = (this == Internal.empty)
@@ -309,9 +309,8 @@ object Style {
       Pen.putPen(o.line, r.getLinePen)
       LineBox.putLineBox(o.box, r.getLineBox)
       r.setScaleImage(o.scaleImage.getOrElse(null))
-      r.setRadius(if (o.radius.isDefined) (o.radius.get : java.lang.Integer) else null)
-      // TODO: more missing?
-      //r.setBlankWhenNull()
+      r.setRadius(optInt(o.radius))
+      r.setBlankWhenNull(optBool(o.blankWhenNull))
       Paragraph.put(o.paragraph, r.getParagraph.asInstanceOf[JRBaseParagraph])
       ret(r)
     }
@@ -320,8 +319,5 @@ object Style {
   sealed case class External(reference: String) extends Style {
     def transform = ret(Some(reference))
   }
-
-  def put(src: Style, tgt:net.sf.jasperreports.engine.design.JRDesignElement) : Transformer[Unit] =
-    drop(src.transform) { so => tgt.setStyleNameReference(so.getOrElse(null)) }
 
 }
