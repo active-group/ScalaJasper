@@ -1,9 +1,12 @@
 package de.ag.jrlang.core
 
 import net.sf.jasperreports.{engine => jre}
-import net.sf.jasperreports.engine.design.{JRDesignParameter, JRDesignStyle}
+import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
 
-case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int, styles: Map[Style, JRDesignStyle], nextst: Int) {
+// TODO: Abstraction over Map+Int?
+case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int,
+                               styles: Map[Style, JRDesignStyle], nextst: Int,
+                               datasets: Map[Dataset, JRDesignDataset], nextds: Int) {
   def binding(v : AnyRef) = {
     val o = env.get(v)
     if (o.isDefined)
@@ -38,10 +41,23 @@ case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int, 
     }
   }
 
+  def datasetName(v : Dataset, f : TransformationState => (JRDesignDataset, TransformationState)) : (String, TransformationState) = {
+    // TODO: remove code duplication with styleName (and binding)
+    val o = datasets.get(v)
+    if (o.isDefined)
+      (o.get.getName, this)
+    else {
+      val (s, st2) = f(this)
+      val id = nextst
+      val name = "auto" + id
+      s.setName(name)
+      (name, this.copy(datasets = datasets.updated(v, s), nextds = id+1))
+    }
+  }
 }
 
 object TransformationState {
-  val empty = TransformationState(Map.empty, 0, Map.empty, 0)
+  val empty = TransformationState(Map.empty, 0, Map.empty, 0, Map.empty, 0)
 }
 
 trait Transformable[+A] {
@@ -72,7 +88,7 @@ abstract def withFilter(p: (A) ⇒ Boolean): FilterMonadic[A, Repr]
  */
 
 trait ImperativeTransformer extends Transformer[Unit] {
-  def >>[B](n : Transformer[B]) = this >>= { _ => n }
+  def >>[B](n : => Transformer[B]) = this >>= { _ => n }
 }
 
 object Transformer {
@@ -112,7 +128,13 @@ object Transformer {
       stored for later retrieval (when the report if transformed. */
   def styleName(v : Style, f : () => Transformer[JRDesignStyle]) : Transformer[String] =
     withState({ st =>
-      st.styleName(v, { st2 => f().exec(st2) })
+      st.styleName(v, { st2 => f().exec(st2) }) // do we have to call exec?
+    })
+
+  /** returns a name for the given dataset. Like styleName */
+  def datasetName(v : Dataset, f : () => Transformer[JRDesignDataset]) : Transformer[String] =
+    withState({ st =>
+      st.datasetName(v, { st2 => f().exec(st2) }) // do we have to call exec?
     })
 }
 
@@ -130,7 +152,8 @@ object Compiler {
     // styles
     tstate.styles foreach { case (_, s) => r.addStyle(s) }
 
-    // TODO: Something similar with subdatasets and dataset-runs
+    // datasets
+    tstate.datasets foreach { case (_, ds) => r.addDataset(ds) }
 
     val finalreport = jre.JasperCompileManager.compileReport(r)
     (finalreport, envArgs)

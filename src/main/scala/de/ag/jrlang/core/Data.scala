@@ -1,10 +1,9 @@
 package de.ag.jrlang.core
 
-import net.sf.jasperreports.engine.JRField
+import net.sf.jasperreports.engine.{JRDatasetRun, JRField, JRDataSource}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignDatasetRun, JRDesignDatasetParameter, JRDesignField}
 
 import Transformer._
-import net.sf.jasperreports.engine.JRDataSource
 
 
 abstract sealed class Data extends Transformable[JRDesignDatasetRun]
@@ -35,7 +34,7 @@ sealed case class DatasetRun(datasetName: String,
   }
 }
 
-sealed case class DataQuery(fields: Map[String,String],
+/*sealed case class DataQuery(fields: Map[String,String],
                             sortFields: Seq[SortField],
                             filter: Expression[Boolean],
                             groups: Seq[JRDesignGroup],
@@ -43,12 +42,19 @@ sealed case class DataQuery(fields: Map[String,String],
                             scriptlets : IndexedSeq[Scriptlet], // Map-Like
                             scriptletClassName: String
                             )
+*/
 
-sealed case class DataDef(query : DataQuery, source : Expression[JRDataSource]) extends Data {
+sealed case class DataDef(query : Dataset,
+                          source : Expression[JRDataSource],
+                          arguments : Map[String, Expression[Any]] = Map.empty) extends Data {
   // translate this to a DatasetRun and a new Dataset
   def transform = {
-    // TODO
-    ret(null)
+    // transform into global env? or new one... then put env into args here...?
+    Transformer.datasetName(query, { () => query.transform }) >>= {
+      name => {
+        DatasetRun(name, arguments, source).transform
+      }
+    }
   }
 }
 
@@ -89,6 +95,7 @@ sealed case class Dataset(
 
   def transform = {
     val r = new JRDesignDataset(false) // isMain = false
+    // name must be set externally
     fill(r) >>
     ret(r)
   }
