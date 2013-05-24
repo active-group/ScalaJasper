@@ -8,13 +8,13 @@ sealed case class ChartLegend(
 // TODO: EnvCollection for all expressions
 sealed case class ChartTitle(
     color: Option[java.awt.Color],
-    expression: Expression,
+    expression: Expression[Any], // ??
     font: Font,
     position: net.sf.jasperreports.charts.`type`.EdgeEnum);
 
 sealed case class ChartSubtitle(
     color: Option[java.awt.Color],
-    expression: Expression,
+    expression: Expression[Any], // ??
     font: Font);
 
 
@@ -23,18 +23,18 @@ abstract sealed class ChartType(value: Byte);
 abstract sealed class JRChartDataset(value : Byte);
 
 sealed case class JRPieSeries(
-    keyExpression: Expression,
-    labelExpression: Expression,
+    keyExpression: Expression[String], //??
+    labelExpression: Expression[String], //??
     sectionHyperlink: Link, // ??
-    valueExpression: Expression
+    valueExpression: Expression[Any] //??
     );
 
 sealed case class JRPieDataset(
     series: IndexedSeq[JRPieSeries],
     maxCount: Int,
     minPercentage: Float,
-    otherKeyExpression: Expression,
-    otherLabelExpression: Expression,
+    otherKeyExpression: Expression[String], // ??
+    otherLabelExpression: Expression[String], // ??
     otherSectionHyperlink: Link // ??
     ) extends JRChartDataset(net.sf.jasperreports.engine.JRChartDataset.PIE_DATASET);
 

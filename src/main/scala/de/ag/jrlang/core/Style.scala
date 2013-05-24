@@ -1,7 +1,10 @@
 package de.ag.jrlang.core
 
-import net.sf.jasperreports.engine.base.JRBaseParagraph
+import net.sf.jasperreports.engine.base.{JRBaseStyle, JRBaseParagraph}
 import net.sf.jasperreports.engine.`type`.TabStopAlignEnum
+
+import Transformer._
+import net.sf.jasperreports.engine.design.{JRDesignConditionalStyle, JRDesignStyle}
 
 // TODO: Not used yet
 sealed abstract class Align(val horizontal : net.sf.jasperreports.engine.`type`.HorizontalAlignEnum,
@@ -204,8 +207,8 @@ object Paragraph {
 }
 
 
-abstract sealed class Style extends StyleFoldable[Style] with EnvCollector {
-}
+// always transforms to a 'style reference'; the style itself will be added to the transformation state
+abstract sealed class Style extends Transformable[Option[String]]
 
 object Style {
   /** inherit all style definitions from 'environment' or the default style, depending on the element */
@@ -213,100 +216,81 @@ object Style {
 
   sealed case class Internal(
       // name is isDefault intentionally left out (see top level JaperDesign)
-      parentStyle: Option[Style],
+      parentStyle: Option[Style] = None,
       // The conditionalStyles may not have a parentStyle, and probably not conditionalStyles themselves
-      conditionalStyles: Seq[(Expression, Style.Internal)],
-      backcolor: Option[java.awt.Color],
-      forecolor: Option[java.awt.Color],
-      font: Font,
-      horizontalAlignment: Option[net.sf.jasperreports.engine.`type`.HorizontalAlignEnum],
-      paragraph: Paragraph,
-      markup: Option[String], // "none", "styled", "html", "rtf" ??!! (why is that here, not at Text?)
+      conditionalStyles: Seq[(Expression[Boolean], Style.Internal)] = Vector.empty,
+      backcolor: Option[java.awt.Color] = None,
+      forecolor: Option[java.awt.Color] = None,
+      font: Font = Font.empty,
+      horizontalAlignment: Option[net.sf.jasperreports.engine.`type`.HorizontalAlignEnum] = None,
+      paragraph: Paragraph = Paragraph.empty,
+      markup: Option[String] = None, // "none", "styled", "html", "rtf"
       /** Report elements can either be transparent or opaque, depending on the value
        *  you specify for the mode attribute. The default value for this attribute 
        *  depends on the type of the report element. Graphic elements like rectangles
        *  and lines are opaque by default, while images are transparent. Both static
        *  texts and text fields are transparent by default, and so are the subreport elements. */
-      mode: Option[net.sf.jasperreports.engine.`type`.ModeEnum],
+      mode: Option[net.sf.jasperreports.engine.`type`.ModeEnum] = None,
 
-      pattern: Option[String],
-      radius: Option[Int],
-      rotation: Option[net.sf.jasperreports.engine.`type`.RotationEnum],
-      scaleImage: Option[net.sf.jasperreports.engine.`type`.ScaleImageEnum],
-      verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum],
-      line: Pen,
-      box: LineBox,
-      fill: Option[net.sf.jasperreports.engine.`type`.FillEnum]
+      pattern: Option[String] = None,
+      radius: Option[Int] = None,
+      rotation: Option[net.sf.jasperreports.engine.`type`.RotationEnum] = None,
+      scaleImage: Option[net.sf.jasperreports.engine.`type`.ScaleImageEnum] = None,
+      verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum] = None,
+      line: Pen = Pen.empty,
+      box: LineBox = LineBox.empty,
+      fill: Option[net.sf.jasperreports.engine.`type`.FillEnum] = None
       // blankWhenNull missing
       ) extends Style {
 
-    def foldStyles(st0: StylesMap) = {
-      val (parentStyle_, st1) = StyleFoldable.foldOption(parentStyle, st0)
-      // TODO: Check: Problem if we replace parent style here - for comparing styles (as map keys?)
-      val nthis = copy(parentStyle = parentStyle_)
-      // Special case: don't register an empty style (must be stored as null at usage places!)
-      if (nthis.isEmpty)
-        (Internal.empty, st1)
-      else
-        st1.lookup(nthis)
-    }
-    
     def isEmpty = (this == Internal.empty)
 
-    private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] =
-      e0 // maybe conditional styles?
-  }
-  object Internal {
-    val empty =
-      new Internal(
-          parentStyle = None,
-          conditionalStyles = Seq.empty,
-          backcolor = None,
-          forecolor = None,
-          font = Font.empty,
-          horizontalAlignment = None,
-          paragraph = Paragraph.empty,
-          markup = None,
-          mode = None,
-          pattern = None,
-          radius = None,
-          rotation = None,
-          scaleImage = None,
-          verticalAlignment = None,
-          line = Pen.empty,
-          box = LineBox.empty,
-          fill = None)
-    
-    implicit def drop(o:Internal) : net.sf.jasperreports.engine.design.JRDesignStyle = {
+    def transform = {
+      if (this.isEmpty)
+        ret(None)
+      else {
+        styleName(this, { () => mkDesignStyle }) >>= { s => ret(Some(s)) }
+      }
+    }
+
+    private[core] def mkDesignStyle : Transformer[JRDesignStyle] = {
       val r = new net.sf.jasperreports.engine.design.JRDesignStyle()
       // name is isDefault are set externally
       //r.setName(o.name);
       //r.setDefault(o.isDefault);
-      if (o.parentStyle.isDefined)
-        put(o.parentStyle.get, r)
-
-      for ((e, s) <- o.conditionalStyles) {
-        // JRConditionalStyleFactory suggests, that the parentStyle should always refer to this 'containing' style
-        val s_ = new net.sf.jasperreports.engine.design.JRDesignConditionalStyle()
-        assert(s.parentStyle == None) // exception?
-        assert(s.conditionalStyles.isEmpty) // exception?
-        putBase(s, s_)
-        s_.setParentStyle(r)
-        s_.setConditionExpression(e)
-        r.addConditionalStyle(s_)
-      }
-
-      putBase(o, r)
-      r
+      drop(parentStyle map {_.transform}) { op => r.setParentStyleNameReference(if (op == null) null else op.getOrElse(null)) } >>
+      (all(conditionalStyles map Internal.transCond) >>= { cs =>
+      // JRConditionalStyleFactory suggests, that the parentStyle should always refer to this 'containing' style
+        cs foreach { _.setParentStyle(r) }
+        cs foreach { r.addConditionalStyle(_) }
+        ret()
+      }) >>
+      Internal.putBase(this, r) >>
+      ret(r)
     }
 
-    private def putBase(o: Internal, r: net.sf.jasperreports.engine.base.JRBaseStyle) {
+  }
+  object Internal {
+    val empty = Internal()
+
+    private def transCond(v: (Expression[Any], Style.Internal)) : Transformer[JRDesignConditionalStyle] = {
+      val (e, s) = v
+      val r = new net.sf.jasperreports.engine.design.JRDesignConditionalStyle()
+      // these are not allowed for conditional styles (new type?)
+      assert(s.parentStyle == None) // exception?
+      assert(s.conditionalStyles.isEmpty) // exception?
+      putBase(s, r) >>
+      drop(e.transform)(r.setConditionExpression(_)) >>
+      ret(r)
+    }
+
+    private def putBase(o: Internal, r: net.sf.jasperreports.engine.base.JRBaseStyle) : Transformer[Unit] = {
 
       def optBool(v: Option[Boolean]) : java.lang.Boolean =
         if (v.isDefined) v.get else null
       def optInt(v: Option[Int]) : java.lang.Integer =
         if (v.isDefined) v.get else null
-      
+      // only simple things currently (need not be within transformer monad)
       r.setBackcolor(o.backcolor.getOrElse(null))
       r.setForecolor(o.forecolor.getOrElse(null))
       // Though the properties are the same, JRStyle does not use a JRFont :-/
@@ -329,26 +313,15 @@ object Style {
       // TODO: more missing?
       //r.setBlankWhenNull()
       Paragraph.put(o.paragraph, r.getParagraph.asInstanceOf[JRBaseParagraph])
-      r
+      ret(r)
     }
   }
 
   sealed case class External(reference: String) extends Style {
-    def foldStyles(st0: StylesMap) = (this, st0)
-
-    private[core] def collectEnv(e0: Map[JRDesignParameter, AnyRef]): Map[JRDesignParameter, AnyRef] = e0
+    def transform = ret(Some(reference))
   }
 
-  def put(src: Style, tgt:net.sf.jasperreports.engine.design.JRDesignElement) {
-    src match {
-      case v:Internal => tgt.setStyle(Internal.drop(v))
-      case v:External => tgt.setStyleNameReference(v.reference)
-    }
-  }
-  def put(src: Style, tgt:net.sf.jasperreports.engine.design.JRDesignStyle) {
-    src match {
-      case v:Internal => tgt.setParentStyle(Internal.drop(v))
-      case v:External => tgt.setParentStyleNameReference(v.reference)
-    }
-  }
+  def put(src: Style, tgt:net.sf.jasperreports.engine.design.JRDesignElement) : Transformer[Unit] =
+    drop(src.transform) { so => tgt.setStyleNameReference(so.getOrElse(null)) }
+
 }

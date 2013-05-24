@@ -17,23 +17,23 @@ class ComponentsTest extends FunSuite {
     val r = Report("basic table").copy(details = List(
       Band.empty.copy(
         height = 200,
-        children = Vector(
+        content = Vector(
           ComponentElement(
             pos = Pos.float(x = 0, y = 0),
             size = Size.fixed(height = 100, width = 400),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
-              datasetRun = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Expression.P("table_datasource")),
+              data = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Expression.P("table_datasource")),
               columns = List(TableColumn(width = 100,
-                detail = TableCell(height = 50, children = List(
+                detail = TableCell(height = 50, content = List(
                   TextField(Size.fixed(15, 100), Pos.float(0, 0), Expression.F("f1")))
                 ))))
         ))
       )),
       mainDataset = Dataset.empty.copy(parameters = Vector(
-        JRDesignParameter("table_datasource").copy(valueClassName = "net.sf.jasperreports.engine.JRDataSource")
+        Parameter("table_datasource").copy(valueClassName = "net.sf.jasperreports.engine.JRDataSource")
       )),
       subDatasets = Map("dummy" -> Dataset.empty.copy(
-        // parameters = Vector(JRDesignParameter("p1").copy(valueClassName = "java.util.List"))
+        // parameters = Vector(Parameter("p1").copy(valueClassName = "java.util.List"))
         fields = Map("f1" -> "java.lang.String")
       ))
     )
@@ -52,7 +52,6 @@ class ComponentsTest extends FunSuite {
         <origin band="detail"/>
         <origin band="detail">
         </origin>
-        <style name="default" isDefault="true" />
         <page>
           <frame>
             <reportElement height="100" origin="0" srcId="1" width="100" x="20" y="30">

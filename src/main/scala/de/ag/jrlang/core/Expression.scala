@@ -1,74 +1,79 @@
 package de.ag.jrlang.core
 
+import net.sf.jasperreports.engine.design.JRDesignExpression
+
+import Transformer._
+
+/*
 // a thing that can/must contribute to the global environment of a report (there is only one)
 private[core] trait EnvCollector {
-  private[core] def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) : Map[JRDesignParameter, AnyRef]
+  private[core] def collectEnv(e0 : Map[Parameter, AnyRef]) : Map[Parameter, AnyRef]
 }
 
 object EnvCollector {
   implicit def opt(o : Option[EnvCollector]) : EnvCollector = {
     new EnvCollector {
-      def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) =
+      def collectEnv(e0 : Map[Parameter, AnyRef]) =
         o.map(_.collectEnv(e0)).getOrElse(e0)
     }
   }
 
   implicit def seq(l : Seq[EnvCollector]) : EnvCollector = {
     new EnvCollector {
-      def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) =
+      def collectEnv(e0 : Map[Parameter, AnyRef]) =
         l.foldLeft(e0) { (e1, v) => v.collectEnv(e1) }
     }
   }
 }
+*/
 
-// we could add a type parameter, to be able to tell at some places
-// that it must be an expression of a certain type; but most if not all of
-// the time JasperReports is dynamically typed anyway, and allows a
-// variety of types; so it would usually be Expression[Any]
-sealed case class Expression private(raw: String, env: Map[JRDesignParameter, AnyRef]=Map.empty) extends EnvCollector {
-  override private[core] def collectEnv(e0 : Map[JRDesignParameter, AnyRef]) = e0 ++ env
+abstract class Expression[+A] extends Transformable[JRDesignExpression] {
+  def transformRaw : Transformer[String]
+
+  def transform : Transformer[JRDesignExpression] = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignExpression()
+    drop(transformRaw) { r.setText(_) } >>
+    ret(r)
+  }
+}
+
+sealed case class RawExpression[A](raw: String) extends Expression[A] {
+  def transformRaw = ret(raw)
+}
+
+sealed case class CallExpression[A, +R](f : Expression[A => R], a : Expression[A]) extends Expression[R] {
+  def transformRaw = f.transformRaw >>= { ft => a.transformRaw >>= { at =>
+    ret("((scala.Function1)" + ft + ").apply(" + at + ")")
+  }}
+}
+
+sealed case class LiftExpression[A <: AnyRef](v : A) extends Expression[A] {
+  def transformRaw = binding(v) >>= { n => ret(Expression.stdraw("P", n)) }
 }
 
 object Expression {
   /** lift value v into a (java) source expression which evaluates to it at report runtime */
-  private def lift(v: AnyRef) = {
-    val uniqueParamName = "v__" + (if (v == null) "null" else v.hashCode()); // Anything unique, though this is not so bad
-    val e = "$P{" + uniqueParamName + "}"
-    val p = new JRDesignParameter(
-      name=uniqueParamName,
-      isForPrompting=false,
-      defaultValueExpression=None,
-      nestedTypeName="",
-      valueClassName="Object",
-      description="")
-    val a = v
-    Expression(e, Map(p -> a))
-  }
+  private def lift[A <: AnyRef](v: A) : LiftExpression[A] = LiftExpression(v)
 
   /** create an expression, which evaluates f and arg at runtime, and calls the resulting function on the argument value */
-  private def call1(f: Expression, arg : Expression) =
-    Expression(
-      "((scala.Function1)" + f.raw + ").apply(" + arg.raw + ")",
-      f.env ++ arg.env
-    )
-
+  def calle[A, R](f: Expression[A => R], arg : Expression[A]) : Expression[R] = CallExpression(f, arg)
 
   // for now, we do heavy currying, but only because it seemed easier to define.
+  def call[A, R](fn : A => R, arg : Expression[A]) : Expression[R] =
+    calle(lift(fn), arg)
 
-  def call[T](fn : T => Any, arg : Expression) : Expression =
-    call1(lift(fn), arg)
+  def call[A1, A2, R](fn : (A1, A2) => R, arg1 : Expression[A1], arg2 : Expression[A2]) : Expression[R] =
+    calle(call({a1:A1 => a2: A2 => fn(a1, a2)}, arg1), arg2)
 
-  def call[T1, T2](fn : (T1, T2) => Any, arg1 : Expression, arg2 : Expression) : Expression =
-    call1(call({ a1:T1 => a2:T2 => fn(a1, a2) }, arg1), arg2)
+  def call[T1, T2, T3, R](fn : (T1, T2, T3) => R, arg1 : Expression[T1], arg2 : Expression[T2], arg3 : Expression[T3]) : Expression[R] =
+    calle(call({(a1:T1, a2:T2) => { a3:T3 => fn(a1, a2, a3)}}, arg1, arg2), arg3)
 
-  def call[T1, T2, T3](fn : (T1, T2, T3) => Any, arg1 : Expression, arg2 : Expression, arg3 : Expression) : Expression =
-    call1(call({(a1:T1, a2:T2) => { a3:T3 => fn(a1, a2, a3)}}, arg1, arg2), arg3)
+  def call[T1, T2, T3, T4, R](fn : (T1, T2, T3, T4) => R, arg1 : Expression[T1], arg2 : Expression[T2], arg3 : Expression[T3], arg4 : Expression[T4]) : Expression[R] =
+    calle(call({(a1:T1, a2:T2, a3:T3) => { a4:T4 => fn(a1, a2, a3, a4)}}, arg1, arg2, arg3), arg4)
 
-  def call[T1, T2, T3, T4](fn : (T1, T2, T3, T4) => Any, arg1 : Expression, arg2 : Expression, arg3 : Expression, arg4 : Expression) : Expression =
-    call1(call({(a1:T1, a2:T2, a3:T3) => { a4:T4 => fn(a1, a2, a3, a4)}}, arg1, arg2, arg3), arg4)
-
-  private def escape(name: String) = name.replaceAllLiterally("$", "$$")
-  private def std(id: String, name: String) = raw("$" + id + "{" + escape(name) + "}")
+  private[core] def escape(name: String) = name.replaceAllLiterally("$", "$$")
+  private[core] def stdraw(id: String, name: String) = "$" + id + "{" + escape(name) + "}"
+  private[core] def std(id: String, name: String) = raw(stdraw(id, name))
 
   /** Parameter values, some built-in, some user defined */
   def P(name: String) = std("P", name)
@@ -77,26 +82,9 @@ object Expression {
   /** Field values */
   def F(name: String) = std("F", name)
 
-  def const(s: AnyRef) : Expression =
+  def const[T <: AnyRef](s: T) : Expression[T] =
      lift(s)
 
-  def raw(r: String) : Expression = Expression(r)
-
-  implicit def dropExpression(o : Expression) = {
-    if (o == null)
-      null
-    else {
-      val r = new net.sf.jasperreports.engine.design.JRDesignExpression()
-      r.setText(o.raw)
-      r
-    }
-  }
-
-  implicit def dropOptExpression(o: Option[Expression]) = {
-    if (o.isDefined)
-      dropExpression(o.get)
-    else
-      null
-  }
+  def raw[T <: AnyRef](r: String) : Expression[T] = RawExpression(r)
 };
 

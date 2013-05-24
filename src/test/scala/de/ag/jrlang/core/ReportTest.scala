@@ -34,7 +34,6 @@ class ReportTest extends FunSuite {
   <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
   <origin band="detail"/>
-  <style name="default" isDefault="true" />
   <page/>
 </jasperPrint>
 
@@ -65,7 +64,7 @@ class ReportTest extends FunSuite {
 
     val myband = Band.empty.copy(
             height = 20,
-            children = Vector(
+            content = Vector(
                 Ellipse(
                     style = style2,
                     pos = Pos.float(x = 0, y = 0),
@@ -98,14 +97,13 @@ class ReportTest extends FunSuite {
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
   <origin band="pageHeader"/>
   <origin band="detail"/>
-  <style name="default" isDefault="true" fontSize="12" isPdfEmbedded="false" pdfFontName="Helvetica" pdfEncoding="Cp1252"/>
-  <style name="autodef0" backcolor="#000000" fontSize="8" forecolor="#FFFFFF" isPdfEmbedded="false" pdfEncoding="Cp1252" pdfFontName="Helvetica"/>
+  <style name="auto0" backcolor="#000000" fontSize="8" forecolor="#FFFFFF" isPdfEmbedded="false" pdfEncoding="Cp1252" pdfFontName="Helvetica"/>
   <page>
     <ellipse>
-      <reportElement uuid="e09461da-2eb3-41f9-9d0c-629f1532d1e8" style="autodef0" x="20" y="30" width="55" height="15" origin="0" srcId="1"/>
+      <reportElement uuid="e09461da-2eb3-41f9-9d0c-629f1532d1e8" style="auto0" x="20" y="30" width="55" height="15" origin="0" srcId="1"/>
     </ellipse>
     <text textHeight="9.421875" lineSpacingFactor="1.1777344" leadingOffset="-1.6875">
-      <reportElement uuid="2155e5cc-96c2-4125-a527-c2124b38f01f" style="autodef0" x="20" y="30" width="55" height="15" origin="0" srcId="2"/>
+      <reportElement uuid="2155e5cc-96c2-4125-a527-c2124b38f01f" style="auto0" x="20" y="30" width="55" height="15" origin="0" srcId="2"/>
       <textContent><![CDATA[Hello]]></textContent>
     </text>
   </page>
@@ -119,7 +117,7 @@ class ReportTest extends FunSuite {
     val mystyle = Style.Internal.empty;
     val myband = Band.empty.copy(
             height = 200,
-            children = Vector(
+            content = Vector(
                 Image(expression = Expression.const("src/test/resources/butterfly.jpg"),
                       style = mystyle.copy(scaleImage = Some(net.sf.jasperreports.engine.`type`.ScaleImageEnum.RETAIN_SHAPE)),
                       lazily = true,
@@ -140,11 +138,10 @@ class ReportTest extends FunSuite {
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
   <origin band="pageHeader"/>
   <origin band="detail"/>
-  <style name="default" isDefault="true" />
-  <style name="autodef0" scaleImage="RetainShape"></style>
+  <style name="auto0" scaleImage="RetainShape"></style>
   <page>
     <image hAlign="Left" isLazy="true" scaleImage="RetainShape" vAlign="Top">
-      <reportElement style="autodef0" height="150" origin="0" srcId="1" width="150" x="20" y="30" />
+      <reportElement style="auto0" height="150" origin="0" srcId="1" width="150" x="20" y="30" />
       <imageSource>src/test/resources/butterfly.jpg</imageSource>
     </image>
   </page>
@@ -158,7 +155,7 @@ class ReportTest extends FunSuite {
     val mystyle = Style.Internal.empty;
     val myband = Band.empty.copy(
             height = 200,
-            children = Vector(
+            content = Vector(
                 TextField(expression = Expression.raw("$P{myarg1}"),
                   size = Size.fixed(width=200, height=50),
                   pos = Pos.float(40, 80))
@@ -166,7 +163,7 @@ class ReportTest extends FunSuite {
     val r = Report("text-parameter").copy(
         mainDataset = Dataset.empty.copy(
             parameters = Vector(
-                JRDesignParameter("myarg1", Some(Expression.raw("\"mydefault\"")))
+                Parameter("myarg1", Some(Expression.raw("\"mydefault\"")))
                 )),
         defaultStyle = mystyle,
         page = Page.empty.copy(
@@ -182,7 +179,6 @@ class ReportTest extends FunSuite {
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
   <origin band="pageHeader"/>
   <origin band="detail"/>
-  <style name="default" isDefault="true" />
   <page>
     <text leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
       <reportElement height="50" origin="0" srcId="1" width="200" x="60" y="110">
