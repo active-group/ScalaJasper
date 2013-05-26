@@ -540,9 +540,7 @@ object Subreport {
 
 sealed case class ComponentElement(size : Size,
                                    pos : Pos,
-                                   component: net.sf.jasperreports.engine.component.Component,
-                                   // automatically set for internal components
-                                   componentKey: net.sf.jasperreports.engine.component.ComponentKey = null,
+                                   component: components.Component,
                                    style: AbstractStyle = Style.inherit,
                                    conditions: Conditions = Conditions.default,
                                    key: String = "")
@@ -551,13 +549,7 @@ sealed case class ComponentElement(size : Size,
   def transform : Transformer[JRDesignComponentElement] = {
     val r = new net.sf.jasperreports.engine.design.JRDesignComponentElement()
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
-    ((component match {
-      case no : components.Component =>
-        no.transform
-      case _ =>
-        assert(componentKey != null) // exception? user's fault... or represent otherwise
-        ret(component, componentKey)
-    }) >>= { case (transcomp, transkey) => {
+    (component.transform >>= { case (transcomp, transkey) => {
       r.setComponent(transcomp)
       r.setComponentKey(transkey)
       ret()
