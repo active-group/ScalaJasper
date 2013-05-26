@@ -112,5 +112,6 @@ class ExpressionTests extends FunSuite {
     val actual = ReportTest.printToXML(r, Map.empty);
     assert(fn0_was_called);
   }
-  // TEST: Use the same function/expression multiple times
+
+  // TODO TEST: Use the same function/expression multiple times
 }

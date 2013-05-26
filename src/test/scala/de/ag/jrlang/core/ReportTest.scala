@@ -43,7 +43,7 @@ class ReportTest extends FunSuite {
 
   test("simple report") {
     // TODO: which style defs are mandatory?
-    val mystyle = Style.Internal.empty.copy(
+    val mystyle = Style(
         font = Font.empty.copy(
             //fontName = Some("DejaVu Sans"),
             fontSize = Some(12),
@@ -114,7 +114,7 @@ class ReportTest extends FunSuite {
   }
   
   test("image") {
-    val mystyle = Style.Internal.empty;
+    val mystyle = Style.empty;
     val myband = Band.empty.copy(
             height = 200,
             content = Vector(
@@ -152,7 +152,7 @@ class ReportTest extends FunSuite {
   }
 
   test("textfield with parameter") {
-    val mystyle = Style.Internal.empty;
+    val mystyle = Style.empty;
     val myband = Band.empty.copy(
             height = 200,
             content = Vector(

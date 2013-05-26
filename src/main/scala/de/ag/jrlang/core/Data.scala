@@ -1,9 +1,10 @@
 package de.ag.jrlang.core
 
-import net.sf.jasperreports.engine.{JRDatasetRun, JRField, JRDataSource}
-import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignDatasetRun, JRDesignDatasetParameter, JRDesignField}
+import net.sf.jasperreports.engine.{JRScriptlet, JRDatasetRun, JRField, JRDataSource}
+import net.sf.jasperreports.engine.design._
 
 import Transformer._
+import net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum
 
 
 abstract sealed class Data extends Transformable[JRDesignDatasetRun]
@@ -34,16 +35,6 @@ sealed case class DatasetRun(datasetName: String,
   }
 }
 
-/*sealed case class DataQuery(fields: Map[String,String],
-                            sortFields: Seq[SortField],
-                            filter: Expression[Boolean],
-                            groups: Seq[JRDesignGroup],
-                            resourceBundle: String, // ??
-                            scriptlets : IndexedSeq[Scriptlet], // Map-Like
-                            scriptletClassName: String
-                            )
-*/
-
 sealed case class DataDef(query : Dataset,
                           source : Expression[JRDataSource],
                           arguments : Map[String, Expression[Any]] = Map.empty) extends Data {
@@ -61,36 +52,76 @@ sealed case class DataDef(query : Dataset,
 sealed case class SortField(
     name: String,
     order: net.sf.jasperreports.engine.`type`.SortOrderEnum,
-    fieldType: net.sf.jasperreports.engine.`type`.SortFieldTypeEnum);
+    fieldType: net.sf.jasperreports.engine.`type`.SortFieldTypeEnum) extends Transformable[JRDesignSortField] {
 
-sealed case class Scriptlet(
-    name: String,
-    description: String,
-    valueClassName: String);
-
-sealed case class JRDesignGroup() {
-   // ... quite a lot
-  
+  def transform = {
+    val r = new JRDesignSortField()
+    r.setName(name)
+    r.setOrder(order)
+    r.setType(fieldType)
+    ret(r)
+  }
 }
+
+sealed case class Group(
+
+                         ) extends Transformable[JRDesignGroup] {
+   // ... quite a lot
+  def transform : Transformer[JRDesignGroup] = null
+}
+
+sealed case class Variable(name: String,
+                           calculation: net.sf.jasperreports.engine.`type`.CalculationEnum,
+                           expression: Expression[Any], // ??
+                           valueClassName: String,
+                           incrementerGroup: Group,
+                           incrementType: net.sf.jasperreports.engine.`type`.IncrementTypeEnum,
+                           incrementerFactoryClassName: String,
+                           // TODO: resetType and resetGroup belong together - maybe the same for incrementer...
+                           resetType: net.sf.jasperreports.engine.`type`.ResetTypeEnum,
+                           resetGroup: Group
+                           )
+  extends Transformable[JRDesignVariable] {
+
+  def transform = {
+    val r = new JRDesignVariable()
+    r.setName(name)
+    r.setCalculation(calculation)
+    r.setIncrementerFactoryClassName(incrementerFactoryClassName)
+    r.setIncrementType(incrementType)
+    r.setResetType(resetType)
+    r.setValueClassName(valueClassName)
+
+    drop(expression.transform) { r.setExpression(_) } >>
+    // maybe groups have to be registered globally too???
+    drop(incrementerGroup.transform) { r.setIncrementGroup(_) } >>
+    drop(resetGroup.transform) { r.setResetGroup(_) } >>
+    ret(r)
+  }
+}
+
 
 // A dataset is a sort of parametrized schema definition of data, or alternatively of an sql query expression
 // We could/should try to derive all subdatasets of a report by moving the definition to all places that reference
 // subdatasets by name (and generate the names) - the places are all local; in datasetRuns within components,
 // charts, crosstabs; and maybe more? Like Style.Internal and External.. make DatasetRun.Implicit/Explicit or .Reference/.Schema
 sealed case class Dataset(
-    query: JRDesignQuery,
-    parameters : Seq[Parameter], // without system parameters!  // Map-Like
-    variables : Seq[JRDesignVariable], // without system variables!  // Map-Like
-    fields : Map[String,String], // maps Name -> ClassName
-    sortFields : Seq[SortField],
-  // setQuery?
-    scriptlets : IndexedSeq[Scriptlet], // Map-Like
-    scriptletClassName: String,
-    groups : Seq[JRDesignGroup], // Map-Like
-    resourceBundle: String,
-    filterExpression: Option[Expression[Boolean]],
-    whenResourceMissingType: net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum,
-    customProperties: Map[String, String])
+    parameters : Seq[Parameter] = Vector.empty, // without system parameters!  // Map-Like
+    variables : Seq[Variable] = Vector.empty, // without system variables!  // Map-Like
+    fields : Map[String,String] = Map.empty, // maps Name -> ClassName
+    sortFields : Seq[SortField] = Vector.empty,
+    query: JRDesignQuery = null, // don't use this, use a JRResultSetDataSource instead (remove?)
+    /** Simple variable expressions cannot always implement complex functionality. This is where scriptlets
+      * come in. Scriptlets are sequences of Java code that are executed every time a report event occurs. Through
+      * scriptlets, users can affect the values stored by the report variables. */
+    // so, maybe we don't need that
+    scriptlets : IndexedSeq[JRScriptlet] = Vector.empty, // Map-Like
+    scriptletClassName: String = "",
+    groups : Seq[Group] =  Vector.empty, // Map-Like
+    resourceBundle: String = "",
+    filterExpression: Option[Expression[Boolean]] = None,
+    whenResourceMissingType: WhenResourceMissingTypeEnum = WhenResourceMissingTypeEnum.NULL,
+    customProperties: Map[String, String] = Map.empty) // remove?
   extends Transformable[JRDesignDataset] {
 
   def transform = {
@@ -103,17 +134,30 @@ sealed case class Dataset(
   private[core] def fill(r : JRDesignDataset) = {
     for ((n,c) <- fields)
       r.addField({
-        val f = new JRDesignField();
-        f.setName(n); f.setValueClassName(c); f })
+        val f = new JRDesignField()
+        f.setName(n)
+        f.setValueClassName(c)
+        f })
+    r.setQuery(query)
+    scriptlets foreach { r.addScriptlet(_) }
+    r.setScriptletClass(scriptletClassName)
+    r.setResourceBundle(resourceBundle)
+    r.setWhenResourceMissingType(whenResourceMissingType)
+    customProperties foreach { case(n,e) => r.setProperty(n, e) }
 
-    // TODO for (v <- mainDataset.groups) r.addGroup(v);
-    // TODO for (v <- mainDataset.scriptlets) r.addScriptlet(v);
     // user defined parameters (generated parameters are added by caller)
     (all(parameters map {_.transform}) >>= {
       ps => ps foreach { r.addParameter(_) }; ret()
     }) >>
-    // TODO for (v <- mainDataset.variables) r.addVariable(v);
-    // TODO: rest
+    (all(variables map {_.transform}) >>= {
+      vs => vs foreach { r.addVariable(_) }; ret()
+    }) >>
+    (all(sortFields map { _.transform }) >>= {
+      sfs => sfs foreach { r.addSortField(_) }; ret()
+    }) >>
+    (all(groups map { _.transform }) >>= {
+      g => g foreach { r.addGroup(_) }; ret()
+    }) >>
     ret()
   }
 }
@@ -129,31 +173,5 @@ sealed case class Dataset(
   */ 
 
 object Dataset {
-  val empty = new Dataset(
-      query = JRDesignQuery.empty,
-      parameters = Vector.empty,
-      variables = Vector.empty,
-      fields = Map.empty,
-      sortFields = Vector.empty,
-      scriptlets = Vector.empty,
-      scriptletClassName = "",
-      groups = Vector.empty,
-      resourceBundle = "",
-      filterExpression = None,
-      whenResourceMissingType = net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum.NULL, //??
-      customProperties = Map.empty
-      )
-
-  /*
-  implicit def drop(o: Dataset): net.sf.jasperreports.engine.design.JRDesignDataset = {
-    val r = new net.sf.jasperreports.engine.design.JRDesignDataset(false); // isMain = false
-    // TODO: Common code with Report?!
-    for (p <- o.parameters)
-      r.addParameter(p);
-    for ((n,c) <- o.fields)
-      r.addField({ val f = new JRDesignField(); f.setName(n); f.setValueClassName(c); f })
-    // TODO: rest
-    r;
-  }
-  */
+  val empty = new Dataset()
 }

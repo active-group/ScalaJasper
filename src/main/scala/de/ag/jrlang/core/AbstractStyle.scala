@@ -208,116 +208,113 @@ object Paragraph {
 
 
 // always transforms to a 'style reference'; the style itself will be added to the transformation state
-abstract sealed class Style extends Transformable[Option[String]]
+abstract sealed class AbstractStyle extends Transformable[Option[String]]
 
-object Style {
-  /** inherit all style definitions from 'environment' or the default style, depending on the element */
-  val inherit = Internal.empty
+sealed case class Style(
+                         // name is isDefault intentionally left out (see top level JaperDesign)
+                         parentStyle: Option[AbstractStyle] = None,
+                         // The conditionalStyles must not have a parentStyle, and probably not conditionalStyles themselves
+                         conditionalStyles: Seq[(Expression[Boolean], Style)] = Vector.empty,
+                         backcolor: Option[java.awt.Color] = None,
+                         forecolor: Option[java.awt.Color] = None,
+                         font: Font = Font.empty,
+                         horizontalAlignment: Option[net.sf.jasperreports.engine.`type`.HorizontalAlignEnum] = None,
+                         paragraph: Paragraph = Paragraph.empty,
+                         markup: Option[String] = None, // "none", "styled", "html", "rtf"
+                         /** Report elements can either be transparent or opaque, depending on the value
+                           *  you specify for the mode attribute. The default value for this attribute
+                           *  depends on the type of the report element. Graphic elements like rectangles
+                           *  and lines are opaque by default, while images are transparent. Both static
+                           *  texts and text fields are transparent by default, and so are the subreport elements. */
+                         mode: Option[net.sf.jasperreports.engine.`type`.ModeEnum] = None,
 
-  sealed case class Internal(
-      // name is isDefault intentionally left out (see top level JaperDesign)
-      parentStyle: Option[Style] = None,
-      // The conditionalStyles may not have a parentStyle, and probably not conditionalStyles themselves
-      conditionalStyles: Seq[(Expression[Boolean], Style.Internal)] = Vector.empty,
-      backcolor: Option[java.awt.Color] = None,
-      forecolor: Option[java.awt.Color] = None,
-      font: Font = Font.empty,
-      horizontalAlignment: Option[net.sf.jasperreports.engine.`type`.HorizontalAlignEnum] = None,
-      paragraph: Paragraph = Paragraph.empty,
-      markup: Option[String] = None, // "none", "styled", "html", "rtf"
-      /** Report elements can either be transparent or opaque, depending on the value
-       *  you specify for the mode attribute. The default value for this attribute 
-       *  depends on the type of the report element. Graphic elements like rectangles
-       *  and lines are opaque by default, while images are transparent. Both static
-       *  texts and text fields are transparent by default, and so are the subreport elements. */
-      mode: Option[net.sf.jasperreports.engine.`type`.ModeEnum] = None,
+                         pattern: Option[String] = None,
+                         radius: Option[Int] = None,
+                         rotation: Option[net.sf.jasperreports.engine.`type`.RotationEnum] = None,
+                         scaleImage: Option[net.sf.jasperreports.engine.`type`.ScaleImageEnum] = None,
+                         verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum] = None,
+                         line: Pen = Pen.empty,
+                         box: LineBox = LineBox.empty,
+                         fill: Option[net.sf.jasperreports.engine.`type`.FillEnum] = None,
+                         blankWhenNull: Option[Boolean] = None
+                         ) extends AbstractStyle {
 
-      pattern: Option[String] = None,
-      radius: Option[Int] = None,
-      rotation: Option[net.sf.jasperreports.engine.`type`.RotationEnum] = None,
-      scaleImage: Option[net.sf.jasperreports.engine.`type`.ScaleImageEnum] = None,
-      verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum] = None,
-      line: Pen = Pen.empty,
-      box: LineBox = LineBox.empty,
-      fill: Option[net.sf.jasperreports.engine.`type`.FillEnum] = None,
-      blankWhenNull: Option[Boolean] = None
-      ) extends Style {
+  def isEmpty = (this == Style.empty)
 
-    def isEmpty = (this == Internal.empty)
-
-    def transform = {
-      if (this.isEmpty)
-        ret(None)
-      else {
-        styleName(this, { () => mkDesignStyle }) >>= { s => ret(Some(s)) }
-      }
+  def transform = {
+    if (this.isEmpty)
+      ret(None)
+    else {
+      styleName(this, { () => mkDesignStyle }) >>= { s => ret(Some(s)) }
     }
+  }
 
-    private[core] def mkDesignStyle : Transformer[JRDesignStyle] = {
-      val r = new net.sf.jasperreports.engine.design.JRDesignStyle()
-      // name is isDefault are set externally
-      //r.setName(o.name);
-      //r.setDefault(o.isDefault);
-      drop(parentStyle map {_.transform}) { op => r.setParentStyleNameReference(if (op == null) null else op.getOrElse(null)) } >>
-      (all(conditionalStyles map Internal.transCond) >>= { cs =>
+  private[core] def mkDesignStyle : Transformer[JRDesignStyle] = {
+    val r = new net.sf.jasperreports.engine.design.JRDesignStyle()
+    // name is isDefault are set externally
+    //r.setName(o.name);
+    //r.setDefault(o.isDefault);
+    drop(orNull(parentStyle map {_.transform})) { op => r.setParentStyleNameReference(if (op == null) null else op.getOrElse(null)) } >>
+      (all(conditionalStyles map Style.transCond) >>= { cs =>
       // JRConditionalStyleFactory suggests, that the parentStyle should always refer to this 'containing' style
         cs foreach { _.setParentStyle(r) }
         cs foreach { r.addConditionalStyle(_) }
         ret()
       }) >>
-      Internal.putBase(this, r) >>
+      Style.putBase(this, r) >>
       ret(r)
-    }
-
   }
-  object Internal {
-    val empty = Internal()
 
-    private def transCond(v: (Expression[Any], Style.Internal)) : Transformer[JRDesignConditionalStyle] = {
-      val (e, s) = v
-      val r = new net.sf.jasperreports.engine.design.JRDesignConditionalStyle()
-      // these are not allowed for conditional styles (new type?)
-      assert(s.parentStyle == None) // exception?
-      assert(s.conditionalStyles.isEmpty) // exception?
-      putBase(s, r) >>
+}
+object Style {
+  val empty = Style()
+
+  /** inherit all style definitions from 'environment' or the default style, depending on the element */
+  val inherit = Style.empty
+
+  private def transCond(v: (Expression[Any], Style)) : Transformer[JRDesignConditionalStyle] = {
+    val (e, s) = v
+    val r = new net.sf.jasperreports.engine.design.JRDesignConditionalStyle()
+    // these are not allowed for conditional styles (new type?)
+    assert(s.parentStyle == None) // exception?
+    assert(s.conditionalStyles.isEmpty) // exception?
+    putBase(s, r) >>
       drop(e.transform)(r.setConditionExpression(_)) >>
       ret(r)
-    }
-
-    private def putBase(o: Internal, r: net.sf.jasperreports.engine.base.JRBaseStyle) : Transformer[Unit] = {
-
-      def optBool(v: Option[Boolean]) : java.lang.Boolean =
-        if (v.isDefined) v.get else null
-      def optInt(v: Option[Int]) : java.lang.Integer =
-        if (v.isDefined) v.get else null
-      // only simple things currently (need not be within transformer monad)
-      r.setBackcolor(o.backcolor.getOrElse(null))
-      r.setForecolor(o.forecolor.getOrElse(null))
-      // Though the properties are the same, JRStyle does not use a JRFont :-/
-      r.setFontName(o.font.fontName.getOrElse(null))
-      // the java.lang.Boolean and Integer overloads are different!
-      // - null means 'inherit' or 'undefined'
-      r.setFontSize(optInt(o.font.fontSize)); // Integer 
-      r.setBold(optBool(o.font.bold))
-      r.setItalic(optBool(o.font.italic))
-      r.setStrikeThrough(optBool(o.font.strikeThrough))
-      r.setUnderline(optBool(o.font.underline))
-      r.setPdfEncoding(o.font.pdfEncoding.getOrElse(null))
-      r.setPdfFontName(o.font.pdfFontName.getOrElse(null))
-      r.setPdfEmbedded(optBool(o.font.pdfEmbedded))
-
-      Pen.putPen(o.line, r.getLinePen)
-      LineBox.putLineBox(o.box, r.getLineBox)
-      r.setScaleImage(o.scaleImage.getOrElse(null))
-      r.setRadius(optInt(o.radius))
-      r.setBlankWhenNull(optBool(o.blankWhenNull))
-      Paragraph.put(o.paragraph, r.getParagraph.asInstanceOf[JRBaseParagraph])
-      ret(r)
-    }
   }
 
-  sealed case class External(reference: String) extends Style {
-    def transform = ret(Some(reference))
-  }
+  private def putBase(o: Style, r: net.sf.jasperreports.engine.base.JRBaseStyle) : Transformer[Unit] = {
 
+    def optBool(v: Option[Boolean]) : java.lang.Boolean =
+      if (v.isDefined) v.get else null
+    def optInt(v: Option[Int]) : java.lang.Integer =
+      if (v.isDefined) v.get else null
+    // only simple things currently (need not be within transformer monad)
+    r.setBackcolor(o.backcolor.getOrElse(null))
+    r.setForecolor(o.forecolor.getOrElse(null))
+    // Though the properties are the same, JRStyle does not use a JRFont :-/
+    r.setFontName(o.font.fontName.getOrElse(null))
+    // the java.lang.Boolean and Integer overloads are different!
+    // - null means 'inherit' or 'undefined'
+    r.setFontSize(optInt(o.font.fontSize)); // Integer
+    r.setBold(optBool(o.font.bold))
+    r.setItalic(optBool(o.font.italic))
+    r.setStrikeThrough(optBool(o.font.strikeThrough))
+    r.setUnderline(optBool(o.font.underline))
+    r.setPdfEncoding(o.font.pdfEncoding.getOrElse(null))
+    r.setPdfFontName(o.font.pdfFontName.getOrElse(null))
+    r.setPdfEmbedded(optBool(o.font.pdfEmbedded))
+
+    Pen.putPen(o.line, r.getLinePen)
+    LineBox.putLineBox(o.box, r.getLineBox)
+    r.setScaleImage(o.scaleImage.getOrElse(null))
+    r.setRadius(optInt(o.radius))
+    r.setBlankWhenNull(optBool(o.blankWhenNull))
+    Paragraph.put(o.paragraph, r.getParagraph.asInstanceOf[JRBaseParagraph])
+    ret(r)
+  }
+}
+
+sealed case class StyleReference(reference: String) extends AbstractStyle {
+  def transform = ret(Some(reference))
 }

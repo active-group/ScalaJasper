@@ -141,7 +141,7 @@ object Link {
       setHyperlinkTarget,
       setLinkTarget
     ) >>
-    drop(o.tooltip map { _.transform })(setHyperlinkTooltipExpression)
+    drop(orNull(o.tooltip map { _.transform }))(setHyperlinkTooltipExpression)
   }
 
 }

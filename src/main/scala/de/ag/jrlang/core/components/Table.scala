@@ -27,7 +27,7 @@ import Transformer._
 sealed case class TableCell(
     height : Int,
     content: Seq[Element],
-    style : Style = Style.inherit,
+    style : AbstractStyle = Style.inherit,
     rowSpan : Option[Int] = None) extends Transformable[DesignCell] {
 
   def transform : Transformer[DesignCell] = {
@@ -53,7 +53,7 @@ sealed case class TableGroupCell(
   }
 }
 
-abstract sealed class AbstractColumn( // Does this work correctly, when subclasses call copy() for example?
+abstract sealed class AbstractColumn(
                                       header: Option[TableCell],
                                       footer: Option[TableCell],
                                       groupHeaders : Seq[TableGroupCell],
@@ -73,7 +73,7 @@ abstract sealed class AbstractColumn( // Does this work correctly, when subclass
     drop(orNull(tableHeader map { _.transform })) { tgt.setTableHeader(_) } >>
       drop(orNull(tableFooter map { _.transform })) { tgt.setTableFooter(_) } >>
     ret(tgt.setWidth(width)) >>
-    drop(printWhenExpression map { _.transform }) { tgt.setPrintWhenExpression(_) }
+    drop(orNull(printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) }
   }
 }
 

@@ -17,7 +17,7 @@ sealed case class Parameter( // add type parameter?
   def transform = {
     val r = new JRDesignParameter()
     ret(r.setName(name)) >>
-    drop(defaultValueExpression map { _.transform }) { r.setDefaultValueExpression(_) } >>
+    drop(orNull(defaultValueExpression map { _.transform })) { r.setDefaultValueExpression(_) } >>
     ret(r.setForPrompting(isForPrompting)) >>
     ret(r.setNestedTypeName(nestedTypeName)) >>
     ret(r.setValueClassName(valueClassName)) >>

@@ -5,7 +5,7 @@ import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, J
 
 // TODO: Abstraction over Map+Int?
 case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int,
-                               styles: Map[Style, JRDesignStyle], nextst: Int,
+                               styles: Map[AbstractStyle, JRDesignStyle], nextst: Int,
                                datasets: Map[Dataset, JRDesignDataset], nextds: Int) {
   def binding(v : AnyRef) = {
     val o = env.get(v)
@@ -28,7 +28,7 @@ case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int,
     }
   }
 
-  def styleName(v : Style, f : TransformationState => (JRDesignStyle, TransformationState)) : (String, TransformationState) = {
+  def styleName(v : AbstractStyle, f : TransformationState => (JRDesignStyle, TransformationState)) : (String, TransformationState) = {
     val o = styles.get(v)
     if (o.isDefined)
       (o.get.getName, this)
@@ -107,10 +107,10 @@ object Transformer {
   def drop[B](t : Transformer[B])(set : B => Unit) : Transformer[Unit] =
     t >>= { b => set(b); ret() }
 
-  implicit def orNull[B <: AnyRef](o : Option[Transformer[B]]) : Transformer[B] =
+  def orNull[B <: AnyRef](o : Option[Transformer[B]]) : Transformer[B] =
     o.getOrElse(ret(null.asInstanceOf[B]))
 
-  implicit def all[B](l : Seq[Transformer[B]]) : Transformer[Seq[B]] =
+  def all[B](l : Seq[Transformer[B]]) : Transformer[Seq[B]] =
     l.foldLeft(ret(Vector[B]())) {
       case (res, v) => v >>= { it => res >>= { lst => ret(lst :+ it) } }
     }
@@ -126,7 +126,7 @@ object Transformer {
 
   /** returns a name for the given style. If it's a new style, f is called, a new name assigned to the result and
       stored for later retrieval (when the report if transformed. */
-  def styleName(v : Style, f : () => Transformer[JRDesignStyle]) : Transformer[String] =
+  def styleName(v : AbstractStyle, f : () => Transformer[JRDesignStyle]) : Transformer[String] =
     withState({ st =>
       st.styleName(v, { st2 => f().exec(st2) }) // do we have to call exec?
     })

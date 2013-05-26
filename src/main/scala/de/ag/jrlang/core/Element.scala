@@ -89,7 +89,7 @@ object EvaluationTime {
   case object Auto extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.AUTO)
   case object Band extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.BAND)
   case object Column extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.COLUMN)
-  sealed case class Group(group: JRDesignGroup) extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.GROUP)
+  sealed case class Group(group: de.ag.jrlang.core.Group) extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.GROUP)
   case object Now extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.NOW)
   case object Page extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.PAGE)
   case object Report extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.REPORT)
@@ -101,7 +101,7 @@ object EvaluationTime {
     o match {
       case Group(g) => {
         setTime(o.value)
-        // TODO setGroup(g);
+        drop(g.transform) { setGroup(_) } >> // TODO: Test, maybe groups have to registered globally?
         ret()
       }
       case _ => 
@@ -184,7 +184,7 @@ private[core] object ElementUtils {
   // sets properties common to all report elements
   def putReportElement(
       key:String,
-      style:Style,
+      style:AbstractStyle,
       pos:Pos,
       size:Size,
       conditions:Conditions,
@@ -200,7 +200,7 @@ private[core] object ElementUtils {
     tgt.setPrintRepeatedValues(conditions.printRepeatedValues)
     tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand)
     tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows)
-    drop(conditions.printWhenExpression map { _.transform }) { tgt.setPrintWhenExpression(_) } >>
+    drop(orNull(conditions.printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) } >>
     // might take colors and mode out of the style - if it's worth it
     // forecolor: Option[java.awt.Color],
     // backcolor: Option[java.awt.Color],
@@ -216,7 +216,7 @@ private[core] object ElementUtils {
                          addElement: JRDesignElement => Unit,
                          addElementGroup: JRDesignElementGroup => Unit) = {
     // obj will 'own' the created child objects (like in DOM)
-    (content map { _.transform }) >>= { lst =>
+    (all(content map { _.transform })) >>= { lst =>
       for (co <- lst) {
         // although elements and groups end up in the same children list,
         // there is no add method for children, but only for the two
@@ -272,7 +272,7 @@ sealed case class Break(
 
   override def transform : Transformer[JRDesignBreak] = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
-    ElementUtils.putReportElement(key = key, style=Style.Internal.empty, pos=pos,
+    ElementUtils.putReportElement(key = key, style=Style.empty, pos=pos,
       size=Size.fixed(0, 0), conditions=conditions, r) >>
     ret(r.setType(breakType)) >>
     ret(r)
@@ -315,7 +315,7 @@ sealed case class Frame(
     size : Size,
     pos : Pos,
     content: Seq[Element],
-    style: Style = Style.inherit,
+    style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
   extends Element with Transformable[JRDesignFrame] {
@@ -330,7 +330,7 @@ sealed case class Frame(
 sealed case class Ellipse(
     size: Size,
     pos: Pos,
-    style: Style = Style.inherit,
+    style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
   extends Element with Transformable[JRDesignEllipse] {
@@ -348,7 +348,7 @@ sealed case class Image(
     size: Size,
     pos: Pos,
     expression : Expression[Any],
-    style: Style = Style.inherit,
+    style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "",
     /** default depends on type of image expression */
@@ -394,7 +394,7 @@ sealed case class Image(
 sealed case class Line(
     size : Size,
     pos : Pos,
-    style: Style = Style.inherit,
+    style: AbstractStyle = Style.inherit,
     conditions : Conditions = Conditions.default,
     key: String = "",
     /** The direction attribute determines which one of the two diagonals of the rectangle
@@ -418,7 +418,7 @@ sealed case class Line(
 sealed case class Rectangle(
     size: Size,
     pos: Pos,
-    style: Style = Style.inherit,
+    style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
   extends Element with Transformable[JRDesignRectangle] {
@@ -435,7 +435,7 @@ sealed case class StaticText(
     pos : Pos,
     text: String,
     key: String = "",
-    style: Style = Style.inherit,
+    style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default)
   extends Element with Transformable[JRDesignStaticText] {
 
@@ -452,7 +452,7 @@ sealed case class TextField(
     pos: Pos,
     expression: Expression[Any],
     key: String = "",
-    style: Style = Style.inherit,
+    style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     link: Link = Link.empty,
     anchor: Anchor = Anchor.None,
@@ -496,7 +496,7 @@ sealed case class Subreport(
    pos: Pos,
    /** The location (filename etc.) */
    subreportExpression: Expression[Any],
-   style: Style = Style.inherit,
+   style: AbstractStyle = Style.inherit,
    conditions: Conditions = Conditions.default,
    key: String = "",
    /** adds to the map created by argumentsMapExpression; overrides individual parameters */
@@ -543,7 +543,7 @@ sealed case class ComponentElement(size : Size,
                                    component: net.sf.jasperreports.engine.component.Component,
                                    // automatically set for internal components
                                    componentKey: net.sf.jasperreports.engine.component.ComponentKey = null,
-                                   style: Style = Style.inherit,
+                                   style: AbstractStyle = Style.inherit,
                                    conditions: Conditions = Conditions.default,
                                    key: String = "")
   extends Element with Transformable[JRDesignComponentElement] {

@@ -98,8 +98,8 @@ object Columns {
 sealed case class Report(
   name : String, // TODO: Validate non-empty
   details: Seq[Band] = Vector.empty,
-  defaultStyle: Style.Internal = Style.Internal.empty,
-  styles: Map[String, Style.Internal] = Map.empty, // additional user-defined styles, usually not needed
+  defaultStyle: Style = Style.empty,
+  styles: Map[String, Style] = Map.empty, // additional user-defined styles, usually not needed
   templates : IndexedSeq[jre.JRReportTemplate] = Vector.empty,
   subDatasets: Map[String, Dataset] = Map.empty,
   mainDataset: Dataset = Dataset.empty,

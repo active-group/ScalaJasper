@@ -19,7 +19,7 @@ sealed case class Band (
   def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBand()
     ret(r.setHeight(height)) >>
-    drop(printWhenExpression map {_.transform}) { r.setPrintWhenExpression(_) } >>
+    drop(orNull(printWhenExpression map {_.transform})) { r.setPrintWhenExpression(_) } >>
     ret(r.setSplitType(splitType)) >>
     ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>
     ret(r)
