@@ -10,6 +10,7 @@ import de.ag.jrlang.core._
 import de.ag.jrlang.core.components.{TableCell, TableColumn, Table}
 import net.sf.jasperreports.components.table.WhenNoDataTypeTableEnum
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource
+import net.sf.jasperreports.engine.JRDataSource
 
 @RunWith(classOf[JUnitRunner])
 class ComponentsTest extends FunSuite {
@@ -22,7 +23,7 @@ class ComponentsTest extends FunSuite {
             pos = Pos.float(x = 0, y = 0),
             size = Size.fixed(height = 100, width = 400),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
-              data = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Expression.P("table_datasource")),
+              data = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Some(Expression.P("table_datasource"))),
               columns = List(TableColumn(width = 100,
                 detail = TableCell(height = 50, content = List(
                   TextField(Size.fixed(15, 100), Pos.float(0, 0), Expression.F("f1")))
@@ -109,7 +110,7 @@ class ComponentsTest extends FunSuite {
             pos = Pos.float(x = 0, y = 0),
             size = Size.fixed(height = 100, width = 400),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
-              data = DataDef(query = dataset, source=Expression.const(datasource)),
+              data = DataDef(dataset = dataset, source=Expression.const(datasource)),
               columns = List(TableColumn(width = 100,
                 detail = TableCell(height = 50, content = List(
                   TextField(Size.fixed(15, 100), Pos.float(0, 0), Expression.F("f1")))

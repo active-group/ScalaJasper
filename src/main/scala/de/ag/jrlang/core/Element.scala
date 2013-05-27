@@ -1,9 +1,11 @@
 package de.ag.jrlang.core
 
-import net.sf.jasperreports.engine.{JRExpression, JRChild, JRAnchor}
+import net.sf.jasperreports.engine.{JRDataSource, JRExpression, JRChild, JRAnchor}
 import net.sf.jasperreports.engine.design._
 
 import Transformer._
+import net.sf.jasperreports.engine.fill.JRIncrementerFactory
+import net.sf.jasperreports.engine.`type`.CalculationEnum
 
 sealed abstract class Element extends Transformable[JRChild] {
   def +(e: Element) = ElementGroup(content = Vector(this, e)) // TODO: Optimize if one is a group already
@@ -240,29 +242,6 @@ private[core] object ElementUtils {
   }
 }
 
-/* TODO
-sealed case class Chart(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions,
-    link: Link,
-    anchor: Anchor,
-    chartType : ChartType, // contains type byte, plot and dataset
-    customizerClass : String,
-    legend: ChartLegend,
-    showLegend: Boolean,
-    theme: String,
-    title: ChartTitle,
-    subtitle: ChartSubtitle,
-    renderType: String,
-    evaluation: EvaluationTime)
-  extends Element with Transformable[JRDesignChart] {
-
-}
-*/
-
 sealed case class Break(
     key: String,
     pos : Pos,
@@ -491,24 +470,48 @@ sealed case class TextField(
   }
 }
 
+sealed case class ReturnValue(subreportVariable: String,
+                              /** A variable of the master report used when returning values from subreports should
+                                * be declared with System calculation */
+                              toVariable: String,
+                              calculation: CalculationEnum = CalculationEnum.NOTHING,
+                              incrementerFactoryClassName: Option[String]) extends Transformable[JRDesignSubreportReturnValue]{
+  def transform = {
+    val r = new JRDesignSubreportReturnValue()
+    r.setSubreportVariable(subreportVariable)
+    r.setToVariable(toVariable)
+    r.setCalculation(calculation)
+    r.setIncrementerFactoryClassName(incrementerFactoryClassName.getOrElse(null))
+    ret(r)
+  }
+}
+
 sealed case class Subreport(
    size: Size,
    pos: Pos,
-   /** The location (filename etc.) */
+   /** The location (filename etc.); can be of one of the types: java.lang.String
+   java.io.File
+   java.net.URL
+   java.io.InputStream
+   net.sf.jasperreports.engine.JasperReport */
    subreportExpression: Expression[Any],
    style: AbstractStyle = Style.inherit,
    conditions: Conditions = Conditions.default,
    key: String = "",
    /** adds to the map created by argumentsMapExpression; overrides individual parameters */
    arguments: Map[String, Expression[Any]] = Map.empty,
-   argumentsMapExpression: Option[Expression[Any]] = None,
+   argumentsMapExpression: Option[Expression[java.util.Map[String, AnyRef]]] = None,
    /** default depends on subreportExpression type */
-   usingCache: Option[Boolean] = None
-   // TODO custom properties?
-   // TODO returnValue
-   // TODO connection, datasource -- simialy/same as Data (-Run, -Source)?
+   usingCache: Option[Boolean] = None,
+   // TODO?? propertyExpressions? customProperties: Map[String, String] = Map.empty,
+   dataSourceExpression: Option[Expression[JRDataSource]] = None,
+   connectionExpression: Option[Expression[java.sql.Connection]] = None,
+   returnValues : Seq[ReturnValue] = Vector.empty
    ) extends Element with Transformable[JRDesignSubreport]
 {
+  // we could provide a different constructor, which takes a Report, calls prepare(), a take the JasperReport and
+  // the map of arguments, to fill the corresponding attributes
+
   private def transArg(v: (String, Expression[Any])) : Transformer[JRDesignSubreportParameter] = {
     val (n, e) = v
     val po = new net.sf.jasperreports.engine.design.JRDesignSubreportParameter()
@@ -519,14 +522,18 @@ sealed case class Subreport(
 
   def transform : Transformer[JRDesignSubreport] = {
     val r = new net.sf.jasperreports.engine.design.JRDesignSubreport(null)
+    r.setUsingCache(if (usingCache.isDefined) (usingCache.get : java.lang.Boolean) else null)
+
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
     drop(subreportExpression.transform) { r.setExpression(_) } >>
-    ret(r.setUsingCache(if (usingCache.isDefined) (usingCache.get : java.lang.Boolean) else null)) >>
     drop(orNull(argumentsMapExpression map {_.transform})) { r.setParametersMapExpression(_) }
     (all(arguments map transArg toSeq) >>= { ps =>
       ps foreach { r.addParameter(_) }
       ret()
     }) >>
+    drop(orNull(dataSourceExpression map {_.transform})){r.setDataSourceExpression(_)} >>
+    drop(orNull(connectionExpression map {_.transform})){r.setConnectionExpression(_)} >>
+    (all(returnValues map {_.transform}) >>= { l => l.foreach { r.addReturnValue(_) }; ret() }) >>
     ret(r)
   }
 }
@@ -557,6 +564,29 @@ sealed case class ComponentElement(size : Size,
     ret(r)
   }
 }
+
+/* TODO
+sealed case class Chart(
+    key: String,
+    style: Style,
+    size : Size,
+    pos : Pos,
+    conditions : Conditions,
+    link: Link,
+    anchor: Anchor,
+    chartType : ChartType, // contains type byte, plot and dataset
+    customizerClass : String,
+    legend: ChartLegend,
+    showLegend: Boolean,
+    theme: String,
+    title: ChartTitle,
+    subtitle: ChartSubtitle,
+    renderType: String,
+    evaluation: EvaluationTime)
+  extends Element with Transformable[JRDesignChart] {
+
+}
+*/
 
 /* TODO
 sealed case class Crosstab(

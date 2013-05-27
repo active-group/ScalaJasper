@@ -37,7 +37,7 @@ abstract class Expression[+A] extends Transformable[JRDesignExpression] {
   }
 }
 
-sealed case class RawExpression[A](raw: String) extends Expression[A] {
+sealed case class RawExpression[+A](raw: String) extends Expression[A] {
   def transformRaw = ret(raw)
 }
 
@@ -73,14 +73,14 @@ object Expression {
 
   private[core] def escape(name: String) = name.replaceAllLiterally("$", "$$")
   private[core] def stdraw(id: String, name: String) = "$" + id + "{" + escape(name) + "}"
-  private[core] def std(id: String, name: String) = raw(stdraw(id, name))
+  private[core] def std[T <: AnyRef](id: String, name: String) : Expression[T] = raw(stdraw(id, name))
 
   /** Parameter values, some built-in, some user defined */
-  def P(name: String) = std("P", name)
+  def P[T <: AnyRef](name: String) = std[T]("P", name)
   /** Resource values */
-  def R(name: String) = std("R", name)
+  def R[T <: AnyRef](name: String) = std[T]("R", name)
   /** Field values */
-  def F(name: String) = std("F", name)
+  def F[T <: AnyRef](name: String) = std[T]("F", name)
 
   def const[T <: AnyRef](s: T) : Expression[T] =
      lift(s)

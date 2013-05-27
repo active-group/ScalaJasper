@@ -4,7 +4,7 @@ import net.sf.jasperreports.engine.{JRScriptlet, JRDatasetRun, JRField, JRDataSo
 import net.sf.jasperreports.engine.design._
 
 import Transformer._
-import net.sf.jasperreports.engine.`type`.WhenResourceMissingTypeEnum
+import net.sf.jasperreports.engine.`type`.{CalculationEnum, IncrementTypeEnum, ResetTypeEnum, WhenResourceMissingTypeEnum}
 
 
 abstract sealed class Data extends Transformable[JRDesignDatasetRun]
@@ -16,9 +16,11 @@ abstract sealed class Data extends Transformable[JRDesignDatasetRun]
 // removing the connection+query option altogether could simplify things a lot; we have the better option of specifying
 // a function call as datasourceExpression, which returns a JRResultSetDataSource at runtime.
 sealed case class DatasetRun(datasetName: String,
-                             arguments: Map[String, Expression[Any]],
-// TODO parametersMapExpression? connectionExpression?
-                             dataSourceExpression: Expression[Any]) extends Data{
+                             arguments: Map[String, Expression[Any]] = Map.empty,
+                             argumentsMapExpression: Option[Expression[java.util.Map[String, AnyRef]]] = None,
+                             dataSourceExpression: Option[Expression[JRDataSource]] = None,
+                             connectionExpression: Option[Expression[java.sql.Connection]] = None
+                             ) extends Data{
   def transform = {
     val r = new JRDesignDatasetRun()
     r.setDatasetName(datasetName)
@@ -30,20 +32,21 @@ sealed case class DatasetRun(datasetName: String,
     }} toSeq) >>= {
       ps => ps foreach { r.addParameter(_) }; ret()
     }) >>
-    drop(dataSourceExpression.transform) { r.setDataSourceExpression(_)} >>
+    drop(orNull(dataSourceExpression map {_.transform})) { r.setDataSourceExpression(_)} >>
+    drop(orNull(connectionExpression map {_.transform})) { r.setConnectionExpression(_)} >>
     ret(r)
   }
 }
 
-sealed case class DataDef(query : Dataset,
+sealed case class DataDef(dataset : Dataset,
                           source : Expression[JRDataSource],
                           arguments : Map[String, Expression[Any]] = Map.empty) extends Data {
   // translate this to a DatasetRun and a new Dataset
   def transform = {
     // transform into global env? or new one... then put env into args here...?
-    Transformer.datasetName(query, { () => query.transform }) >>= {
+    Transformer.datasetName(dataset, { () => dataset.transform }) >>= {
       name => {
-        DatasetRun(name, arguments, source).transform
+        DatasetRun(datasetName = name, arguments = arguments, dataSourceExpression = Some(source)).transform
       }
     }
   }
@@ -70,16 +73,82 @@ sealed case class Group(
   def transform : Transformer[JRDesignGroup] = null
 }
 
+abstract sealed class Reset extends Transformable[(ResetTypeEnum, Option[JRDesignGroup])]
+
+object Reset {
+  /**
+   * The variable is initialized only once, at the beginning of the report filling process, with the value returned by
+   * the variable's initial value expression.
+   */
+  case object Report extends Reset {
+    def transform = ret(ResetTypeEnum.REPORT, Option.empty)
+  }
+  /**
+   * The variable is reinitialized at the beginning of each new page.
+   */
+  case object Page extends Reset {
+    def transform = ret(ResetTypeEnum.PAGE, Option.empty)
+  }
+  /**
+   * The variable is reinitialized at the beginning of each new column.
+   */
+  case object Column extends Reset {
+    def transform = ret(ResetTypeEnum.COLUMN, Option.empty)
+  }
+  /**
+   * The variable is reinitialized every time the group specified by the {@link JRVariable#getResetGroup()} method breaks.
+   */
+  /* TODO: it's probably more like a group reference... need groups in transformation state?
+  sealed case class Group(g : de.ag.jrlang.Group) extends Reset {
+    def transform =
+      g.transform >>= { jg =>
+        ret(ResetTypeEnum.GROUP, jg)
+      }
+  }
+  */
+  /**
+   * The variable will never be initialized using its initial value expression and will only contain values obtained by
+   * evaluating the variable's expression.
+   */
+  case object None extends Reset {
+    def transform = ret(ResetTypeEnum.NONE, Option.empty)
+  }
+}
+
+abstract sealed class Increment extends Transformable[(IncrementTypeEnum, Option[JRDesignGroup])]
+
+object Increment {
+  case object Report extends Increment {
+    def transform = ret(IncrementTypeEnum.REPORT, Option.empty)
+  }
+  case object Page extends Increment {
+    def transform = ret(IncrementTypeEnum.PAGE, Option.empty)
+  }
+  case object Column extends Increment {
+    def transform = ret(IncrementTypeEnum.COLUMN, Option.empty)
+  }
+  /* TODO: it's probably more like a group reference... need groups in transformation state?
+  sealed case class Group(g : de.ag.jrlang.Group) extends Increment {
+    def transform =
+      g.transform >>= { jg =>
+        ret(IncrementTypeEnum.GROUP, jg)
+      }
+  }
+  */
+  case object None extends Increment {
+    def transform = ret(IncrementTypeEnum.NONE, Option.empty)
+  }
+
+}
+
+
 sealed case class Variable(name: String,
-                           calculation: net.sf.jasperreports.engine.`type`.CalculationEnum,
-                           expression: Expression[Any], // ??
-                           valueClassName: String,
-                           incrementerGroup: Group,
-                           incrementType: net.sf.jasperreports.engine.`type`.IncrementTypeEnum,
-                           incrementerFactoryClassName: String,
-                           // TODO: resetType and resetGroup belong together - maybe the same for incrementer...
-                           resetType: net.sf.jasperreports.engine.`type`.ResetTypeEnum,
-                           resetGroup: Group
+                           calculation: CalculationEnum,
+                           expression: Expression[Any],
+                           valueClassName: String = "java.lang.String",
+                           increment: Increment = Increment.None,
+                           reset: Reset = Reset.Report,
+                           incrementerFactoryClassName: Option[String] = None
                            )
   extends Transformable[JRDesignVariable] {
 
@@ -87,15 +156,18 @@ sealed case class Variable(name: String,
     val r = new JRDesignVariable()
     r.setName(name)
     r.setCalculation(calculation)
-    r.setIncrementerFactoryClassName(incrementerFactoryClassName)
-    r.setIncrementType(incrementType)
-    r.setResetType(resetType)
+    r.setIncrementerFactoryClassName(incrementerFactoryClassName.getOrElse(null))
     r.setValueClassName(valueClassName)
 
+    drop(increment.transform) { case(t, g) =>
+      r.setIncrementType(t)
+      r.setIncrementGroup(g.getOrElse(null))
+    } >>
     drop(expression.transform) { r.setExpression(_) } >>
-    // maybe groups have to be registered globally too???
-    drop(incrementerGroup.transform) { r.setIncrementGroup(_) } >>
-    drop(resetGroup.transform) { r.setResetGroup(_) } >>
+    drop(reset.transform) { case(t, g) =>
+      r.setResetType(t)
+      r.setResetGroup(g.getOrElse(null))
+      } >>
     ret(r)
   }
 }
@@ -116,9 +188,9 @@ sealed case class Dataset(
       * scriptlets, users can affect the values stored by the report variables. */
     // so, maybe we don't need that
     scriptlets : IndexedSeq[JRScriptlet] = Vector.empty, // Map-Like
-    scriptletClassName: String = "",
+    scriptletClassName: Option[String] = None,
     groups : Seq[Group] =  Vector.empty, // Map-Like
-    resourceBundle: String = "",
+    resourceBundle: Option[String] = None,
     filterExpression: Option[Expression[Boolean]] = None,
     whenResourceMissingType: WhenResourceMissingTypeEnum = WhenResourceMissingTypeEnum.NULL,
     customProperties: Map[String, String] = Map.empty) // remove?
@@ -140,8 +212,8 @@ sealed case class Dataset(
         f })
     r.setQuery(query)
     scriptlets foreach { r.addScriptlet(_) }
-    r.setScriptletClass(scriptletClassName)
-    r.setResourceBundle(resourceBundle)
+    r.setScriptletClass(scriptletClassName.getOrElse(null))
+    r.setResourceBundle(resourceBundle.getOrElse(null))
     r.setWhenResourceMissingType(whenResourceMissingType)
     customProperties foreach { case(n,e) => r.setProperty(n, e) }
 
