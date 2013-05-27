@@ -4,7 +4,7 @@ import net.sf.jasperreports.engine.{JRScriptlet, JRDatasetRun, JRField, JRDataSo
 import net.sf.jasperreports.engine.design._
 
 import Transformer._
-import net.sf.jasperreports.engine.`type`.{CalculationEnum, IncrementTypeEnum, ResetTypeEnum, WhenResourceMissingTypeEnum}
+import net.sf.jasperreports.engine.`type`._
 
 
 abstract sealed class Data extends Transformable[JRDesignDatasetRun]
@@ -66,11 +66,36 @@ sealed case class SortField(
   }
 }
 
-sealed case class Group(
-
+sealed case class Group(/** consecutive records with the same value form the group */
+                        expression: Expression[Any],
+                        header: Seq[Band] = Vector.empty,
+                        footer: Seq[Band] = Vector.empty,
+                        footerPosition: FooterPositionEnum = FooterPositionEnum.NORMAL,
+                        startNewColumn: Boolean = false,
+                        resetPageNumber: Boolean = false,
+                        reprintHeaderOnEachPage: Boolean = false,
+                        minHeightToStartNewPage: Int = 0,
+                        keepTogether: Boolean = false
                          ) extends Transformable[JRDesignGroup] {
    // ... quite a lot
-  def transform : Transformer[JRDesignGroup] = null
+  def transform : Transformer[JRDesignGroup] = {
+     val r = new JRDesignGroup()
+     r.setFooterPosition(footerPosition)
+     r.setStartNewColumn(startNewColumn)
+     r.setResetPageNumber(resetPageNumber)
+     r.setReprintHeaderOnEachPage(reprintHeaderOnEachPage)
+     r.setMinHeightToStartNewPage(minHeightToStartNewPage)
+     r.setKeepTogether(keepTogether)
+
+     drop(expression.transform) { r.setExpression(_) } >>
+     (all(header map {_.transform}) >>= {
+       bs => bs.foreach { r.getGroupHeaderSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
+     }) >>
+     (all(footer map {_.transform}) >>= {
+       bs => bs.foreach { r.getGroupFooterSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
+     }) >>
+     ret(r)
+   }
 }
 
 abstract sealed class Reset extends Transformable[(ResetTypeEnum, Option[JRDesignGroup])]
@@ -189,7 +214,9 @@ sealed case class Dataset(
     // so, maybe we don't need that
     scriptlets : IndexedSeq[JRScriptlet] = Vector.empty, // Map-Like
     scriptletClassName: Option[String] = None,
-    groups : Seq[Group] =  Vector.empty, // Map-Like
+    /** A report group is represented by sequence of consecutive records in the data source that have something
+      * in common, like the value of a certain report field. */
+    groups : Map[String, Group] =  Map.empty,
     resourceBundle: Option[String] = None,
     filterExpression: Option[Expression[Boolean]] = None,
     whenResourceMissingType: WhenResourceMissingTypeEnum = WhenResourceMissingTypeEnum.NULL,
@@ -227,8 +254,8 @@ sealed case class Dataset(
     (all(sortFields map { _.transform }) >>= {
       sfs => sfs foreach { r.addSortField(_) }; ret()
     }) >>
-    (all(groups map { _.transform }) >>= {
-      g => g foreach { r.addGroup(_) }; ret()
+    (all(groups map { case(n, g) => g.transform >>= { jg => ret(n, jg) } } toSeq) >>= {
+      l => l foreach { case(n, g) => g.setName(n); r.addGroup(g) }; ret()
     }) >>
     ret()
   }
