@@ -5,7 +5,7 @@ assemblySettings
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-organization := "Active Group"
+organization := "de.ag"
 
 scalaVersion in ThisBuild := "2.9.2"
 

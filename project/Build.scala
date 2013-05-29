@@ -6,7 +6,7 @@ import AssemblyKeys._
 object JRLangBuild extends Build {
 
   // should be first, alphabetically
-  lazy val JRLang = Project(id = "JRLang",
+  lazy val JRLang = Project(id = "jrlang",
     base = file("."))
 
 }
