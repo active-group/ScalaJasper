@@ -166,8 +166,11 @@ object Compiler {
     // styles
     tstate.styles foreach { case (_, s) => r.addStyle(s) }
 
-    // datasets
-    tstate.datasets foreach { case (_, ds) => r.addDataset(ds) }
+    // datasets, also add all auto-parameters to the subdatasets - they might have been used there too
+    tstate.datasets foreach { case (_, ds) =>
+      tstate.env foreach { case(_, p) => ds.addParameter(p) }
+      r.addDataset(ds)
+    }
 
     val finalreport = jre.JasperCompileManager.compileReport(r)
     (finalreport, envArgs)

@@ -44,20 +44,15 @@ sealed case class DataDef(dataset : Dataset,
                           arguments : Map[String, Expression[Any]] = Map.empty) extends Data {
   // translate this to a DatasetRun and a new Dataset
   def transform = {
-    getCurrentEnvironment >>= { env =>
-      // all auto-parameters generated to far, are added as parameters to the sub-dataset (because I don't know how to do better)
-      // The values from the global report are then all passed through via the REPORT_PARAMETERS_MAP
-      val autoParams = (env map {_._2}) map { p => Parameter(name = p.getName, valueClassName = p.getValueClassName) } // conversion back-and-forth, well...
-      // this is not nice: TODO think about adding all auto-parameters to all datasets at the end of compilation?
-      val fullDataset = dataset.copy(parameters = dataset.parameters ++ autoParams)
-    // TODO: is this correct? what's the right environment for dataset expressions?!
-      Transformer.datasetName(fullDataset, { () => fullDataset.transform }) >>= {
+    // getCurrentEnvironment >>= { env =>
+      Transformer.datasetName(dataset, { () => dataset.transform }) >>= {
         name =>
           DatasetRun(datasetName = name, arguments = arguments, dataSourceExpression = Some(source),
-            argumentsMapExpression = Some(Expression.P("REPORT_PARAMETERS_MAP")) // pass all values from global report args
+            // pass all values from global report args, parameter declarations are added in compile() later
+            argumentsMapExpression = Some(Expression.P("REPORT_PARAMETERS_MAP"))
           ).transform
         }
-    }
+    // }
   }
 }
 
@@ -136,16 +131,14 @@ object Reset {
     def transform = ret(ResetTypeEnum.COLUMN, Option.empty)
   }
   /**
-   * The variable is reinitialized every time the group specified by the {@link JRVariable#getResetGroup()} method breaks.
+   * The variable is reinitialized every time the specified group breaks.
    */
-  /* TODO: it's probably more like a group reference... need groups in transformation state?
-  sealed case class Group(g : de.ag.jrlang.Group) extends Reset {
+  sealed case class Group(g : de.ag.jrlang.core.Group) extends Reset {
     def transform =
       g.transform >>= { jg =>
-        ret(ResetTypeEnum.GROUP, jg)
+        ret(ResetTypeEnum.GROUP, Some(jg))
       }
   }
-  */
   /**
    * The variable will never be initialized using its initial value expression and will only contain values obtained by
    * evaluating the variable's expression.
@@ -259,7 +252,7 @@ sealed case class Dataset(
     r.setWhenResourceMissingType(whenResourceMissingType)
     customProperties foreach { case(n,e) => r.setProperty(n, e) }
 
-    // user defined parameters (generated parameters are added below)
+    // user defined parameters (generated parameters are added later)
     (all(parameters map {_.transform}) >>= {
       ps => ps foreach { r.addParameter(_) }; ret()
     }) >>
@@ -272,8 +265,6 @@ sealed case class Dataset(
     (all(groups map { case(n, g) => g.transform >>= { jg => ret(n, jg) } } toSeq) >>= {
       l => l foreach { case(n, g) => g.setName(n); r.addGroup(g) }; ret()
     }) >>
-//    // adds all automatic parameters collected so far in the transformation-state (must be last thing thereby!)
-//    (getAutoParams >>= { ps => ps foreach { r.addParameter(_) }; ret() }) >>
     ret()
   }
 }

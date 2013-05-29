@@ -169,4 +169,54 @@ class ComponentsTest extends FunSuite {
         ReportTest.removeElemAttr("origin", "report", // on origin band detail ...
           actual)))
   }
+
+  test("two tables in one report (with same dataset)") {
+    val data : Array[java.util.Map[java.lang.String,AnyRef]] =
+      Array(mapAsJavaMap(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef])),
+        mapAsJavaMap(Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]))
+      )
+    val datasource = new JRMapArrayDataSource(data.asInstanceOf[Array[AnyRef]])
+    val dataset = Dataset.empty.copy(
+      // parameters = Vector(Parameter("p1").copy(valueClassName = "java.util.List"))
+      fields = Map("f1" -> "java.lang.String")
+    )
+
+    def tab(textExpr: Expression[String]) =
+      Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
+        data = DataDef(dataset = dataset, source=Expression.const(datasource)),
+        columns = List(TableColumn(width = 100,
+          detail = TableCell(height = 50, content = List(
+            TextField(Size.fixed(height=15, width=100), Pos.float(0, 0),
+              textExpr))
+          ))))
+
+    val r = Report("two tables").copy(details = List(
+      Band(
+        height = 200,
+        splitType = SplitTypeEnum.STRETCH,
+        content = Vector(
+          // same dataset etc, but different (auto-) parameters (in the form of expressions)
+          ComponentElement(
+            pos = Pos.float(x = 0, y = 0),
+            size = Size.fixed(height = 100, width = 400),
+            component = tab(Expression.call({t:String => t+t}, Expression.F("f1")))
+          ),
+          ComponentElement(
+            pos = Pos.float(x = 0, y = 100),
+            size = Size.fixed(height = 100, width = 400),
+            component = tab(Expression.call({t:String => t+" ...and... "+t}, Expression.F("f1")))
+          ))
+      ))
+    )
+
+    // just test successfull compilation for now...
+    val actual = ReportTest.printToXML(r, Map.empty);
+    assert(actual != null)
+    /*
+    ReportTest.compareJasperPrintXML(expected,
+      ReportTest.removeElemAttr("property", "value", // would only be needed for property name=tableUUID ...
+        ReportTest.removeElemAttr("origin", "report", // on origin band detail ...
+          actual)))
+    */
+  }
 }

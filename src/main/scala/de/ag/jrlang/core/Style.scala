@@ -1,7 +1,7 @@
 package de.ag.jrlang.core
 
 import net.sf.jasperreports.engine.base.{JRBaseStyle, JRBaseParagraph}
-import net.sf.jasperreports.engine.`type`.TabStopAlignEnum
+import net.sf.jasperreports.engine.`type`.{LineSpacingEnum, TabStopAlignEnum}
 
 import Transformer._
 import net.sf.jasperreports.engine.design.{JRDesignConditionalStyle, JRDesignStyle}
@@ -59,6 +59,19 @@ sealed case class Font(
     pdfEmbedded: Option[Boolean] = None
     ) {
   def isEmpty = this == Font.empty
+
+  def ++(rhs: Font) =
+    Font(
+      fontName = rhs.fontName.orElse(this.fontName),
+      fontSize = rhs.fontSize.orElse(this.fontSize),
+      bold = rhs.bold.orElse(this.bold),
+      italic = rhs.italic.orElse(this.italic),
+      strikeThrough = rhs.strikeThrough.orElse(this.strikeThrough),
+      underline = rhs.underline.orElse(this.underline),
+      pdfEncoding = rhs.pdfEncoding.orElse(this.pdfEncoding),
+      pdfFontName = rhs.pdfFontName.orElse(this.pdfFontName),
+      pdfEmbedded = rhs.pdfEmbedded.orElse(this.pdfEmbedded)
+    )
 }
 object Font {
   val empty = new Font()
@@ -66,7 +79,14 @@ object Font {
 
 sealed case class Pen(lineColor: Option[java.awt.Color] = None,
                       lineStyle: Option[net.sf.jasperreports.engine.`type`.LineStyleEnum] = None,
-                      lineWidth: Option[Float] = None)
+                      lineWidth: Option[Float] = None) {
+  def ++(rhs: Pen) =
+    Pen(
+      lineColor = rhs.lineColor.orElse(this.lineColor),
+      lineStyle = rhs.lineStyle.orElse(this.lineStyle),
+      lineWidth = rhs.lineWidth.orElse(this.lineWidth)
+    )
+}
 
 object Pen {
   val lineWidth0 = net.sf.jasperreports.engine.JRPen.LINE_WIDTH_0
@@ -89,6 +109,14 @@ sealed case class BoxPen(top : Pen = Pen.empty,
                          right : Pen = Pen.empty) {
 
   def isUniform = (top == left) && (left == bottom) && (bottom == right)
+
+  def ++(rhs: BoxPen) =
+    BoxPen(
+      top = this.top ++ rhs.top,
+      left = this.left ++ rhs.left,
+      bottom = this.bottom ++ rhs.bottom,
+      right = this.right ++ rhs.right
+    )
 }
 
 object BoxPen {
@@ -115,6 +143,14 @@ sealed case class BoxPadding(top: Option[Int] = None,
                              bottom: Option[Int] = None,
                              right: Option[Int] = None) {
   def isUniform = (top == left) && (left == bottom) && (bottom == right)
+
+  def ++(rhs: BoxPadding) =
+    BoxPadding(
+      top = rhs.top.orElse(this.top),
+      left = rhs.left.orElse(this.left),
+      bottom = rhs.bottom.orElse(this.bottom),
+      right = rhs.right.orElse(this.right)
+    )
 }
 object BoxPadding {
   val empty = new BoxPadding()
@@ -141,7 +177,14 @@ object BoxPadding {
 sealed case class LineBox(pen: BoxPen = BoxPen.empty,
                           padding : BoxPadding = BoxPadding.empty
                           // style is a fake property, taken from parent "BoxContainer"
-                          )
+                          ) {
+  def ++(rhs: LineBox) =
+    LineBox(
+      pen = this.pen ++ rhs.pen,
+      padding = this.padding ++ rhs.padding
+    )
+}
+
 object LineBox {
   val empty = new LineBox()
 
@@ -163,15 +206,73 @@ object TabStop {
 
 }
 
-sealed case class Paragraph(lineSpacing: Option[net.sf.jasperreports.engine.`type`.LineSpacingEnum] = None,
-                            lineSpacingSize: Option[Float] = None,
+abstract sealed class LineSpacing extends Transformable[(LineSpacingEnum, Float)]
+
+object LineSpacing {
+  /**
+   * Normal spacing between lines.
+   */
+  case object Single extends LineSpacing {
+    def transform = ret(LineSpacingEnum.SINGLE, 0)
+  }
+
+  /**
+   * Spacing between lines of 50% more than normal.
+   */
+  case object OneAndHalf extends LineSpacing {
+    def transform = ret(LineSpacingEnum.ONE_AND_HALF, 0)
+  }
+
+  /**
+   * Spacing between lines of double size than normal.
+   */
+  case object Double extends LineSpacing {
+    def transform = ret(LineSpacingEnum.DOUBLE, 0)
+  }
+
+  /**
+   * Spacing between lines of at least the specified size.
+   */
+  sealed case class AtLeast(size: Float) extends LineSpacing {
+    def transform = ret(LineSpacingEnum.AT_LEAST, size)
+  }
+
+  /**
+   * Spacing between lines of the specified size.
+   */
+  sealed case class Fixed(size: Float) extends LineSpacing {
+    def transform = ret(LineSpacingEnum.FIXED, size)
+  }
+
+  /**
+   * Spacing between lines to the specified proportion of the normal line spacing.
+   */
+  sealed case class Proportional(factor: Float) extends LineSpacing {
+    def transform = ret(LineSpacingEnum.PROPORTIONAL, factor)
+  }
+}
+
+sealed case class Paragraph(lineSpacing: Option[LineSpacing] = None,
                             firstLineIndent: Option[Int] = None,
                             leftIndent: Option[Int] = None,
                             rightIndent: Option[Int] = None,
                             spacingBefore: Option[Int] = None,
                             spacingAfter: Option[Int] = None,
                             tabStopWidth: Option[Int] = None,
-                            tabStops: Seq[TabStop] = Seq.empty)
+                            tabStops: Seq[TabStop] = Seq.empty) {
+  def ++(rhs: Paragraph) =
+    Paragraph(
+      lineSpacing = rhs.lineSpacing.orElse(this.lineSpacing),
+      firstLineIndent = rhs.firstLineIndent.orElse(this.firstLineIndent),
+      leftIndent = rhs.leftIndent.orElse(this.leftIndent),
+      rightIndent = rhs.rightIndent.orElse(this.rightIndent),
+      spacingBefore = rhs.spacingBefore.orElse(this.spacingBefore),
+      spacingAfter = rhs.spacingAfter.orElse(this.spacingAfter),
+      tabStopWidth = rhs.tabStopWidth.orElse(this.tabStopWidth),
+      /* tabStops - how should they be reasonably combined? */
+      tabStops = this.tabStops ++ rhs.tabStops
+    )
+}
 
 object Paragraph {
   val empty = Paragraph()
@@ -180,8 +281,6 @@ object Paragraph {
     def optFloat(v: Option[Float]) : java.lang.Float = if (v.isDefined) v.get else null
     def optInt(v: Option[Int]) : java.lang.Integer = if (v.isDefined) v.get else null
 
-    r.setLineSpacing(o.lineSpacing.getOrElse(null))
-    r.setLineSpacingSize(optFloat(o.lineSpacingSize))
     r.setFirstLineIndent(optInt(o.firstLineIndent))
     r.setLeftIndent(optInt(o.leftIndent))
     r.setRightIndent(optInt(o.rightIndent))
@@ -190,6 +289,12 @@ object Paragraph {
     r.setTabStopWidth(optInt(o.tabStopWidth))
     for (t <- o.tabStops)
       r.addTabStop(t)
+    if (o.lineSpacing.isDefined)
+      drop(o.lineSpacing.get.transform) { case(en, sz) =>
+        r.setLineSpacing(en)
+        r.setLineSpacingSize(sz)
+      }
+    else ret()
   }
 }
 
@@ -199,7 +304,7 @@ abstract sealed class AbstractStyle extends Transformable[Option[String]]
 
 sealed case class Style(
                          // name is isDefault intentionally left out (see top level JaperDesign)
-                         parentStyle: Option[AbstractStyle] = None,
+                         parentStyle: Option[StyleReference] = None, // for now, only allow manually defined parentStyles; just combine or copy for auto styles
                          // The conditionalStyles must not have a parentStyle, and probably not conditionalStyles themselves
                          conditionalStyles: Seq[(Expression[Boolean], Style)] = Vector.empty,
                          backcolor: Option[java.awt.Color] = None,
@@ -227,6 +332,31 @@ sealed case class Style(
                          ) extends AbstractStyle {
 
   def isEmpty = (this == Style.empty)
+
+  /** combine this style with given style. If a property is set in both styles, the right side replaces the left.
+    * This is different from the copy method, in that it is a 'deep' combination. ParentStyle and conditionalStyles
+    * can hardly be combined automatically; so don't expect anything of one of the styles uses it. */
+  def ++(rhs: Style) =
+    Style(
+      parentStyle = rhs.parentStyle.orElse(this.parentStyle),
+      conditionalStyles = this.conditionalStyles ++ rhs.conditionalStyles,
+      backcolor = rhs.backcolor.orElse(this.backcolor),
+      forecolor = rhs.forecolor.orElse(this.forecolor),
+      font = this.font ++ rhs.font,
+      horizontalAlignment = rhs.horizontalAlignment.orElse(this.horizontalAlignment),
+      paragraph = this.paragraph ++ rhs.paragraph,
+      markup = rhs.markup.orElse(this.markup),
+      mode = rhs.mode.orElse(this.mode),
+      pattern = rhs.pattern.orElse(this.pattern),
+      radius = rhs.radius.orElse(this.radius),
+      rotation = rhs.rotation.orElse(this.rotation),
+      scaleImage = rhs.scaleImage.orElse(this.scaleImage),
+      verticalAlignment = rhs.verticalAlignment.orElse(this.verticalAlignment),
+      line = this.line ++ rhs.line,
+      box = this.box ++ rhs.box,
+      fill = rhs.fill.orElse(this.fill),
+      blankWhenNull = rhs.blankWhenNull.orElse(this.blankWhenNull)
+    )
 
   def transform = {
     if (this.isEmpty)
