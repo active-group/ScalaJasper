@@ -151,7 +151,6 @@ sealed case class Report(
     (all(details map {_.transform}) >>= {
       bands => bands foreach { r.getDetailSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
     }) >>
-    mainDataset.fill(r.getMainDesignDataset) >>
     // user defined datasets, generated datasets are added by caller
     (all(subDatasets map {
       case(n,d) => d.transform >>= { o => o.setName(n); ret(o) }
@@ -167,6 +166,7 @@ sealed case class Report(
     drop(orNull(page.background map {_.transform})) { r.setBackground(_) } >>
     drop(orNull(summary.band map {_.transform})) { r.setSummary(_) } >>
     drop(orNull(title.band map {_.transform})) { r.setTitle(_) } >>
+    mainDataset.fill(r.getMainDesignDataset) >> // must be last!
     ret(r)
   }
 

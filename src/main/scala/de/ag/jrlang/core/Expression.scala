@@ -81,6 +81,8 @@ object Expression {
   def R[T <: AnyRef](name: String) = std[T]("R", name)
   /** Field values */
   def F[T <: AnyRef](name: String) = std[T]("F", name)
+  /** Variable values */
+  def V[T <: AnyRef](name: String) = std[T]("V", name)
 
   def const[T <: AnyRef](s: T) : Expression[T] =
      lift(s)

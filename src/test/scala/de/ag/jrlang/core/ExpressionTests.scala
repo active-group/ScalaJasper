@@ -5,6 +5,7 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import de.ag.jrlang.core._
+import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 
 @RunWith(classOf[JUnitRunner])
 class ExpressionTests extends FunSuite {
@@ -30,7 +31,8 @@ class ExpressionTests extends FunSuite {
     val r = Report("test").copy(
       mainDataset = Dataset.empty.copy(parameters = List(Parameter("fn0").copy(valueClassName = fnClassName))),
       page = Page.empty.copy(
-        header = Some(Band.empty.copy(
+        header = Some(Band(
+          splitType = SplitTypeEnum.STRETCH,
           height = 20,
           content = Vector(
             StaticText(
@@ -94,7 +96,8 @@ class ExpressionTests extends FunSuite {
     }
     val r = Report("test").copy(
       page = Page.empty.copy(
-        header = Some(Band.empty.copy(
+        header = Some(Band(
+          splitType = SplitTypeEnum.STRETCH,
           height = 20,
           content = Vector(
             StaticText(

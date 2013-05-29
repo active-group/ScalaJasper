@@ -11,13 +11,15 @@ import de.ag.jrlang.core.components.{TableCell, TableColumn, Table}
 import net.sf.jasperreports.components.table.WhenNoDataTypeTableEnum
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource
 import net.sf.jasperreports.engine.JRDataSource
+import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 
 @RunWith(classOf[JUnitRunner])
 class ComponentsTest extends FunSuite {
   test("table component") {
     val r = Report("basic table").copy(details = List(
-      Band.empty.copy(
+      Band(
         height = 200,
+        splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           ComponentElement(
             pos = Pos.float(x = 0, y = 0),
@@ -26,7 +28,7 @@ class ComponentsTest extends FunSuite {
               data = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Some(Expression.P("table_datasource"))),
               columns = List(TableColumn(width = 100,
                 detail = TableCell(height = 50, content = List(
-                  TextField(Size.fixed(15, 100), Pos.float(0, 0), Expression.F("f1")))
+                  TextField(Size.fixed(height=15, width=100), Pos.float(0, 0), Expression.F("f1")))
                 ))))
         ))
       )),
@@ -103,8 +105,9 @@ class ComponentsTest extends FunSuite {
     )
 
     val r = Report("basic table").copy(details = List(
-      Band.empty.copy(
+      Band(
         height = 200,
+        splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           ComponentElement(
             pos = Pos.float(x = 0, y = 0),
@@ -113,7 +116,8 @@ class ComponentsTest extends FunSuite {
               data = DataDef(dataset = dataset, source=Expression.const(datasource)),
               columns = List(TableColumn(width = 100,
                 detail = TableCell(height = 50, content = List(
-                  TextField(Size.fixed(15, 100), Pos.float(0, 0), Expression.F("f1")))
+                  TextField(Size.fixed(height=15, width=100), Pos.float(0, 0),
+                    Expression.call({t:String => t+t}, Expression.F("f1"))))
                 ))))
           ))
       ))
@@ -142,7 +146,7 @@ class ComponentsTest extends FunSuite {
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
                 <reportElement height="15" origin="1" srcId="5" width="100" x="0" y="0">
                 </reportElement>
-                <textContent>Hello</textContent>
+                <textContent>HelloHello</textContent>
               </text>
             </frame>
             <frame>
@@ -152,7 +156,7 @@ class ComponentsTest extends FunSuite {
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
                 <reportElement height="15" origin="1" srcId="5" width="100" x="0" y="0">
                 </reportElement>
-                <textContent>World</textContent>
+                <textContent>WorldWorld</textContent>
               </text>
             </frame>
           </frame>

@@ -32,6 +32,7 @@ sealed case class DatasetRun(datasetName: String,
     }} toSeq) >>= {
       ps => ps foreach { r.addParameter(_) }; ret()
     }) >>
+    drop(orNull(argumentsMapExpression map {_.transform})) { r.setParametersMapExpression(_)} >>
     drop(orNull(dataSourceExpression map {_.transform})) { r.setDataSourceExpression(_)} >>
     drop(orNull(connectionExpression map {_.transform})) { r.setConnectionExpression(_)} >>
     ret(r)
@@ -43,11 +44,19 @@ sealed case class DataDef(dataset : Dataset,
                           arguments : Map[String, Expression[Any]] = Map.empty) extends Data {
   // translate this to a DatasetRun and a new Dataset
   def transform = {
-    // transform into global env? or new one... then put env into args here...?
-    Transformer.datasetName(dataset, { () => dataset.transform }) >>= {
-      name => {
-        DatasetRun(datasetName = name, arguments = arguments, dataSourceExpression = Some(source)).transform
-      }
+    getCurrentEnvironment >>= { env =>
+      // all auto-parameters generated to far, are added as parameters to the sub-dataset (because I don't know how to do better)
+      // The values from the global report are then all passed through via the REPORT_PARAMETERS_MAP
+      val autoParams = (env map {_._2}) map { p => Parameter(name = p.getName, valueClassName = p.getValueClassName) } // conversion back-and-forth, well...
+      // this is not nice: TODO think about adding all auto-parameters to all datasets at the end of compilation?
+      val fullDataset = dataset.copy(parameters = dataset.parameters ++ autoParams)
+    // TODO: is this correct? what's the right environment for dataset expressions?!
+      Transformer.datasetName(fullDataset, { () => fullDataset.transform }) >>= {
+        name =>
+          DatasetRun(datasetName = name, arguments = arguments, dataSourceExpression = Some(source),
+            argumentsMapExpression = Some(Expression.P("REPORT_PARAMETERS_MAP")) // pass all values from global report args
+          ).transform
+        }
     }
   }
 }
@@ -65,6 +74,12 @@ sealed case class SortField(
     ret(r)
   }
 }
+
+/*// although it only refers to a globally defined group, the API forces us to pass the object at compile time
+abstract sealed class GroupRef extends Transformable[JRDesignGroup]
+
+sealed case class Group
+*/
 
 sealed case class Group(/** consecutive records with the same value form the group */
                         expression: Expression[Any],
@@ -244,7 +259,7 @@ sealed case class Dataset(
     r.setWhenResourceMissingType(whenResourceMissingType)
     customProperties foreach { case(n,e) => r.setProperty(n, e) }
 
-    // user defined parameters (generated parameters are added by caller)
+    // user defined parameters (generated parameters are added below)
     (all(parameters map {_.transform}) >>= {
       ps => ps foreach { r.addParameter(_) }; ret()
     }) >>
@@ -257,6 +272,8 @@ sealed case class Dataset(
     (all(groups map { case(n, g) => g.transform >>= { jg => ret(n, jg) } } toSeq) >>= {
       l => l foreach { case(n, g) => g.setName(n); r.addGroup(g) }; ret()
     }) >>
+//    // adds all automatic parameters collected so far in the transformation-state (must be last thing thereby!)
+//    (getAutoParams >>= { ps => ps foreach { r.addParameter(_) }; ret() }) >>
     ret()
   }
 }

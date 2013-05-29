@@ -103,7 +103,7 @@ object EvaluationTime {
     o match {
       case Group(g) => {
         setTime(o.value)
-        drop(g.transform) { setGroup(_) } >> // TODO: Test, maybe groups have to registered globally?
+        drop(g.transform) { setGroup(_) } >>
         ret()
       }
       case _ => 
@@ -122,26 +122,26 @@ object PrintWhen {
 */
 
 sealed case class Size(
-    height: Int,
     width: Int,
+    height: Int,
     stretchType: net.sf.jasperreports.engine.`type`.StretchTypeEnum)
 
 object Size {
   /**
    * The element preserves its original specified height.
    */
-  def fixed(height: Int, width: Int) = Size(height, width, net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH)
+  def fixed(width: Int, height: Int) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH)
 
   /**
    * The element stretches to the tallest element in it's group (@see ElementGroup).
    */
-  def relativeToTallest(height: Int, width: Int) = Size(height, width, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
+  def relativeToTallest(width: Int, height: Int) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
 
   /**
    * The element will adapt its height to match the new height of the report section it placed on, which has been
    * affected by stretch.
    */
-  def relativeToBand(height: Int, width: Int) = Size(height, width, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
+  def relativeToBand(width: Int, height: Int) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
 
 }
 

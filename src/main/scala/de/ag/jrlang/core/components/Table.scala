@@ -128,10 +128,14 @@ sealed case class Table(columns : Seq[AbstractColumn],
   override def transform : Transformer[(net.sf.jasperreports.components.table.StandardTable, net.sf.jasperreports.engine.component.ComponentKey)] = {
     val r = new net.sf.jasperreports.components.table.StandardTable()
     r.setWhenNoDataType(whenNoData)
-    drop(all(columns map {_.transform})) { r.setColumns(_) } >>
-    // "If no dataset run is specified for a chart or crosstab, the main dataset of the report is used."
-    // Apparently, that is not true for tables - a NPE is raised when you try it - so you cannot have a table of the main dataset
-    drop(data.transform) { r.setDatasetRun(_) } >>
-    ret(r, new ComponentKey("http://jasperreports.sourceforge.net/jasperreports/components", "noprefix", "table"))
+    // The columns (the content) have to be transformed in a fresh expression environment, the auto args
+    // then added to the data(-set) implicitly...
+    //withNewEnvironment {
+      drop(all(columns map {_.transform})) { r.setColumns(_) } >>
+      // "If no dataset run is specified for a chart or crosstab, the main dataset of the report is used."
+      // Apparently, that is not true for tables - a NPE is raised when you try it - so you cannot have a table of the main dataset
+      drop(data.transform) { r.setDatasetRun(_) } >> // must be last!
+      ret(r, new ComponentKey("http://jasperreports.sourceforge.net/jasperreports/components", "noprefix", "table"))
+    //}
   }
 }

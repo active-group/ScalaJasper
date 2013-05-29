@@ -5,6 +5,7 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import de.ag.jrlang.core._
+import net.sf.jasperreports.engine.`type`.{LineStyleEnum, SplitTypeEnum}
 
 @RunWith(classOf[JUnitRunner])
 class ReportTest extends FunSuite {
@@ -53,8 +54,9 @@ class ReportTest extends FunSuite {
         );
     val style2 = mystyle.copy(
         font = mystyle.font.copy(fontSize = Some(8)),
-        backcolor = Some(java.awt.Color.black),
-        forecolor = Some(java.awt.Color.white)
+        forecolor = Some(java.awt.Color.black),
+        backcolor = Some(java.awt.Color.white),
+        line = Pen(lineWidth = Some(1.0F), lineStyle = Some(LineStyleEnum.SOLID), lineColor = Some(new java.awt.Color(0xc0, 0, 0))) // some red
         // mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
         );
     // Experiment: We could use 'parentStyle' for every copy that is made automatically...?!
@@ -62,10 +64,11 @@ class ReportTest extends FunSuite {
     //    parentStyle = Some(mystyle),
     //    font = JRFont.empty.copy(fontSize = Some(8)))),
 
-    val myband = Band.empty.copy(
-            height = 20,
+    val myband = Band(
+            splitType = SplitTypeEnum.STRETCH,
+            height = 200,
             content = Vector(
-                Ellipse(
+                Line(
                     style = style2,
                     pos = Pos.float(x = 0, y = 0),
                     size = Size.fixed(width=55, height = 15)
@@ -97,26 +100,32 @@ class ReportTest extends FunSuite {
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
   <origin band="pageHeader"/>
   <origin band="detail"/>
-  <style name="auto0" backcolor="#000000" fontSize="8" forecolor="#FFFFFF" isPdfEmbedded="false" pdfEncoding="Cp1252" pdfFontName="Helvetica"/>
+  <style name="auto0" forecolor="#000000" fontSize="8" backcolor="#FFFFFF" isPdfEmbedded="false" pdfEncoding="Cp1252" pdfFontName="Helvetica">
+    <pen lineColor="#C00000" lineStyle="Solid" lineWidth="1.0"></pen>
+  </style>
   <page>
-    <ellipse>
+    <line>
       <reportElement uuid="e09461da-2eb3-41f9-9d0c-629f1532d1e8" style="auto0" x="20" y="30" width="55" height="15" origin="0" srcId="1"/>
-    </ellipse>
+    </line>
     <text textHeight="9.421875" lineSpacingFactor="1.1777344" leadingOffset="-1.6875">
       <reportElement uuid="2155e5cc-96c2-4125-a527-c2124b38f01f" style="auto0" x="20" y="30" width="55" height="15" origin="0" srcId="2"/>
       <textContent><![CDATA[Hello]]></textContent>
     </text>
   </page>
 </jasperPrint>
-   
-    val actual = ReportTest.printToXML(r, Map.empty);
-    ReportTest.compareJasperPrintXML(expected, actual);
+
+    val args : Map[String, AnyRef] = Map.empty
+    // ReportTest.printToPDF(r, args, "/Users/frese/tmp/test.pdf")
+
+    val actual = ReportTest.printToXML(r, args)
+    ReportTest.compareJasperPrintXML(expected, actual)
   }
   
   test("image") {
     val mystyle = Style.empty;
-    val myband = Band.empty.copy(
+    val myband = Band(
             height = 200,
+            splitType = SplitTypeEnum.STRETCH,
             content = Vector(
                 Image(expression = Expression.const("src/test/resources/butterfly.jpg"),
                       style = mystyle.copy(scaleImage = Some(net.sf.jasperreports.engine.`type`.ScaleImageEnum.RETAIN_SHAPE)),
@@ -153,8 +162,9 @@ class ReportTest extends FunSuite {
 
   test("textfield with parameter") {
     val mystyle = Style.empty;
-    val myband = Band.empty.copy(
+    val myband = Band(
             height = 200,
+            splitType = SplitTypeEnum.STRETCH,
             content = Vector(
                 TextField(expression = Expression.raw("$P{myarg1}"),
                   size = Size.fixed(width=200, height=50),
@@ -254,7 +264,12 @@ object ReportTest {
     val xml:scala.xml.Elem = scala.xml.XML.loadString(s);
     xml
   }
-  
+
+  def printToPDF(d: Report, args: Map[String, AnyRef], pdfFilename: String) {
+    val p = print(d, args);
+    net.sf.jasperreports.engine.JasperExportManager.exportReportToPdfFile(p, pdfFilename)
+  }
+
   def compareJasperPrintXML(expected_ : scala.xml.Elem, actual_ : scala.xml.Elem) = {
     val expected = prepareForCompare(expected_);
     val actual = prepareForCompare(actual_);

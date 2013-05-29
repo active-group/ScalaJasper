@@ -2,6 +2,7 @@ package de.ag.jrlang.core
 
 import net.sf.jasperreports.{engine => jre}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
+import net.sf.jasperreports.engine.JRDatasetParameter
 
 // TODO: Abstraction over Map+Int?
 case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int,
@@ -136,6 +137,19 @@ object Transformer {
     withState({ st =>
       st.datasetName(v, { st2 => f().exec(st2) }) // do we have to call exec?
     })
+
+  /** returns all automatic parameter (from environment) collected to far */
+  def getCurrentEnvironment : Transformer[Map[AnyRef, JRDesignParameter]] =
+    withState({ st =>
+      (st.env, st)
+    })
+
+  def withNewEnvironment[T](f : => Transformer[T]) : Transformer[T] =
+    withState({previousState => {
+      val newState = previousState.copy(env = Map.empty) // could reset id too
+      val (res, _) = f.exec(newState) // modified state ignored, must be grabbed before end of f
+      (res, previousState)
+    }})
 }
 
 object Compiler {

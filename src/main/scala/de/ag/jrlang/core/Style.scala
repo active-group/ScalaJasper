@@ -48,40 +48,31 @@ object Align {
 
 
 sealed case class Font(
-    fontName: Option[String],
-    fontSize: Option[Int],
-    bold: Option[Boolean],
-    italic: Option[Boolean],
-    strikeThrough: Option[Boolean],
-    underline: Option[Boolean],
-    pdfEncoding: Option[String],
-    pdfFontName: Option[String],
-    pdfEmbedded: Option[Boolean]
+    fontName: Option[String] = None,
+    fontSize: Option[Int] = None,
+    bold: Option[Boolean] = None,
+    italic: Option[Boolean] = None,
+    strikeThrough: Option[Boolean] = None,
+    underline: Option[Boolean] = None,
+    pdfEncoding: Option[String] = None,
+    pdfFontName: Option[String] = None,
+    pdfEmbedded: Option[Boolean] = None
     ) {
   def isEmpty = this == Font.empty
 }
 object Font {
-  val empty = new Font(
-      fontName = None,
-      fontSize = None,
-      bold = None,
-      italic = None,
-      strikeThrough = None,
-      underline = None,
-      pdfEncoding = None,
-      pdfFontName = None,
-      pdfEmbedded = None)
+  val empty = new Font()
 }
 
-sealed case class Pen(lineColor: Option[java.awt.Color],
-                      lineStyle: Option[net.sf.jasperreports.engine.`type`.LineStyleEnum],
-                      lineWidth: Option[Float])
+sealed case class Pen(lineColor: Option[java.awt.Color] = None,
+                      lineStyle: Option[net.sf.jasperreports.engine.`type`.LineStyleEnum] = None,
+                      lineWidth: Option[Float] = None)
 
 object Pen {
   val lineWidth0 = net.sf.jasperreports.engine.JRPen.LINE_WIDTH_0
   val lineWidth1 = net.sf.jasperreports.engine.JRPen.LINE_WIDTH_1
 
-  val empty = new Pen(None, None, None)
+  val empty = new Pen()
 
   private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.JRPen) {
     tgt.setLineColor(o.lineColor.getOrElse(null))
@@ -92,16 +83,16 @@ object Pen {
   }
 }
 
-sealed case class BoxPen(top : Pen,
-                         left : Pen,
-                         bottom : Pen,
-                         right : Pen) {
+sealed case class BoxPen(top : Pen = Pen.empty,
+                         left : Pen = Pen.empty,
+                         bottom : Pen = Pen.empty,
+                         right : Pen = Pen.empty) {
 
   def isUniform = (top == left) && (left == bottom) && (bottom == right)
 }
 
 object BoxPen {
-  val empty = new BoxPen(Pen.empty, Pen.empty, Pen.empty, Pen.empty)
+  val empty = new BoxPen()
 
   /** Creates a box pen that uses the same pen on all sides of the box */
   implicit def uniform(pen: Pen) = new BoxPen(pen, pen, pen, pen)
@@ -119,16 +110,14 @@ object BoxPen {
   }
 }
 
-sealed case class BoxPadding(
-                              top: Option[Int],
-                              left: Option[Int],
-                              bottom: Option[Int],
-                              right: Option[Int]
-                              ) {
+sealed case class BoxPadding(top: Option[Int] = None,
+                             left: Option[Int] = None,
+                             bottom: Option[Int] = None,
+                             right: Option[Int] = None) {
   def isUniform = (top == left) && (left == bottom) && (bottom == right)
 }
 object BoxPadding {
-  val empty = new BoxPadding(None, None, None, None)
+  val empty = new BoxPadding()
 
   val none : BoxPadding = 0
 
@@ -149,14 +138,12 @@ object BoxPadding {
   }
 }
 
-sealed case class LineBox(pen: BoxPen,
-                          padding : BoxPadding
+sealed case class LineBox(pen: BoxPen = BoxPen.empty,
+                          padding : BoxPadding = BoxPadding.empty
                           // style is a fake property, taken from parent "BoxContainer"
                           )
 object LineBox {
-  val empty = new LineBox(
-    pen = BoxPen.empty,
-    padding = BoxPadding.empty)
+  val empty = new LineBox()
 
   private[core] def putLineBox(o: LineBox, tgt: net.sf.jasperreports.engine.JRLineBox) {
     BoxPen.putBoxPen(o.pen, tgt)
@@ -304,6 +291,13 @@ object Style {
     r.setPdfEncoding(o.font.pdfEncoding.getOrElse(null))
     r.setPdfFontName(o.font.pdfFontName.getOrElse(null))
     r.setPdfEmbedded(optBool(o.font.pdfEmbedded))
+    r.setHorizontalAlignment(o.horizontalAlignment.getOrElse(null))
+    r.setVerticalAlignment(o.verticalAlignment.getOrElse(null))
+    r.setMarkup(o.markup.getOrElse(null))
+    r.setMode(o.mode.getOrElse(null))
+    r.setPattern(o.pattern.getOrElse(null))
+    r.setRotation(o.rotation.getOrElse(null))
+    r.setFill(o.fill.getOrElse(null))
 
     Pen.putPen(o.line, r.getLinePen)
     LineBox.putLineBox(o.box, r.getLineBox)

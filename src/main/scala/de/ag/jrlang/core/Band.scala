@@ -7,12 +7,13 @@ import net.sf.jasperreports.engine.design.JRDesignBand
 
 
 import Transformer._
+import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 
 sealed case class Band (
-    height : Int, // calculate from content, under some circumstances?
-    printWhenExpression : Option[Expression[Boolean]],
-    splitType : net.sf.jasperreports.engine.`type`.SplitTypeEnum,
-    content : Seq[Element] // elements + groups
+    splitType : SplitTypeEnum,
+    content : Seq[Element], // elements + groups
+    height : Int = 0, // calculate from content, under some circumstances?
+    printWhenExpression : Option[Expression[Boolean]] = None
     // origin: probably useless (set automatically, after Band is used somewhere)
     ) extends Transformable[JRDesignBand] //FilterMonadic[Band, Iterable[Band]]
 {
@@ -24,13 +25,4 @@ sealed case class Band (
     ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>
     ret(r)
   }
-}
-
-object Band {
-  val empty = new Band(
-      height = 0,
-      printWhenExpression = None,
-      splitType = net.sf.jasperreports.engine.`type`.SplitTypeEnum.IMMEDIATE, //??
-      content = Vector.empty
-      )
 }
