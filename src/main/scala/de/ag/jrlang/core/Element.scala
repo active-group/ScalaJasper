@@ -7,53 +7,13 @@ import Transformer._
 import net.sf.jasperreports.engine.fill.JRIncrementerFactory
 import net.sf.jasperreports.engine.`type`.CalculationEnum
 
-sealed abstract class Element extends Transformable[JRChild] {
+sealed abstract class Element extends Transformable[(JRChild, Int)] {
   def +(e: Element) = ElementGroup(content = Vector(this, e)) // TODO: Optimize if one is a group already
   // more... side-by-side, move etc....?
 
-  /*
-  def transform : Transformer[JRChild] =
-    this match {
-      case v : Ellipse => v.transform
-      case v : StaticText => StaticText.drop(v)
-      case v : Image => Image.drop(v)
-      case v : TextField => TextField.drop(v)
-      case v : Subreport => Subreport.drop(v)
-      case v : Break => Break.drop(v)
-      case v : Frame => Frame.drop(v)
-      case v : Line => Line.drop(v)
-      case v : Rectangle => Rectangle.drop(v)
-      case v : ComponentElement => ComponentElement.drop(v)
-      // GenericElement, Crosstab, Chart
-    }
-  */
 }
 
 object Element {
-  // could probably do the 'implicit CanBuildFrom' technique here; but not worth it.
-  // def foldStyles(st0: StylesMap) : Element;
-
-
-  /*
-  def foldAllStyles(cs: Seq[Element], st: StylesMap) : (Vector[Element], StylesMap) =
-    cs.foldLeft((Vector[Element](), st)) {
-      case ((c, st0), v) => {
-        val (v_, st1) /*: (Element, StylesMap) */ = v match {
-          case v: Ellipse => v.foldStyles(st0)
-          case v: StaticText => v.foldStyles(st0)
-          case v: Image => v.foldStyles(st0)
-          case v: TextField => v.foldStyles(st0)
-          case v: Subreport => v.foldStyles(st0)
-          case v: Break => v.foldStyles(st0)
-          case v: Frame => v.foldStyles(st0)
-          case v: Line => v.foldStyles(st0)
-          case v: Rectangle => v.foldStyles(st0)
-          case v: ComponentElement => v.foldStyles(st0)
-          case _: Element => (v, st0) // undefined, no styles
-        }
-        ((c :+ v_), st1)
-      }}
-  */
 }
 
 abstract class Anchor extends Transformable[(JRDesignExpression, Int)]
@@ -219,7 +179,7 @@ private[core] object ElementUtils {
                          addElementGroup: JRDesignElementGroup => Unit) = {
     // obj will 'own' the created child objects (like in DOM)
     (all(content map { _.transform })) >>= { lst =>
-      for (co <- lst) {
+      for (co <- lst map {_._1}) {
         // although elements and groups end up in the same children list,
         // there is no add method for children, but only for the two
         // classes of children, elements and element groups -
@@ -237,7 +197,7 @@ private[core] object ElementUtils {
           case _ => throw new RuntimeException("Unexpected type of child: " + co.getClass)
         }
       }
-      ret()
+      ret((lst map {_._2}).foldLeft(0)(math.max)) // return max of all heights
     }
   }
 }
@@ -247,14 +207,15 @@ sealed case class Break(
     pos : Pos,
     conditions : Conditions,
     breakType : net.sf.jasperreports.engine.`type`.BreakTypeEnum)
-  extends Element with Transformable[JRDesignBreak] {
+  extends Element
+{
 
-  override def transform : Transformer[JRDesignBreak] = {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
     ElementUtils.putReportElement(key = key, style=Style.empty, pos=pos,
       size=Size.fixed(0, 0), conditions=conditions, r) >>
     ret(r.setType(breakType)) >>
-    ret(r)
+    ret(r, pos.y + 0) // breaks have no height
   }
 }
 object Break {
@@ -277,12 +238,13 @@ object Break {
 /** The only reason to group your report elements is to customize their stretch behavior. */
 sealed case class ElementGroup( // different from a "group"!
     content: Seq[Element])
-  extends Element with Transformable[JRDesignElementGroup] {
+  extends Element {
 
-  def transform = {
+  override def transform = {
     val r = new JRDesignElementGroup()
-    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>
-    ret(r)
+    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>= { h =>
+      ret(r, h)
+    }
   }
 }
 
@@ -297,12 +259,13 @@ sealed case class Frame(
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
-  extends Element with Transformable[JRDesignFrame] {
-  def transform = {
+  extends Element {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignFrame()
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
-    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>
-    ret(r)
+    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>= { _ =>
+      ret(r, pos.y + size.height) // correct? only frame height, and content height is irrelevant?
+    }
   }
 }
 
@@ -312,14 +275,14 @@ sealed case class Ellipse(
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
-  extends Element with Transformable[JRDesignEllipse] {
+  extends Element {
 
-  def transform : Transformer[JRDesignEllipse] = {
+  override def transform = {
     // Unlike other elements (e.g. TextField), the ellipse is missing a default constructor;
     // setting JRDefaultStyleProvider to null like the others do.
     val r = new net.sf.jasperreports.engine.design.JRDesignEllipse(null)
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 
@@ -339,9 +302,9 @@ sealed case class Image(
     evaluationTime: EvaluationTime = EvaluationTime.Now,
     link: Link = Link.empty,
     anchor: Anchor = Anchor.None
-    ) extends Element with Transformable[JRDesignImage]
-{
-  def transform : Transformer[JRDesignImage] = {
+    ) extends Element {
+
+  override def transform = {
     // Unlike other elements (e.g. TextField), the ellipse is missing a default constructor;
     // setting JRDefaultStyleProvider to null like the others do.
     val r = new net.sf.jasperreports.engine.design.JRDesignImage(null)
@@ -366,7 +329,7 @@ sealed case class Image(
       r.setAnchorNameExpression(_),
       r.setBookmarkLevel(_)) >>
     drop(expression.transform)(r.setExpression(_)) >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 
@@ -384,13 +347,13 @@ sealed case class Line(
       *    the upper-right corner.
       *  The default direction for a line is top-down. */
     direction: net.sf.jasperreports.engine.`type`.LineDirectionEnum = net.sf.jasperreports.engine.`type`.LineDirectionEnum.TOP_DOWN)
-  extends Element with Transformable[JRDesignLine] {
+  extends Element {
 
-  def transform : Transformer[JRDesignLine] = {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignLine()
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
     ret(r.setDirection(direction)) >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 
@@ -400,12 +363,12 @@ sealed case class Rectangle(
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
-  extends Element with Transformable[JRDesignRectangle] {
+  extends Element {
 
-  def transform : Transformer[JRDesignRectangle] = {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignRectangle()
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 
@@ -416,13 +379,13 @@ sealed case class StaticText(
     key: String = "",
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default)
-  extends Element with Transformable[JRDesignStaticText] {
+  extends Element {
 
-  def transform : Transformer[JRDesignStaticText] = {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignStaticText()
     r.setText(text)
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 
@@ -442,9 +405,9 @@ sealed case class TextField(
     evaluationTime: EvaluationTime = EvaluationTime.Now,
     // Not sure: optionally overrides the static pattern in style.pattern
     patternExpression: Option[Expression[Any]] = None) // or Expression[String] ?
-  extends Element with Transformable[JRDesignTextField] {
+  extends Element {
 
-  def transform : Transformer[JRDesignTextField] = {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignTextField()
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
     Link.put(link,
@@ -466,7 +429,7 @@ sealed case class TextField(
     EvaluationTime.putEvaluationTime(evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_)) >>
     drop(expression.transform) { r.setExpression(_) } >>
     drop(orNull(patternExpression map {_.transform})) { r.setPatternExpression(_) } >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 
@@ -507,7 +470,7 @@ sealed case class Subreport(
    dataSourceExpression: Option[Expression[JRDataSource]] = None,
    connectionExpression: Option[Expression[java.sql.Connection]] = None,
    returnValues : Seq[ReturnValue] = Vector.empty
-   ) extends Element with Transformable[JRDesignSubreport]
+   ) extends Element
 {
   // we could provide a different constructor, which takes a Report, calls prepare(), a take the JasperReport and
   // the map of arguments, to fill the corresponding attributes
@@ -520,7 +483,7 @@ sealed case class Subreport(
     ret(po)
   }
 
-  def transform : Transformer[JRDesignSubreport] = {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignSubreport(null)
     r.setUsingCache(if (usingCache.isDefined) (usingCache.get : java.lang.Boolean) else null)
 
@@ -534,7 +497,7 @@ sealed case class Subreport(
     drop(orNull(dataSourceExpression map {_.transform})){r.setDataSourceExpression(_)} >>
     drop(orNull(connectionExpression map {_.transform})){r.setConnectionExpression(_)} >>
     (all(returnValues map {_.transform}) >>= { l => l.foreach { r.addReturnValue(_) }; ret() }) >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 
@@ -551,9 +514,9 @@ sealed case class ComponentElement(size : Size,
                                    style: AbstractStyle = Style.inherit,
                                    conditions: Conditions = Conditions.default,
                                    key: String = "")
-  extends Element with Transformable[JRDesignComponentElement] {
+  extends Element {
 
-  def transform : Transformer[JRDesignComponentElement] = {
+  override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignComponentElement()
     ElementUtils.putReportElement(key, style, pos, size, conditions, r) >>
     (component.transform >>= { case (transcomp, transkey) => {
@@ -561,7 +524,7 @@ sealed case class ComponentElement(size : Size,
       r.setComponentKey(transkey)
       ret()
     }}) >>
-    ret(r)
+    ret(r, pos.y + size.height)
   }
 }
 

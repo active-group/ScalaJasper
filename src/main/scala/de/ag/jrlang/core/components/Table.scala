@@ -25,18 +25,18 @@ import Transformer._
 
 // Like a ElementGroup, plus a bit more
 sealed case class TableCell(
-    height : Int,
-    content: Seq[Element],
+    height : BandHeight = BandHeight.Auto,
+    content: Seq[Element] = Seq.empty,
     style : AbstractStyle = Style.inherit,
     rowSpan : Option[Int] = None) extends Transformable[DesignCell] {
 
   def transform : Transformer[DesignCell] = {
     val r = new net.sf.jasperreports.components.table.DesignCell()
-    r.setHeight(height)
     r.setRowSpan(if (rowSpan.isDefined) rowSpan.get : java.lang.Integer else null)
 
     drop(style.transform) { so => r.setStyleNameReference(so.getOrElse(null)) } >>
-    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>
+    (ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>=
+      BandHeight.calc(height)(r.setHeight(_))) >>
     ret(r)
   }
 }
