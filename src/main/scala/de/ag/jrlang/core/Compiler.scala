@@ -171,8 +171,7 @@ object Transformer {
 object Compiler {
   implicit def compile(o : Report) : (jre.JasperReport, Map[String, AnyRef]) = {
     // basic object generation...
-    val maxElementWidth = o.absoluteColumnWidth
-    val (r, tstate) = o.transform.exec(TransformationState.initial(maxElementWidth))
+    val (r, tstate) = o.transform.exec(TransformationState.initial(0 px))
 
     // now insert collected auto-generated properties into basic object
 

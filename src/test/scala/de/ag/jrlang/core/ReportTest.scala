@@ -5,7 +5,17 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import de.ag.jrlang.core.Dimensions._
-import net.sf.jasperreports.engine.`type`.{LineStyleEnum, SplitTypeEnum}
+import net.sf.jasperreports.engine.`type`._
+import de.ag.jrlang.core.Parameter
+import de.ag.jrlang.core.SummaryBand
+import scala.Some
+import de.ag.jrlang.core.TextField
+import de.ag.jrlang.core.Band
+import de.ag.jrlang.core.StaticText
+import de.ag.jrlang.core.Line
+import de.ag.jrlang.core.TitleBand
+import de.ag.jrlang.core.Image
+import de.ag.jrlang.core.Report
 
 @RunWith(classOf[JUnitRunner])
 class ReportTest extends FunSuite {
@@ -85,11 +95,8 @@ class ReportTest extends FunSuite {
         page = Page(
             header = Some(myband)
             // footer
-            ),
-        summary = SummaryBand.empty.copy(
-            // band = Some(myband)
             )
-        );
+        )
     
     val expected =
 <jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="hello-world-report" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
@@ -200,9 +207,15 @@ class ReportTest extends FunSuite {
   }
 
   /*
-  def makeRegionsCheatSheet = {
-    def demoBand(name: String) = {
-      val st = Style(box = LineBox(pen = BoxPen.uniform(Pen(lineWidth = Some(0.5F)))))
+  test("make regions cheat sheet") {
+    makeRegionsCheatSheet()
+  }
+  */
+  def makeRegionsCheatSheet() {
+    def demoBand(name: String, h:Height = Height.fixed(2 cm)) = {
+      val st = Style(box = LineBox(pen = BoxPen.uniform(Pen(lineWidth = Some(0.5F)))),
+        verticalAlignment = Some(VerticalAlignEnum.MIDDLE),
+        horizontalAlignment = Some(HorizontalAlignEnum.CENTER))
       Band(
         height = BandHeight.Auto,
         splitType = SplitTypeEnum.STRETCH,
@@ -210,7 +223,7 @@ class ReportTest extends FunSuite {
           TextField(
             expression = Expression.const(name),
             style = st,
-            width=100 percent, height = Height.fixed(2 cm))
+            width=100 percent, height = h)
         ))
     }
     val r = Report(name = "cheat sheet",
@@ -218,20 +231,24 @@ class ReportTest extends FunSuite {
         header = Some(demoBand("page header")),
         footer = Some(demoBand("page footer")),
         columns = Columns(count = 2,
+          spacing = 5 px,
           header = Some(demoBand("column header")),
-          footer = FloatingBand(Some(demoBand("column footer")))
-          )
+          footer = Some(FloatingBand(demoBand("column footer (floating)"), floating=true))
+          ),
+        background = Some(Band(splitType = SplitTypeEnum.IMMEDIATE, // split type of background?
+          content = Vector(TextField(
+            expression = Expression.const("background"),
+            width = 100 percent, height = Height.relativeToBand(100 px)))))
       ),
-      details = List(demoBand("details")),
-      summary = SummaryBand(Some(demoBand("summary"))),
-      title = TitleBand(demoBand("title")),
-      lastPageFooter = Some(demoBand("last page footer"))
+      details = (1 to 12) map {i => demoBand("details "+i) },
+      summary = Some(SummaryBand(demoBand("summary (new page, with header and footer)"), newPage=true, withPageHeaderAndFooter=true)),
+      title = Some(TitleBand(demoBand("title (new page)"), newPage=true))
+      // would override page footer lastPageFooter = Some(demoBand("last page footer"))
     )
 
-    val actual = ReportTest.printToXML(r, Map.empty);
-    ReportTest.compareJasperPrintXML(expected, actual);
+    ReportTest.printToPDF(r, Map.empty, "/Users/frese/tmp/JasperCheatSheet.pdf")
   }
-  */
+
 
   /*
   test("persistency") {

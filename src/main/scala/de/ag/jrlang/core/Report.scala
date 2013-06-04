@@ -13,12 +13,8 @@ import net.sf.jasperreports.engine.`type`.{PrintOrderEnum, RunDirectionEnum, Ori
 // have split it up somehow...
 
 sealed case class FloatingBand(
-    band : Option[Band] = None,
+    band : Band,
     floating : Boolean = false)
-
-object FloatingBand {
-  val empty = new FloatingBand()
-}
 
 /** top and bottom margins can be relative to the page height, left and right relative to the page with */
 // same order as in CSS
@@ -36,21 +32,14 @@ object Margins {
 }
 
 sealed case class SummaryBand(
-    band : Option[Band] = None,
+    band : Band,
     newPage : Boolean = false,
+    // probably only relevant when newPage=true... (TODO encode that?)
     withPageHeaderAndFooter : Boolean = false)
 
-object SummaryBand {
-  val empty = new SummaryBand()
-}
-
 sealed case class TitleBand(
-    band : Option[Band] = None,
+    band : Band,
     newPage : Boolean = false)
-
-object TitleBand {
-  val empty = TitleBand()
-}
 
 /** Orientation is used mostly to inform printers of page layouts. */
 sealed case class PageFormat(width: Length, height: Length, orientation: OrientationEnum) {
@@ -66,7 +55,7 @@ object PageFormat {
 
 sealed case class Columns(count : Int = 1,
                           direction : RunDirectionEnum = RunDirectionEnum.LTR,
-                          footer : FloatingBand = FloatingBand.empty,
+                          footer : Option[FloatingBand] = None,
                           header : Option[Band] = None,
                           spacing : Length = 0 px, // between columns
 
@@ -106,14 +95,19 @@ sealed case class Report(
   lastPageFooter : Option[Band] = None,
   noData : Option[Band] = None,
   page : Page = Page.default,
-  summary : SummaryBand = SummaryBand.empty,
-  title : TitleBand = TitleBand.empty
+  summary : Option[SummaryBand] = None,
+  title : Option[TitleBand] = None
   // UUID probably not
 ) extends Transformable[JasperDesign] {
 
   private def absoluteRightMargin = page.margins.right asPartOf page.format.width
   private def absoluteLeftMargin = page.margins.left asPartOf page.format.width
-  private[core] def absoluteColumnWidth = page.columns.width.asPartOf(page.format.width - absoluteLeftMargin - absoluteRightMargin - (page.columns.spacing * (page.columns.count - 1)))
+  private def absolutePageContentWith = page.format.width - absoluteLeftMargin - absoluteRightMargin
+
+  private[core] def absoluteColumnWidth = {
+    val allColumnWidth = absolutePageContentWith - (page.columns.spacing * (page.columns.count - 1))
+    page.columns.width.asPartOf(allColumnWidth / page.columns.count)
+  }
 
 
   def transform = {
@@ -130,17 +124,17 @@ sealed case class Report(
     r.setOrientation(page.format.orientation)
     r.setColumnCount(page.columns.count)
     r.setColumnDirection(page.columns.direction)
-    r.setFloatColumnFooter(page.columns.footer.floating)
+    r.setFloatColumnFooter(page.columns.footer map {_.floating} getOrElse(false))
     r.setColumnSpacing(page.columns.spacing inAbsolutePixels)
     r.setColumnWidth(absoluteColumnWidth inAbsolutePixels)
     r.setPrintOrder(page.columns.printOrder)
     r.setIgnorePagination(ignorePagination)
     r.setLanguage(language)
-    r.setSummaryNewPage(summary.newPage)
-    r.setSummaryWithPageHeaderAndFooter(summary.withPageHeaderAndFooter)
+    r.setSummaryNewPage(summary map { _.newPage } getOrElse(false))
+    r.setSummaryWithPageHeaderAndFooter(summary map { _.withPageHeaderAndFooter } getOrElse(false))
     r.getTemplatesList.addAll(templates)
     imports foreach { r.addImport(_) } // Java imports for expressions - remove?
-    r.setTitleNewPage(title.newPage)
+    r.setTitleNewPage(title map { _.newPage } getOrElse(false))
 
     // monadic transformation...
 
@@ -149,24 +143,29 @@ sealed case class Report(
     (all(styles map { case(n,s) => s.mkDesignStyle >>= { js => js.setName(n); ret(js) } } toSeq) >>= {
       sts => sts foreach { r.addStyle(_) }; ret()
     }) >>
-    (all(details map {_.transform}) >>= {
-      bands => bands foreach { r.getDetailSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
-    }) >>
     // user defined datasets, generated datasets are added by caller
     (all(subDatasets map {
       case(n,d) => d.transform >>= { o => o.setName(n); ret(o) }
     } toList) >>= {
       ds => ds foreach { r.addDataset(_) }; ret()
     }) >>
-    drop(orNull(page.columns.footer.band map {_.transform})) { r.setColumnFooter(_) } >>
-    drop(orNull(page.columns.header map {_.transform})) { r.setColumnHeader(_) } >>
-    drop(orNull(lastPageFooter map {_.transform})) { r.setLastPageFooter(_) } >>
-    drop(orNull(noData map {_.transform})) { r.setNoData(_) } >>
-    drop(orNull(page.footer map {_.transform})) { r.setPageFooter(_) } >>
-    drop(orNull(page.header map {_.transform})) { r.setPageHeader(_) } >>
-    drop(orNull(page.background map {_.transform})) { r.setBackground(_) } >>
-    drop(orNull(summary.band map {_.transform})) { r.setSummary(_) } >>
-    drop(orNull(title.band map {_.transform})) { r.setTitle(_) } >>
+    (withContainerWidth(absoluteColumnWidth) {
+      // although jasper allows details to be wider than the column, you usually want 100% to mean that width
+      (all(details map {_.transform}) >>= {
+        bands => bands foreach { r.getDetailSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
+      }) >>
+      drop(orNull(page.columns.footer map {_.band.transform})) { r.setColumnFooter(_) } >>
+      drop(orNull(page.columns.header map {_.transform})) { r.setColumnHeader(_) }
+    }) >>
+    (withContainerWidth(absolutePageContentWith) {
+      drop(orNull(lastPageFooter map {_.transform})) { r.setLastPageFooter(_) } >>
+      drop(orNull(noData map {_.transform})) { r.setNoData(_) } >>
+      drop(orNull(page.footer map {_.transform})) { r.setPageFooter(_) } >>
+      drop(orNull(summary map {_.band.transform})) { r.setSummary(_) } >>
+      drop(orNull(title map {_.band.transform})) { r.setTitle(_) } >>
+      drop(orNull(page.header map {_.transform})) { r.setPageHeader(_) } >>
+      drop(orNull(page.background map {_.transform})) { r.setBackground(_) }
+    }) >>
     mainDataset.fill(r.getMainDesignDataset) >> // must be last!
     ret(r)
   }

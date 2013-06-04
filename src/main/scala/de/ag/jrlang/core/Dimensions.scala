@@ -18,11 +18,12 @@ object Dimensions {
     def inInch = inMM / 25.4
     */
     def inPixels = value * unit.inJasperPixels
-    def inAbsolutePixels : Int = scala.math.round(inPixels) toInt // floor to be sure? // better not implicit maybe?!
+    def inAbsolutePixels : Int = scala.math.floor(inPixels) toInt // floor to be sure, hope that's ok for everybody
 
     def -(rhs: Length) : Length = Length(this.inPixels - rhs.inPixels, LengthUnit.px) // or keep one of the units?
     def +(rhs: Length) : Length = Length(this.inPixels + rhs.inPixels, LengthUnit.px)
     def /(rhs: Length) : Double = (this.inPixels / rhs.inPixels)
+    def /(rhs: Double) : Length = Length(this.inPixels / rhs, LengthUnit.px)
     def *(f: Double) : Length = Length(this.inPixels * f, LengthUnit.px)
   }
 
