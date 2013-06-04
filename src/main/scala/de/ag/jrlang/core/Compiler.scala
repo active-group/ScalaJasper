@@ -3,9 +3,10 @@ package de.ag.jrlang.core
 import net.sf.jasperreports.{engine => jre}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
 import net.sf.jasperreports.engine.JRDatasetParameter
+import de.ag.jrlang.core.Dimensions.Length
 
 // TODO: Abstraction over Map+Int?
-case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int,
+case class TransformationState(containerWidth: Length, env: Map[AnyRef, JRDesignParameter], nextp: Int,
                                styles: Map[AbstractStyle, JRDesignStyle], nextst: Int,
                                datasets: Map[Dataset, JRDesignDataset], nextds: Int) {
   def binding(v : AnyRef) = {
@@ -58,7 +59,7 @@ case class TransformationState(env: Map[AnyRef, JRDesignParameter], nextp: Int,
 }
 
 object TransformationState {
-  val empty = TransformationState(Map.empty, 0, Map.empty, 0, Map.empty, 0)
+  def initial(containerWidth: Length) = TransformationState(containerWidth, Map.empty, 0, Map.empty, 0, Map.empty, 0)
 }
 
 trait Transformable[+A] {
@@ -122,6 +123,8 @@ object Transformer {
       def exec(st: TransformationState) = f(st)
     }
 
+  private def getState : Transformer[TransformationState] = withState({ st => (st, st)})
+
   /** returns a parameter name for the given value */
   def binding(v : AnyRef) : Transformer[String] = withState({st => st.binding(v)})
 
@@ -140,9 +143,7 @@ object Transformer {
 
   /** returns all automatic parameter (from environment) collected to far */
   def getCurrentEnvironment : Transformer[Map[AnyRef, JRDesignParameter]] =
-    withState({ st =>
-      (st.env, st)
-    })
+    getState >>= { st => ret(st.env) }
 
   def withNewEnvironment[T](f : => Transformer[T]) : Transformer[T] =
     withState({previousState => {
@@ -150,12 +151,28 @@ object Transformer {
       val (res, _) = f.exec(newState) // modified state ignored, must be grabbed before end of f
       (res, previousState)
     }})
+
+  def setCurrentContainerWidth(width: Length) : Transformer[Unit] =
+    withState({ st => ((), st.copy(containerWidth = width)) })
+
+  def currentContainerWidth : Transformer[Length] =
+    getState >>= { st => ret(st.containerWidth) }
+
+  def withContainerWidth[A](width: Length)(f : => Transformer[A]) : Transformer[A] =
+    currentContainerWidth >>= {
+      prev =>
+        setCurrentContainerWidth(width) >> f >>= { res =>
+          setCurrentContainerWidth(prev)
+          ret(res)
+        }
+    }
 }
 
 object Compiler {
   implicit def compile(o : Report) : (jre.JasperReport, Map[String, AnyRef]) = {
     // basic object generation...
-    val (r, tstate) = o.transform.exec(TransformationState.empty)
+    val maxElementWidth = o.absoluteColumnWidth
+    val (r, tstate) = o.transform.exec(TransformationState.initial(maxElementWidth))
 
     // now insert collected auto-generated properties into basic object
 

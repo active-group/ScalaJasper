@@ -5,6 +5,9 @@ import scala.collection.JavaConversions._
 import net.sf.jasperreports.engine.design.{JRDesignParameter, JRDesignSection, JasperDesign}
 
 import Transformer._
+import Dimensions._
+
+import net.sf.jasperreports.engine.`type`.{PrintOrderEnum, RunDirectionEnum, OrientationEnum}
 
 // we have around 40 fields; but Scala functions and case classes cannot have more than 22 parameters :-/
 // have split it up somehow...
@@ -17,12 +20,20 @@ object FloatingBand {
   val empty = new FloatingBand()
 }
 
+/** top and bottom margins can be relative to the page height, left and right relative to the page with */
 // same order as in CSS
 sealed case class Margins(
-    top : Int,
-    right : Int,
-    bottom : Int,
-    left : Int)
+    top : RestrictedLength = 0 px,
+    right : RestrictedLength = 0 px,
+    bottom : RestrictedLength = 0 px,
+    left : RestrictedLength = 0 px)
+
+object Margins {
+  val none = Margins()
+
+  /** as defined in JRBaseReport.java */
+  val default = Margins(left=20 px, right=20 px, top=30 px, bottom=30 px)
+}
 
 sealed case class SummaryBand(
     band : Option[Band] = None,
@@ -41,58 +52,44 @@ object TitleBand {
   val empty = TitleBand()
 }
 
+/** Orientation is used mostly to inform printers of page layouts. */
+sealed case class PageFormat(width: Length, height: Length, orientation: OrientationEnum) {
+  def quotient : Double = height / width
+}
+object PageFormat {
+  /** DIN A4 portrait */
+  val A4portrait = PageFormat(210 mm, 297 mm, OrientationEnum.PORTRAIT)
+  val A4 = A4portrait
+  /** DIN A4 landscape */
+  val A4landscape = PageFormat(297 mm, 210 mm, OrientationEnum.LANDSCAPE)
+}
+
 sealed case class Page(
-    height : Int,
-    width : Int,
-    margins : Margins,
-    orientation : net.sf.jasperreports.engine.`type`.OrientationEnum,
-    footer : Option[Band],
-    header : Option[Band],
-    background : Option[Band])
+    format: PageFormat = PageFormat.A4,
+    margins : Margins = Margins.default,
+    footer : Option[Band] = None,
+    header : Option[Band] = None,
+    background : Option[Band] = None)
 
 object Page {
-  val empty = {
-    // very explicit defaults...
-    val o = new net.sf.jasperreports.engine.design.JasperDesign();
-    new Page(
-        height = o.getPageHeight,
-        width = o.getPageWidth,
-        margins = new Margins(
-            left = o.getLeftMargin,
-            right = o.getRightMargin,
-            top = o.getTopMargin,
-            bottom = o.getBottomMargin),
-        orientation = o.getOrientationValue,
-        footer = None,
-        header = None,
-        background = None
-    )
-  }
+  val empty = Page()
 }
 
 sealed case class Columns(
-    count : Int,
-    direction : net.sf.jasperreports.engine.`type`.RunDirectionEnum,
-    footer : FloatingBand,
-    header : Option[Band],
-    spacing : Int,
-    width : Int,
-    printOrder : net.sf.jasperreports.engine.`type`.PrintOrderEnum)
+    count : Int = 1,
+    direction : RunDirectionEnum = RunDirectionEnum.LTR,
+    footer : FloatingBand = FloatingBand.empty,
+    header : Option[Band] = None,
+    spacing : Length = 0 px, // between columns
+
+    /* 100% = page width - left margin - right margin - (spacing * (column count - 1)) */
+    width : RestrictedLength = 100 percent, // 555 is jasper's default, which should be 100%...?!
+    /** only relevant when count > 1 */
+    printOrder : PrintOrderEnum = PrintOrderEnum.VERTICAL
+)
 
 object Columns {
-  val empty = {
-    // very explicit defaults...
-    val o = new net.sf.jasperreports.engine.design.JasperDesign();
-    new Columns(
-        count = o.getColumnCount,
-        direction = o.getColumnDirection,
-        footer = FloatingBand.empty,
-        header = None,
-        spacing = o.getColumnSpacing,
-        width = o.getColumnWidth,
-        printOrder = o.getPrintOrderValue
-        )
-  }
+  val empty = Columns()
 }
 
 sealed case class Report(
@@ -115,23 +112,29 @@ sealed case class Report(
   title : TitleBand = TitleBand.empty
   // UUID probably not
 ) extends Transformable[JasperDesign] {
+
+  private def absoluteRightMargin = page.margins.right asPartOf page.format.width
+  private def absoluteLeftMargin = page.margins.left asPartOf page.format.width
+  private[core] def absoluteColumnWidth = columns.width.asPartOf(page.format.width - absoluteLeftMargin - absoluteRightMargin - (columns.spacing * (columns.count - 1)))
+
+
   def transform = {
     val r = new JasperDesign()
     //(o: Report, r: jre.design.JasperDesign, defaultStyleName: String, styles: Seq[(String, Style.Internal)]) = {
     // simple properties first that need not run in the monad:
     r.setName(name)
-    r.setPageHeight(page.height)
-    r.setPageWidth(page.width)
-    r.setTopMargin(page.margins.top)
-    r.setRightMargin(page.margins.right)
-    r.setBottomMargin(page.margins.bottom)
-    r.setLeftMargin(page.margins.left)
-    r.setOrientation(page.orientation)
+    r.setPageHeight(page.format.height.inAbsolutePixels)
+    r.setPageWidth(page.format.width.inAbsolutePixels)
+    r.setTopMargin(page.margins.top asPartOf page.format.height inAbsolutePixels)
+    r.setRightMargin(absoluteRightMargin inAbsolutePixels)
+    r.setBottomMargin(page.margins.bottom asPartOf page.format.height inAbsolutePixels)
+    r.setLeftMargin(absoluteLeftMargin inAbsolutePixels)
+    r.setOrientation(page.format.orientation)
     r.setColumnCount(columns.count)
     r.setColumnDirection(columns.direction)
     r.setFloatColumnFooter(columns.footer.floating)
-    r.setColumnSpacing(columns.spacing)
-    r.setColumnWidth(columns.width)
+    r.setColumnSpacing(columns.spacing inAbsolutePixels)
+    r.setColumnWidth(absoluteColumnWidth inAbsolutePixels)
     r.setPrintOrder(columns.printOrder)
     r.setIgnorePagination(ignorePagination)
     r.setLanguage(language)

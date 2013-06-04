@@ -10,6 +10,7 @@ import net.sf.jasperreports.engine.JRDatasetParameter
 import net.sf.jasperreports.engine.design.{JRDesignDatasetParameter, JRDesignSubreportParameter}
 
 import Transformer._
+import de.ag.jrlang.core.Dimensions.RestrictedLength
 
 /** From the "Ultimate guide":
   * "In order to obtain truly dynamic table structures, users had to create report templates at runtime using the
@@ -61,24 +62,30 @@ abstract sealed class AbstractColumn(
                                       // no idea what 'tableHeader' and 'tableFooter' (of a column!) are
                                       tableHeader: Option[TableCell],
                                       tableFooter: Option[TableCell],
-                                      width: Int,
+                                      width: RestrictedLength,
                                       printWhenExpression: Option[Expression[Boolean]])
   extends Transformable[BaseColumn] {
 
   protected def fill(tgt: net.sf.jasperreports.components.table.StandardBaseColumn) = {
-    drop(orNull(header map { _.transform })) { tgt.setColumnHeader(_) } >>
-    drop(orNull(footer map { _.transform })) { tgt.setColumnFooter(_) } >>
-    drop(all(groupHeaders map { _.transform })) { tgt.setGroupHeaders(_) } >>
-    drop(all(groupFooters map { _.transform })) { tgt.setGroupFooters(_) } >>
-    drop(orNull(tableHeader map { _.transform })) { tgt.setTableHeader(_) } >>
-      drop(orNull(tableFooter map { _.transform })) { tgt.setTableFooter(_) } >>
-    ret(tgt.setWidth(width)) >>
-    drop(orNull(printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) }
+    currentContainerWidth >>= { containerWidth =>
+      val absoluteWidth = width asPartOf containerWidth
+      (withContainerWidth(absoluteWidth) {
+        drop(orNull(header map { _.transform })) { tgt.setColumnHeader(_) } >>
+        drop(orNull(footer map { _.transform })) { tgt.setColumnFooter(_) } >>
+        drop(all(groupHeaders map { _.transform })) { tgt.setGroupHeaders(_) } >>
+        drop(all(groupFooters map { _.transform })) { tgt.setGroupFooters(_) } >>
+        drop(orNull(tableHeader map { _.transform })) { tgt.setTableHeader(_) } >>
+        drop(orNull(tableFooter map { _.transform })) { tgt.setTableFooter(_) }
+      }) >>
+      ret(tgt.setWidth(absoluteWidth inAbsolutePixels)) >>
+      drop(orNull(printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) } >>
+      setCurrentContainerWidth(containerWidth) >> // reset
+      ret(absoluteWidth) }
   }
 }
 
 sealed case class TableColumn(
-  width: Int,
+  width: RestrictedLength, // restricted by containing element (page)
   detail: TableCell,
   header: Option[TableCell] = None,
   footer: Option[TableCell] = None,
@@ -93,9 +100,12 @@ sealed case class TableColumn(
 
   override def transform = {
     val r = new net.sf.jasperreports.components.table.StandardColumn();
-    super.fill(r) >>
-    drop(detail.transform) { r.setDetailCell(_) } >>
-    ret(r)
+    super.fill(r) >>= { absoluteWidth =>
+      withContainerWidth(absoluteWidth) {
+        drop(detail.transform) { r.setDetailCell(_) } >>
+        ret(r)
+      }
+    }
   }
 }
 
@@ -106,7 +116,7 @@ sealed case class TableColumnGroup(
   groupFooters : Seq[TableGroupCell],
   tableHeader: Option[TableCell],
   tableFooter: Option[TableCell],
-  width: Int,
+  width: RestrictedLength,
   printWhenExpression: Option[Expression[Boolean]],
   columns: Seq[AbstractColumn])
   extends AbstractColumn(header, footer, groupHeaders, groupFooters, tableHeader, tableFooter, width, printWhenExpression)
@@ -114,9 +124,12 @@ sealed case class TableColumnGroup(
 
   override def transform : Transformer[StandardColumnGroup] = {
     val r = new net.sf.jasperreports.components.table.StandardColumnGroup()
-    super.fill(r) >>
-    drop(all(columns map {_.transform})) { r.setColumns(_) } >>
-    ret(r)
+    super.fill(r) >>= { absoluteWidth =>
+      withContainerWidth(absoluteWidth) {
+        drop(all(columns map {_.transform})) { r.setColumns(_) } >>
+        ret(r)
+      }
+    }
   }
 }
 

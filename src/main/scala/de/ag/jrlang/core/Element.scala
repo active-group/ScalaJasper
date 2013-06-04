@@ -6,8 +6,9 @@ import net.sf.jasperreports.engine.design._
 import Transformer._
 import net.sf.jasperreports.engine.fill.JRIncrementerFactory
 import net.sf.jasperreports.engine.`type`.CalculationEnum
+import Dimensions._
 
-sealed abstract class Element extends Transformable[(JRChild, Int)] {
+sealed abstract class Element extends Transformable[(JRChild, Length)] {
   def +(e: Element) = ElementGroup(content = Vector(this, e)) // TODO: Optimize if one is a group already
   // more... side-by-side, move etc....?
 
@@ -73,41 +74,33 @@ object EvaluationTime {
   }
 }
 
-/*
-sealed abstract class PrintWhen;
-object PrintWhen {
-  sealed case class Expression(expression: Expression) extends PrintWhen;
-  
-}
-*/
-
 sealed case class Size(
-    width: Int,
-    height: Int,
+    width: RestrictedLength,
+    height: Length,
     stretchType: net.sf.jasperreports.engine.`type`.StretchTypeEnum)
 
 object Size {
   /**
    * The element preserves its original specified height.
    */
-  def fixed(width: Int, height: Int) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH)
+  def fixed(width: RestrictedLength, height: Length) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.NO_STRETCH)
 
   /**
    * The element stretches to the tallest element in it's group (@see ElementGroup).
    */
-  def relativeToTallest(width: Int, height: Int) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
+  def relativeToTallest(width: RestrictedLength, height: Length) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
 
   /**
    * The element will adapt its height to match the new height of the report section it placed on, which has been
    * affected by stretch.
    */
-  def relativeToBand(width: Int, height: Int) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
+  def relativeToBand(width: RestrictedLength, height: Length) = Size(width=width, height=height, net.sf.jasperreports.engine.`type`.StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
 
 }
 
 sealed case class Pos(
-    x: Int,
-    y: Int,
+    x: RestrictedLength,
+    y: Length,
     positionType: net.sf.jasperreports.engine.`type`.PositionTypeEnum)
 
 object Pos {
@@ -115,19 +108,19 @@ object Pos {
    * The element will float in its parent section if it is pushed downwards by other elements fount above it.
    * It will try to conserve the distance between it and the neighboring elements placed immediately above.
    */
-  def float(x: Int, y: Int) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FLOAT)
+  def float(x: RestrictedLength, y: Length) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FLOAT)
 
   /**
    * The element will simply ignore what happens to the other section elements and tries to
    * conserve the y offset measured from the top of its parent report section.
    */
-  def fixedTop(x: Int, y: Int) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FIX_RELATIVE_TO_TOP)
+  def fixedTop(x: RestrictedLength, y: Length) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FIX_RELATIVE_TO_TOP)
 
   /**
    * If the height of the parent report section is affected by elements that stretch, the current element will try to
    * conserve the original distance between its bottom margin and the bottom of the band.
    */
-  def fixedBottom(x: Int, y: Int) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FIX_RELATIVE_TO_BOTTOM)
+  def fixedBottom(x: RestrictedLength, y: Length) = Pos(x, y, net.sf.jasperreports.engine.`type`.PositionTypeEnum.FIX_RELATIVE_TO_BOTTOM)
 }
 
 sealed case class Conditions(
@@ -153,15 +146,19 @@ private[core] object ElementUtils {
       // custom properties?
       tgt:JRDesignElement) = {
     tgt.setKey(if (key == "") null else key) // don't know if it's important to be null
-    tgt.setHeight(size.height)
-    tgt.setWidth(size.width)
+    tgt.setHeight(size.height inAbsolutePixels)
     tgt.setStretchType(size.stretchType)
-    tgt.setX(pos.x)
-    tgt.setY(pos.y)
+    tgt.setY(pos.y inAbsolutePixels)
     tgt.setPositionType(pos.positionType)
     tgt.setPrintRepeatedValues(conditions.printRepeatedValues)
     tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand)
     tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows)
+
+    (currentContainerWidth >>= { parentWidth => {
+      tgt.setWidth(size.width asPartOf parentWidth inAbsolutePixels)
+      tgt.setX(pos.x asPartOf parentWidth inAbsolutePixels)
+      ret()
+    }}) >>
     drop(orNull(conditions.printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) } >>
     // might take colors and mode out of the style - if it's worth it
     // forecolor: Option[java.awt.Color],
@@ -197,7 +194,7 @@ private[core] object ElementUtils {
           case _ => throw new RuntimeException("Unexpected type of child: " + co.getClass)
         }
       }
-      ret((lst map {_._2}).foldLeft(0)(math.max)) // return max of all heights
+      ret((lst map {_._2}).foldLeft(0 px) { (l1:Length, l2:Length) => math.max(l1.inAbsolutePixels, l2.inAbsolutePixels) px }) // return max of all heights
     }
   }
 }
@@ -213,9 +210,9 @@ sealed case class Break(
   override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
     ElementUtils.putReportElement(key = key, style=Style.empty, pos=pos,
-      size=Size.fixed(0, 0), conditions=conditions, r) >>
+      size=Size.fixed(0 px, 0 px), conditions=conditions, r) >>
     ret(r.setType(breakType)) >>
-    ret(r, pos.y + 0) // breaks have no height
+    ret(r, pos.y) // breaks have no height
   }
 }
 object Break {

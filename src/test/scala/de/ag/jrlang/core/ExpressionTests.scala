@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import de.ag.jrlang.core._
+import de.ag.jrlang.core.Dimensions._
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 
 @RunWith(classOf[JUnitRunner])
@@ -33,12 +33,12 @@ class ExpressionTests extends FunSuite {
       page = Page.empty.copy(
         header = Some(Band(
           splitType = SplitTypeEnum.STRETCH,
-          height = 20,
+          height = 20 px,
           content = Vector(
             StaticText(
               text = "Hello",
-              pos = Pos.float(x = 0, y = 0),
-              size = Size.fixed(width=55, height = 15),
+              pos = Pos.float(x = 0 px, y = 0 px),
+              size = Size.fixed(width=55 px, height = 15 px),
               conditions = Conditions(printWhenExpression=Some(Expression.raw("$P{fn0}.apply($P{REPORT_PARAMETERS_MAP})")))
             )
           )))
@@ -98,12 +98,12 @@ class ExpressionTests extends FunSuite {
       page = Page.empty.copy(
         header = Some(Band(
           splitType = SplitTypeEnum.STRETCH,
-          height = 20,
+          height = 20 px,
           content = Vector(
             StaticText(
               text = "Hello",
-              pos = Pos.float(x = 0, y = 0),
-              size = Size.fixed(width=55, height = 15),
+              pos = Pos.float(x = 0 px, y = 0 px),
+              size = Size.fixed(width=55 px, height = 15 px),
               conditions = Conditions(
                 printWhenExpression=Some(Expression.call(fn0, Expression.P("REPORT_PARAMETERS_MAP"))))
             )

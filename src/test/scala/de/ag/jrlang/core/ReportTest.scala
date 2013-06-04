@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import de.ag.jrlang.core._
+import de.ag.jrlang.core.Dimensions._
 import net.sf.jasperreports.engine.`type`.{LineStyleEnum, SplitTypeEnum}
 
 @RunWith(classOf[JUnitRunner])
@@ -66,18 +66,18 @@ class ReportTest extends FunSuite {
 
     val myband = Band(
             splitType = SplitTypeEnum.STRETCH,
-            height = 200,
+            height = 200 px,
             content = Vector(
                 Line(
                     style = style2,
-                    pos = Pos.float(x = 0, y = 0),
-                    size = Size.fixed(width=55, height = 15)
+                    pos = Pos.float(x = 0 px, y = 0 px),
+                    size = Size.fixed(width=55 px, height = 15 px)
                     ),
                 StaticText(
                     text = "Hello",
                     style = style2,
-                    pos = Pos.float(x = 0, y = 0),
-                    size = Size.fixed(width=55, height = 15)
+                    pos = Pos.float(x = 0 px, y = 0 px),
+                    size = Size.fixed(width=55 px, height = 15 px)
                     )
                 ));
     val r = Report("hello-world-report").copy(
@@ -124,14 +124,14 @@ class ReportTest extends FunSuite {
   test("image") {
     val mystyle = Style.empty;
     val myband = Band(
-            height = 200,
+            height = 200 px,
             splitType = SplitTypeEnum.STRETCH,
             content = Vector(
                 Image(expression = Expression.const("src/test/resources/butterfly.jpg"),
                       style = mystyle.copy(scaleImage = Some(net.sf.jasperreports.engine.`type`.ScaleImageEnum.RETAIN_SHAPE)),
                       lazily = true,
-                      pos = Pos.float(0, 0),
-                      size = Size.fixed(height = 150, width = 150))
+                      pos = Pos.float(0 px, 0 px),
+                      size = Size.fixed(height = 150 px, width = 150 px))
                 ));
     val r = Report("myfirstimage").copy(
         defaultStyle = mystyle,
@@ -163,12 +163,12 @@ class ReportTest extends FunSuite {
   test("textfield with parameter") {
     val mystyle = Style.empty;
     val myband = Band(
-            height = 200,
+            height = 200 px,
             splitType = SplitTypeEnum.STRETCH,
             content = Vector(
                 TextField(expression = Expression.raw("$P{myarg1}"),
-                  size = Size.fixed(width=200, height=50),
-                  pos = Pos.float(40, 80))
+                  size = Size.fixed(width=100 percent, height=50 px),
+                  pos = Pos.float(40 px, 80 px))
                 ))
     val r = Report("text-parameter").copy(
         mainDataset = Dataset.empty.copy(
@@ -191,7 +191,7 @@ class ReportTest extends FunSuite {
   <origin band="detail"/>
   <page>
     <text leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-      <reportElement height="50" origin="0" srcId="1" width="200" x="60" y="110">
+      <reportElement height="50" origin="0" srcId="1" width="555" x="60" y="110">
       </reportElement>
       <textContent>mydefault</textContent>
     </text>

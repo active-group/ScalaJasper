@@ -7,6 +7,7 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import de.ag.jrlang.core._
+import de.ag.jrlang.core.Dimensions._
 import de.ag.jrlang.core.components.{TableCell, TableColumn, Table}
 import net.sf.jasperreports.components.table.WhenNoDataTypeTableEnum
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource
@@ -18,17 +19,17 @@ class ComponentsTest extends FunSuite {
   test("table component") {
     val r = Report("basic table").copy(details = List(
       Band(
-        height = 200,
+        height = 200 px,
         splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           ComponentElement(
-            pos = Pos.float(x = 0, y = 0),
-            size = Size.fixed(height = 100, width = 400),
+            pos = Pos.float(x = 0 px, y = 0 px),
+            size = Size.fixed(height = 100 px, width = 400 px),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
               data = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Some(Expression.P("table_datasource"))),
-              columns = List(TableColumn(width = 100,
-                detail = TableCell(height = 50, content = List(
-                  TextField(Size.fixed(height=15, width=100), Pos.float(0, 0), Expression.F("f1")))
+              columns = List(TableColumn(width = 100 px,
+                detail = TableCell(height = 50 px, content = List(
+                  TextField(Size.fixed(height=15 px, width=100 percent), Pos.float(0 px, 0 px), Expression.F("f1")))
                 ))))
         ))
       )),
@@ -106,17 +107,17 @@ class ComponentsTest extends FunSuite {
 
     val r = Report("basic table").copy(details = List(
       Band(
-        height = 200,
+        height = 200 px,
         splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           ComponentElement(
-            pos = Pos.float(x = 0, y = 0),
-            size = Size.fixed(height = 100, width = 400),
+            pos = Pos.float(x = 0 cm, y = 0 mm),
+            size = Size.fixed(height = 100 px, width = 400 px),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
               data = DataDef(dataset = dataset, source=Expression.const(datasource)),
-              columns = List(TableColumn(width = 100,
-                detail = TableCell(height = 50, content = List(
-                  TextField(Size.fixed(height=15, width=100), Pos.float(0, 0),
+              columns = List(TableColumn(width = 80 percent,
+                detail = TableCell(height = 50 px, content = List(
+                  TextField(Size.fixed(height=15 px, width=90 percent), Pos.float(0 px, 0 px),
                     Expression.call({t:String => t+t}, Expression.F("f1"))))
                 ))))
           ))
@@ -134,27 +135,27 @@ class ComponentsTest extends FunSuite {
         </origin>
         <page>
           <frame>
-            <reportElement height="100" origin="0" srcId="1" width="100" x="20" y="30">
+            <reportElement height="100" origin="0" srcId="1" width="444" x="20" y="30">
               <property
               name="net.sf.jasperreports.export.headertoolbar.tableUUID">
               </property>
             </reportElement>
             <frame>
-              <reportElement height="50" origin="1" srcId="4" width="100" x="0" y="0">
+              <reportElement height="50" origin="1" srcId="4" width="444" x="0" y="0">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="100" x="0" y="0">
+                <reportElement height="15" origin="1" srcId="5" width="400" x="0" y="0">
                 </reportElement>
                 <textContent>HelloHello</textContent>
               </text>
             </frame>
             <frame>
-              <reportElement height="50" origin="1" srcId="4" width="100" x="0" y="50">
+              <reportElement height="50" origin="1" srcId="4" width="444" x="0" y="50">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="100" x="0" y="0">
+                <reportElement height="15" origin="1" srcId="5" width="400" x="0" y="0">
                 </reportElement>
                 <textContent>WorldWorld</textContent>
               </text>
@@ -184,26 +185,26 @@ class ComponentsTest extends FunSuite {
     def tab(textExpr: Expression[String]) =
       Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
         data = DataDef(dataset = dataset, source=Expression.const(datasource)),
-        columns = List(TableColumn(width = 100,
-          detail = TableCell(height = 50, content = List(
-            TextField(Size.fixed(height=15, width=100), Pos.float(0, 0),
+        columns = List(TableColumn(width = 100 px,
+          detail = TableCell(height = 50 px, content = List(
+            TextField(Size.fixed(height=15 px, width=100 px), Pos.float(0 px, 0 px),
               textExpr))
           ))))
 
     val r = Report("two tables").copy(details = List(
       Band(
-        height = 200,
+        height = 200 px,
         splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           // same dataset etc, but different (auto-) parameters (in the form of expressions)
           ComponentElement(
-            pos = Pos.float(x = 0, y = 0),
-            size = Size.fixed(height = 100, width = 400),
+            pos = Pos.float(x = 0 px, y = 0 px),
+            size = Size.fixed(height = 100 px, width = 400 px),
             component = tab(Expression.call({t:String => t+t}, Expression.F("f1")))
           ),
           ComponentElement(
-            pos = Pos.float(x = 0, y = 100),
-            size = Size.fixed(height = 100, width = 400),
+            pos = Pos.float(x = 0 px, y = 100 px),
+            size = Size.fixed(height = 100 px, width = 400 px),
             component = tab(Expression.call({t:String => t+" ...and... "+t}, Expression.F("f1")))
           ))
       ))

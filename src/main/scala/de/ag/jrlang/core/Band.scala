@@ -8,26 +8,27 @@ import net.sf.jasperreports.engine.design.JRDesignBand
 
 import Transformer._
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
+import de.ag.jrlang.core.Dimensions.Length
 
 abstract sealed class BandHeight
 
 object BandHeight {
   /** Defined, fixed height */
-  sealed case class Fixed(height: Int) extends BandHeight
+  sealed case class Fixed(height: Length) extends BandHeight
   /** Automatically calculate needed height */
   case object Auto extends BandHeight
   /** Automatically calculate needed height, but add some margin */
-  sealed case class AutoPlus(margin: Int) extends BandHeight
+  sealed case class AutoPlus(margin: Length) extends BandHeight
 
-  implicit def fixed(height: Int) = Fixed(height)
+  implicit def fixed(height: Length) = Fixed(height)
 
-  private[core] def calc(h: BandHeight)(setter: Int=>Unit) = { contentHeight:Int =>
+  private[core] def calc(h: BandHeight)(setter: Int=>Unit) = { contentHeight:Length =>
     val r = h match {
       case BandHeight.Fixed(v) => v
       case BandHeight.Auto => contentHeight
       case BandHeight.AutoPlus(v) => contentHeight + v
     }
-    setter(r)
+    setter(r inAbsolutePixels)
     ret()
   }
 }
