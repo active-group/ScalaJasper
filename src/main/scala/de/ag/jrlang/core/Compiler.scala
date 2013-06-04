@@ -162,7 +162,7 @@ object Transformer {
     currentContainerWidth >>= {
       prev =>
         setCurrentContainerWidth(width) >> f >>= { res =>
-          setCurrentContainerWidth(prev)
+          setCurrentContainerWidth(prev) >>
           ret(res)
         }
     }
