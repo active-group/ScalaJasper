@@ -98,6 +98,21 @@ object Height {
 
 }
 
+abstract sealed class Width {
+  private[core] def within(x: Length, total: Length) : Length
+}
+
+object Width {
+  sealed case class Specific(value: RestrictedLength) extends Width {
+    private[core] override def within(x: Length, total: Length) = value.asPartOf(total)
+  }
+
+  case object Remaining extends Width {
+    private[core] override def within(x: Length, total: Length) = total - x
+  }
+
+}
+
 /** Vertical position of an element */
 sealed case class YPos(
     value: Length,
@@ -142,7 +157,7 @@ private[core] object ElementUtils {
       style:AbstractStyle,
       x: RestrictedLength,
       y: YPos,
-      width: RestrictedLength,
+      width: Width,
       height: Height,
       conditions:Conditions,
       // custom properties?
@@ -157,8 +172,9 @@ private[core] object ElementUtils {
     tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows)
 
     (currentContainerWidth >>= { parentWidth => {
-      tgt.setWidth(width asPartOf parentWidth inAbsolutePixels)
-      tgt.setX(x asPartOf parentWidth inAbsolutePixels)
+      val absX = x asPartOf parentWidth
+      tgt.setWidth(width within (absX, parentWidth) inAbsolutePixels)
+      tgt.setX(absX inAbsolutePixels)
       ret()
     }}) >>
     drop(orNull(conditions.printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) } >>
@@ -212,7 +228,7 @@ sealed case class Break(
   override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
     ElementUtils.putReportElement(key = key, style=Style.empty, x=0 px,
-      y = y, width = 0 px, height = Height.fixed(0 px), conditions=conditions, r) >>
+      y = y, width = Width.Specific(0 px), height = Height.fixed(0 px), conditions=conditions, r) >>
     ret(r.setType(breakType)) >>
     ret(r, y.value) // breaks have no height
   }
@@ -256,7 +272,7 @@ sealed case class Frame(
     content: Seq[Element],
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
-    width: RestrictedLength = 100 percent,
+    width: Width = Width.Specific(100 percent),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
@@ -272,7 +288,7 @@ sealed case class Frame(
 }
 
 sealed case class Ellipse(
-    width: RestrictedLength,
+    width: Width,
     height: Height,
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
@@ -292,7 +308,7 @@ sealed case class Ellipse(
 
 sealed case class Image(
     expression : Expression[Any],
-    width: RestrictedLength,
+    width: Width,
     height: Height,
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
@@ -340,7 +356,7 @@ sealed case class Image(
 }
 
 sealed case class Line(
-    width: RestrictedLength,
+    width: Width,
     height: Height,
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
@@ -366,7 +382,7 @@ sealed case class Line(
 }
 
 sealed case class Rectangle(
-    width: RestrictedLength,
+    width: Width,
     height: Height,
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
@@ -385,7 +401,7 @@ sealed case class Rectangle(
 sealed case class StaticText(
     text: String,
     height: Height, // TODO 1 em ?
-    width: RestrictedLength = 100 percent,
+    width: Width = Width.Specific(100 percent),
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
     key: String = "",
@@ -404,7 +420,7 @@ sealed case class StaticText(
 sealed case class TextField(
     expression: Expression[Any],
     height: Height, // TODO 1 em?
-    width: RestrictedLength = 100 percent,
+    width: Width = Width.Specific(100 percent),
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
     key: String = "",
@@ -471,7 +487,7 @@ sealed case class Subreport(
    net.sf.jasperreports.engine.JasperReport */
    subreportExpression: Expression[Any],
    height: Height,
-   width: RestrictedLength = 100 percent,
+   width: Width = Width.Specific(100 percent),
    x: RestrictedLength = 0 px,
    y: YPos = YPos.float(0 px),
    style: AbstractStyle = Style.inherit,
@@ -527,7 +543,7 @@ object Subreport {
 sealed case class ComponentElement(
      component: components.Component,
      height: Height, // derive like BandHeight?
-     width: RestrictedLength = 100 percent,
+     width: Width = Width.Specific(100 percent),
      x: RestrictedLength = 0 px,
      y: YPos = YPos.float(0 px),
      style: AbstractStyle = Style.inherit,

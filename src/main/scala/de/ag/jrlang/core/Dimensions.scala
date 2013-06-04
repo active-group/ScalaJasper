@@ -36,8 +36,6 @@ object Dimensions {
     def cm = in(LengthUnit.cm)
 
   }
-  implicit def lengthValue(value: Double) = new LengthValue(value)
-  implicit def lengthValue(value: Int) = new LengthValue(value)
   val zero = 0 px // in case you want to make explicit that 0 actually has no unit
 
   sealed case class FractionValue(value: Double) {
@@ -45,9 +43,6 @@ object Dimensions {
     // The percent sign unfortunately does not work as a "unary postfix operator"
     def percent = FractionValue(value/100.0)
   }
-  implicit def fractionValue(value: Double) = FractionValue(value) // might get too confusing val p:Percent = 0.45 ?
-  implicit def fractionValue(value: Int) = FractionValue(value)
-
 
   private object Demo {
     def t(v: Length) = v
@@ -65,8 +60,5 @@ object Dimensions {
   sealed case class AbsoluteLength(l: Length) extends RestrictedLength {
     override def asPartOf(total: Length) = l
   }
-
-  implicit def partialLength(p: FractionValue) = PartialLength(p)
-  implicit def absoluteLength(l: Length) = AbsoluteLength(l)
 
 }

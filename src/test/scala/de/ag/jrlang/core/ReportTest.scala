@@ -198,7 +198,41 @@ class ReportTest extends FunSuite {
     val actual = ReportTest.printToXML(r, Map.empty);
     ReportTest.compareJasperPrintXML(expected, actual);
   }
-  
+
+  /*
+  def makeRegionsCheatSheet = {
+    def demoBand(name: String) = {
+      val st = Style(box = LineBox(pen = BoxPen.uniform(Pen(lineWidth = Some(0.5F)))))
+      Band(
+        height = BandHeight.Auto,
+        splitType = SplitTypeEnum.STRETCH,
+        content = Vector(
+          TextField(
+            expression = Expression.const(name),
+            style = st,
+            width=100 percent, height = Height.fixed(2 cm))
+        ))
+    }
+    val r = Report(name = "cheat sheet",
+      page = Page(
+        header = Some(demoBand("page header")),
+        footer = Some(demoBand("page footer")),
+        columns = Columns(count = 2,
+          header = Some(demoBand("column header")),
+          footer = FloatingBand(Some(demoBand("column footer")))
+          )
+      ),
+      details = List(demoBand("details")),
+      summary = SummaryBand(Some(demoBand("summary"))),
+      title = TitleBand(demoBand("title")),
+      lastPageFooter = Some(demoBand("last page footer"))
+    )
+
+    val actual = ReportTest.printToXML(r, Map.empty);
+    ReportTest.compareJasperPrintXML(expected, actual);
+  }
+  */
+
   /*
   test("persistency") {
      val o0 = Report();

@@ -1,8 +1,22 @@
 package de.ag.jrlang
 
-import scala.collection.JavaConversions._;
+import scala.collection.JavaConversions._
+import de.ag.jrlang.core.Dimensions._
+;
 
 package object core {
+  implicit def lengthValue(value: Double) = new LengthValue(value)
+  implicit def lengthValue(value: Int) = new LengthValue(value)
+
+  implicit def fractionValue(value: Double) = FractionValue(value) // might get too confusing val p:Percent = 0.45 ?
+  implicit def fractionValue(value: Int) = FractionValue(value)
+
+  implicit def partialLength(p: FractionValue) = PartialLength(p)
+  implicit def absoluteLength(l: Length) = AbsoluteLength(l)
+
+  implicit def specificWidth(value: RestrictedLength) = Width.Specific(value)
+  implicit def specificWidth(value: FractionValue) = Width.Specific(value)
+  implicit def specificWidth(value: Length) = Width.Specific(value)
 
   /** Creates a JasperReport object (a report template) and a map of fixed arguments to generated parameters,
     * which can be combined with additional arguments and passed to print later. This way the overhead can be
