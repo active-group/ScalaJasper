@@ -70,14 +70,12 @@ class ReportTest extends FunSuite {
             content = Vector(
                 Line(
                     style = style2,
-                    pos = Pos.float(x = 0 px, y = 0 px),
-                    size = Size.fixed(width=55 px, height = 15 px)
+                    width=55 px, height = Height.fixed(15 px)
                     ),
                 StaticText(
                     text = "Hello",
                     style = style2,
-                    pos = Pos.float(x = 0 px, y = 0 px),
-                    size = Size.fixed(width=55 px, height = 15 px)
+                    width=55 px, height = Height.fixed(15 px)
                     )
                 ));
     val r = Report("hello-world-report").copy(
@@ -130,8 +128,7 @@ class ReportTest extends FunSuite {
                 Image(expression = Expression.const("src/test/resources/butterfly.jpg"),
                       style = mystyle.copy(scaleImage = Some(net.sf.jasperreports.engine.`type`.ScaleImageEnum.RETAIN_SHAPE)),
                       lazily = true,
-                      pos = Pos.float(0 px, 0 px),
-                      size = Size.fixed(height = 150 px, width = 150 px))
+                      width = 150 px, height = Height.fixed(150 px))
                 ));
     val r = Report("myfirstimage").copy(
         defaultStyle = mystyle,
@@ -167,8 +164,8 @@ class ReportTest extends FunSuite {
             splitType = SplitTypeEnum.STRETCH,
             content = Vector(
                 TextField(expression = Expression.raw("$P{myarg1}"),
-                  size = Size.fixed(width=100 percent, height=50 px),
-                  pos = Pos.float(40 px, 80 px))
+                  width=100 percent, height = Height.fixed(50 px),
+                  x = 40 px, y = YPos.float(80 px))
                 ))
     val r = Report("text-parameter").copy(
         mainDataset = Dataset.empty.copy(

@@ -37,8 +37,7 @@ class ExpressionTests extends FunSuite {
           content = Vector(
             StaticText(
               text = "Hello",
-              pos = Pos.float(x = 0 px, y = 0 px),
-              size = Size.fixed(width=55 px, height = 15 px),
+              height = Height.fixed(15 px), width=55 px,
               conditions = Conditions(printWhenExpression=Some(Expression.raw("$P{fn0}.apply($P{REPORT_PARAMETERS_MAP})")))
             )
           )))
@@ -102,8 +101,7 @@ class ExpressionTests extends FunSuite {
           content = Vector(
             StaticText(
               text = "Hello",
-              pos = Pos.float(x = 0 px, y = 0 px),
-              size = Size.fixed(width=55 px, height = 15 px),
+              width=55 px, height = Height.fixed(15 px),
               conditions = Conditions(
                 printWhenExpression=Some(Expression.call(fn0, Expression.P("REPORT_PARAMETERS_MAP"))))
             )
