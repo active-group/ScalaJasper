@@ -272,7 +272,7 @@ sealed case class Frame(
     content: Seq[Element],
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
-    width: Width = Width.Specific(100 percent),
+    width: Width = Width.Remaining,
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
@@ -401,7 +401,7 @@ sealed case class Rectangle(
 sealed case class StaticText(
     text: String,
     height: Height, // TODO 1 em ?
-    width: Width = Width.Specific(100 percent),
+    width: Width = Width.Remaining,
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
     key: String = "",
@@ -420,7 +420,7 @@ sealed case class StaticText(
 sealed case class TextField(
     expression: Expression[Any],
     height: Height, // TODO 1 em?
-    width: Width = Width.Specific(100 percent),
+    width: Width = Width.Remaining,
     x: RestrictedLength = 0 px,
     y: YPos = YPos.float(0 px),
     key: String = "",
@@ -487,7 +487,7 @@ sealed case class Subreport(
    net.sf.jasperreports.engine.JasperReport */
    subreportExpression: Expression[Any],
    height: Height,
-   width: Width = Width.Specific(100 percent),
+   width: Width = Width.Remaining,
    x: RestrictedLength = 0 px,
    y: YPos = YPos.float(0 px),
    style: AbstractStyle = Style.inherit,
@@ -543,7 +543,7 @@ object Subreport {
 sealed case class ComponentElement(
      component: components.Component,
      height: Height, // derive like BandHeight?
-     width: Width = Width.Specific(100 percent),
+     width: Width = Width.Remaining,
      x: RestrictedLength = 0 px,
      y: YPos = YPos.float(0 px),
      style: AbstractStyle = Style.inherit,
