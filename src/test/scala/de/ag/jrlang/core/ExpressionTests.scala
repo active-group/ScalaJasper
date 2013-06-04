@@ -30,7 +30,7 @@ class ExpressionTests extends FunSuite {
     val args = Map("fn0" -> fn0);
     val r = Report("test").copy(
       mainDataset = Dataset.empty.copy(parameters = List(Parameter("fn0").copy(valueClassName = fnClassName))),
-      page = Page.empty.copy(
+      page = Page(
         header = Some(Band(
           splitType = SplitTypeEnum.STRETCH,
           height = 20 px,
@@ -95,7 +95,7 @@ class ExpressionTests extends FunSuite {
       true
     }
     val r = Report("test").copy(
-      page = Page.empty.copy(
+      page = Page(
         header = Some(Band(
           splitType = SplitTypeEnum.STRETCH,
           height = 20 px,

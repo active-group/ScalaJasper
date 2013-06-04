@@ -64,32 +64,31 @@ object PageFormat {
   val A4landscape = PageFormat(297 mm, 210 mm, OrientationEnum.LANDSCAPE)
 }
 
+sealed case class Columns(count : Int = 1,
+                          direction : RunDirectionEnum = RunDirectionEnum.LTR,
+                          footer : FloatingBand = FloatingBand.empty,
+                          header : Option[Band] = None,
+                          spacing : Length = 0 px, // between columns
+
+                          /* 100% = page width - left margin - right margin - (spacing * (column count - 1)) */
+                          width : RestrictedLength = 100 percent, // 555 is jasper's default, which should be 100%...?!
+                          printOrder : PrintOrderEnum = PrintOrderEnum.VERTICAL
+                          )
+
+object Columns {
+  val singleColumn = Columns(count=1)
+}
+
 sealed case class Page(
     format: PageFormat = PageFormat.A4,
     margins : Margins = Margins.default,
     footer : Option[Band] = None,
     header : Option[Band] = None,
-    background : Option[Band] = None)
+    background : Option[Band] = None,
+    columns: Columns = Columns.singleColumn)
 
 object Page {
-  val empty = Page()
-}
-
-sealed case class Columns(
-    count : Int = 1,
-    direction : RunDirectionEnum = RunDirectionEnum.LTR,
-    footer : FloatingBand = FloatingBand.empty,
-    header : Option[Band] = None,
-    spacing : Length = 0 px, // between columns
-
-    /* 100% = page width - left margin - right margin - (spacing * (column count - 1)) */
-    width : RestrictedLength = 100 percent, // 555 is jasper's default, which should be 100%...?!
-    /** only relevant when count > 1 */
-    printOrder : PrintOrderEnum = PrintOrderEnum.VERTICAL
-)
-
-object Columns {
-  val empty = Columns()
+  val default = Page()
 }
 
 sealed case class Report(
@@ -101,13 +100,12 @@ sealed case class Report(
   subDatasets: Map[String, Dataset] = Map.empty,
   mainDataset: Dataset = Dataset.empty,
   imports : Set[String] = Set.empty,
-  columns : Columns = Columns.empty,
   // formatFactoryClass
   ignorePagination : Boolean = false,
   language : String = net.sf.jasperreports.engine.JRReport.LANGUAGE_JAVA, // Java or Groovy
   lastPageFooter : Option[Band] = None,
   noData : Option[Band] = None,
-  page : Page = Page.empty,
+  page : Page = Page.default,
   summary : SummaryBand = SummaryBand.empty,
   title : TitleBand = TitleBand.empty
   // UUID probably not
@@ -115,7 +113,7 @@ sealed case class Report(
 
   private def absoluteRightMargin = page.margins.right asPartOf page.format.width
   private def absoluteLeftMargin = page.margins.left asPartOf page.format.width
-  private[core] def absoluteColumnWidth = columns.width.asPartOf(page.format.width - absoluteLeftMargin - absoluteRightMargin - (columns.spacing * (columns.count - 1)))
+  private[core] def absoluteColumnWidth = page.columns.width.asPartOf(page.format.width - absoluteLeftMargin - absoluteRightMargin - (page.columns.spacing * (page.columns.count - 1)))
 
 
   def transform = {
@@ -130,12 +128,12 @@ sealed case class Report(
     r.setBottomMargin(page.margins.bottom asPartOf page.format.height inAbsolutePixels)
     r.setLeftMargin(absoluteLeftMargin inAbsolutePixels)
     r.setOrientation(page.format.orientation)
-    r.setColumnCount(columns.count)
-    r.setColumnDirection(columns.direction)
-    r.setFloatColumnFooter(columns.footer.floating)
-    r.setColumnSpacing(columns.spacing inAbsolutePixels)
+    r.setColumnCount(page.columns.count)
+    r.setColumnDirection(page.columns.direction)
+    r.setFloatColumnFooter(page.columns.footer.floating)
+    r.setColumnSpacing(page.columns.spacing inAbsolutePixels)
     r.setColumnWidth(absoluteColumnWidth inAbsolutePixels)
-    r.setPrintOrder(columns.printOrder)
+    r.setPrintOrder(page.columns.printOrder)
     r.setIgnorePagination(ignorePagination)
     r.setLanguage(language)
     r.setSummaryNewPage(summary.newPage)
@@ -160,8 +158,8 @@ sealed case class Report(
     } toList) >>= {
       ds => ds foreach { r.addDataset(_) }; ret()
     }) >>
-    drop(orNull(columns.footer.band map {_.transform})) { r.setColumnFooter(_) } >>
-    drop(orNull(columns.header map {_.transform})) { r.setColumnHeader(_) } >>
+    drop(orNull(page.columns.footer.band map {_.transform})) { r.setColumnFooter(_) } >>
+    drop(orNull(page.columns.header map {_.transform})) { r.setColumnHeader(_) } >>
     drop(orNull(lastPageFooter map {_.transform})) { r.setLastPageFooter(_) } >>
     drop(orNull(noData map {_.transform})) { r.setNoData(_) } >>
     drop(orNull(page.footer map {_.transform})) { r.setPageFooter(_) } >>

@@ -84,7 +84,7 @@ class ReportTest extends FunSuite {
         defaultStyle = mystyle,
         // details = Vector(myband),
         // title = TitleBand.empty.copy(band = Some(myband), newPage = true),
-        page = Page.empty.copy(
+        page = Page(
             header = Some(myband)
             // footer
             ),
@@ -135,7 +135,7 @@ class ReportTest extends FunSuite {
                 ));
     val r = Report("myfirstimage").copy(
         defaultStyle = mystyle,
-        page = Page.empty.copy(
+        page = Page(
             header = Some(myband)
             )
         );
@@ -176,7 +176,7 @@ class ReportTest extends FunSuite {
                 Parameter("myarg1", Some(Expression.raw("\"mydefault\"")))
                 )),
         defaultStyle = mystyle,
-        page = Page.empty.copy(
+        page = Page(
             header = Some(myband)
             )
         );
