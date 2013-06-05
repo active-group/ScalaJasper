@@ -43,14 +43,21 @@ sealed case class TitleBand(
 
 /** Orientation is used mostly to inform printers of page layouts. */
 sealed case class PageFormat(width: Length, height: Length, orientation: OrientationEnum) {
-  def quotient : Double = height / width
+  def aspectRatio : Double = height / width
+
+  def flip = PageFormat(height, width,
+    if (orientation == OrientationEnum.PORTRAIT) OrientationEnum.LANDSCAPE else OrientationEnum.PORTRAIT)
 }
 object PageFormat {
   /** DIN A4 portrait */
-  val A4portrait = PageFormat(210 mm, 297 mm, OrientationEnum.PORTRAIT)
-  val A4 = A4portrait
+  val A4Portrait = PageFormat(210 mm, 297 mm, OrientationEnum.PORTRAIT)
+  val A4 = A4Portrait
   /** DIN A4 landscape */
-  val A4landscape = PageFormat(297 mm, 210 mm, OrientationEnum.LANDSCAPE)
+  val A4Landscape = A4Portrait.flip
+  /** US Letter portrait */
+  val USLetterPortrait = PageFormat(8.5 inch, 11 inch, OrientationEnum.PORTRAIT)
+  val USLetter = USLetterPortrait
+  val USLetterLandscape = USLetterPortrait.flip
 }
 
 sealed case class Columns(count : Int = 1,
@@ -81,9 +88,9 @@ object Page {
 }
 
 sealed case class Report(
-  name : String, // TODO: Validate non-empty
+  name : String,
   details: Seq[Band] = Vector.empty,
-  defaultStyle: Style = Style.empty,
+  // defaultStyle: Style = Style.empty,
   styles: Map[String, Style] = Map.empty, // additional user-defined styles, usually not needed
   templates : IndexedSeq[jre.JRReportTemplate] = Vector.empty,
   subDatasets: Map[String, Dataset] = Map.empty,
@@ -139,7 +146,7 @@ sealed case class Report(
     // monadic transformation...
 
     // user defined styles (generated styles are added by caller)
-    drop(defaultStyle.mkDesignStyle) { s => s.setName("default"); s.setDefault(true); r.setDefaultStyle(s) }
+    // drop(defaultStyle.mkDesignStyle) { s => s.setName("default"); s.setDefault(true); r.setDefaultStyle(s) }
     (all(styles map { case(n,s) => s.mkDesignStyle >>= { js => js.setName(n); ret(js) } } toSeq) >>= {
       sts => sts foreach { r.addStyle(_) }; ret()
     }) >>

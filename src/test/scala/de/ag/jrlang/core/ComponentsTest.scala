@@ -48,7 +48,7 @@ class ComponentsTest extends FunSuite {
 
     val expected =
       <jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd"
-                   name="basic table" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
+                   name="basic table" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
         <property name="net.sf.jasperreports.export.xml.start.page.index"/>
         <property name="net.sf.jasperreports.export.xml.end.page.index"/>
         <property name="net.sf.jasperreports.export.xml.page.count"/>
@@ -124,7 +124,7 @@ class ComponentsTest extends FunSuite {
 
     val expected =
       <jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd"
-                   name="basic table" pageWidth="595" pageHeight="842" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
+                   name="basic table" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
         <property name="net.sf.jasperreports.export.xml.start.page.index"/>
         <property name="net.sf.jasperreports.export.xml.end.page.index"/>
         <property name="net.sf.jasperreports.export.xml.page.count"/>
@@ -143,7 +143,7 @@ class ComponentsTest extends FunSuite {
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="400" x="0" y="0">
+                <reportElement height="15" origin="1" srcId="5" width="399" x="0" y="0">
                 </reportElement>
                 <textContent>HelloHello</textContent>
               </text>
@@ -153,7 +153,7 @@ class ComponentsTest extends FunSuite {
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="400" x="0" y="0">
+                <reportElement height="15" origin="1" srcId="5" width="399" x="0" y="0">
                 </reportElement>
                 <textContent>WorldWorld</textContent>
               </text>
