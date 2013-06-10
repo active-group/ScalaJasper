@@ -18,6 +18,10 @@ package object core {
   implicit def specificWidth(value: FractionValue) = Width.Specific(value)
   implicit def specificWidth(value: Length) = Width.Specific(value)
 
+
+  // backward-compatiblity; should be removed maybe
+  implicit def liftElements(l: Seq[Element]) : Element = if (l.size == 1) l(0) else ElementSeq(l)
+
   /** Creates a JasperReport object (a report template) and a map of fixed arguments to generated parameters,
     * which can be combined with additional arguments and passed to print later. This way the overhead can be
     * reduced if many similar reports have to be created for different data. */

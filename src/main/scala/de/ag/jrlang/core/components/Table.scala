@@ -26,18 +26,18 @@ import de.ag.jrlang.core.Dimensions.RestrictedLength
 
 // Like a ElementGroup, plus a bit more
 sealed case class TableCell(
+    content: Element,
     height : BandHeight = BandHeight.Auto,
-    content: Seq[Element] = Seq.empty,
     style : AbstractStyle = Style.inherit,
     rowSpan : Option[Int] = None) extends Transformable[DesignCell] {
 
   def transform : Transformer[DesignCell] = {
     val r = new net.sf.jasperreports.components.table.DesignCell()
     r.setRowSpan(if (rowSpan.isDefined) rowSpan.get : java.lang.Integer else null)
+    BandHeight.calc(height, content.maxHeight)(r.setHeight(_))
 
     drop(style.transform) { so => r.setStyleNameReference(so.getOrElse(null)) } >>
-    (ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>=
-      BandHeight.calc(height)(r.setHeight(_))) >>
+    ElementUtils.contentTransformer(content.seq, r.addElement(_), r.addElementGroup(_)) >>
     ret(r)
   }
 }

@@ -4,17 +4,51 @@ import net.sf.jasperreports.engine.{JRDataSource, JRExpression, JRChild, JRAncho
 import net.sf.jasperreports.engine.design._
 
 import Transformer._
-import net.sf.jasperreports.engine.fill.JRIncrementerFactory
 import net.sf.jasperreports.engine.`type`.{PositionTypeEnum, StretchTypeEnum, CalculationEnum}
 import Dimensions._
 
-sealed abstract class Element extends Transformable[(JRChild, Length)] {
-  def +(e: Element) = ElementGroup(content = Vector(this, e)) // TODO: Optimize if one is a group already
+sealed abstract class Element extends Transformable[JRChild] {
+  def maxHeight: Length // y + height usually
+
+  def seq = Seq(this)
+
+  def +(e: Element) = // also overridden in ElementSeq
+    e match {
+      case ElementSeq(tl) => ElementSeq(this +: tl)
+      case _ => ElementSeq(Vector(this, e))
+    }
+
   // more... side-by-side, move etc....?
 
+  /*
+  def addYPos(len: Length) : Element
+
+  // place this element below that element
+  def below(that: Element) = {
+    val ((_, height), _) = that.transform.exec(TransformationState.initial(0 px))
+    this.addYPos(height)
+  }
+  */
 }
 
 object Element {
+}
+
+/** Element sequences are totally transparent, e.g. an Element e behaves exactly the same if it is nested
+  * in an ElementSeq or not. Various utilities in this library freely pack and unpack elements from these sequences. */
+// This is a new 'virtual' Element type, because an ElementGroup has a small semantic meaning, to those elements
+// contained in it with height=RelativeToTallest; so for a fully indifferent container type, we need this:
+sealed case class ElementSeq(elements: Seq[Element]) extends Element {
+  override def maxHeight = ElementUtils.maxHeight(elements)
+  override def transform = null // treated specially
+
+  override def +(e: Element) =
+    e match {
+      case ElementSeq(tl) => ElementSeq(elements ++ tl)
+      case _ => ElementSeq(elements :+ e)
+    }
+
+  override def seq = elements
 }
 
 abstract class Anchor extends Transformable[(JRDesignExpression, Int)]
@@ -143,7 +177,7 @@ sealed case class Conditions(
     printWhenExpression: Option[Expression[Boolean]] = None,
     printRepeatedValues: Boolean = true, // important!!
     printWhenDetailOverflows: Boolean = false,
-    // TODO printWhenGroupChanges? is a JRGroup - probably needs a reference to a group defined elsewhere
+    printWhenGroupChanges: Option[Group] = None,
     removeLineWhenBlank: Boolean = false)
 
 object Conditions {
@@ -171,6 +205,7 @@ private[core] object ElementUtils {
     tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand)
     tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows)
 
+    drop(orNull(conditions.printWhenGroupChanges map {_.transform})) { tgt.setPrintWhenGroupChanges(_) } >>
     (currentContainerWidth >>= { parentWidth => {
       val absX = x asPartOf parentWidth
       tgt.setWidth(width within (absX, parentWidth) inAbsolutePixels)
@@ -187,14 +222,24 @@ private[core] object ElementUtils {
     // tgt.setMode(src.mode.getOrElse(null));
     drop(style.transform) { so => tgt.setStyleNameReference(so.getOrElse(null)) }
   }
+
+  def maxHeight(elements: Seq[Element]): Length =
+    (elements map {_.maxHeight}).foldLeft(0 px) { (l1:Length, l2:Length) =>
+      math.max(l1.inAbsolutePixels, l2.inAbsolutePixels).px }
   
   // Various classes need this, though they don't have a common type
   def contentTransformer(content: Seq[Element],
                          addElement: JRDesignElement => Unit,
                          addElementGroup: JRDesignElementGroup => Unit) = {
+    def transformAll(e: Element) : Seq[Transformer[JRChild]] =
+      e match {
+        // we need to 'flat out' ElementSeq, that are not real Elements, but just a 'virtual' utility class
+        case ElementSeq(es) => es flatMap transformAll // TODO: Make tail recursive
+        case _ => Seq(e.transform)
+      }
     // obj will 'own' the created child objects (like in DOM)
-    (all(content map { _.transform })) >>= { lst =>
-      for (co <- lst map {_._1}) {
+    (all(content flatMap transformAll)) >>= { lst =>
+      for (co <- lst) {
         // although elements and groups end up in the same children list,
         // there is no add method for children, but only for the two
         // classes of children, elements and element groups -
@@ -212,7 +257,7 @@ private[core] object ElementUtils {
           case _ => throw new RuntimeException("Unexpected type of child: " + co.getClass)
         }
       }
-      ret((lst map {_._2}).foldLeft(0 px) { (l1:Length, l2:Length) => math.max(l1.inAbsolutePixels, l2.inAbsolutePixels) px }) // return max of all heights
+      ret()
     }
   }
 }
@@ -227,12 +272,15 @@ sealed case class Break(
 
   override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
-    ElementUtils.putReportElement(key = key, style=Style.empty, x=0 px,
+    ElementUtils.putReportElement(key = key, style=Style.empty, x=(0 px),
       y = y, width = Width.Specific(0 px), height = Height.fixed(0 px), conditions=conditions, r) >>
     ret(r.setType(breakType)) >>
-    ret(r, y.value) // breaks have no height
+    ret(r)
   }
+
+  override def maxHeight = y.value // breaks have no height
 }
+
 object Break {
   /** Creates a page break */
   def page(y: YPos, conditions: Conditions = Conditions.default, key:String = "") = new Break(
@@ -257,10 +305,11 @@ sealed case class ElementGroup( // different from a "group"!
 
   override def transform = {
     val r = new JRDesignElementGroup()
-    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>= { h =>
-      ret(r, h)
-    }
+    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>
+    ret(r)
   }
+
+  override def maxHeight = ElementUtils.maxHeight(content)
 }
 
 object ElementGroup {
@@ -269,8 +318,8 @@ object ElementGroup {
 
 sealed case class Frame(
     height: Height,
-    content: Seq[Element],
-    x: RestrictedLength = 0 px,
+    content: Element,
+    x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
     width: Width = Width.Remaining,
     style: AbstractStyle = Style.inherit,
@@ -281,16 +330,18 @@ sealed case class Frame(
   override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignFrame()
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
-    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>= { _ =>
-      ret(r, y.value + height.value) // correct? only frame height, and content height is irrelevant?
-    }
+    ElementUtils.contentTransformer(content.seq, r.addElement(_), r.addElementGroup(_)) >>
+    ret(r)
   }
+
+  override def maxHeight =
+    y.value + height.value // correct? only frame height, and content height is irrelevant?
 }
 
 sealed case class Ellipse(
     width: Width,
     height: Height,
-    x: RestrictedLength = 0 px,
+    x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -302,15 +353,17 @@ sealed case class Ellipse(
     // setting JRDefaultStyleProvider to null like the others do.
     val r = new net.sf.jasperreports.engine.design.JRDesignEllipse(null)
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 sealed case class Image(
     expression : Expression[Any],
     width: Width,
     height: Height,
-    x: RestrictedLength = 0 px,
+    x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -351,14 +404,16 @@ sealed case class Image(
       r.setAnchorNameExpression(_),
       r.setBookmarkLevel(_)) >>
     drop(expression.transform)(r.setExpression(_)) >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 sealed case class Line(
     width: Width,
     height: Height,
-    x: RestrictedLength = 0 px,
+    x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions : Conditions = Conditions.default,
@@ -377,14 +432,16 @@ sealed case class Line(
     val r = new net.sf.jasperreports.engine.design.JRDesignLine()
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
     ret(r.setDirection(direction)) >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 sealed case class Rectangle(
     width: Width,
     height: Height,
-    x: RestrictedLength = 0 px,
+    x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -394,15 +451,17 @@ sealed case class Rectangle(
   override def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignRectangle()
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 sealed case class StaticText(
     text: String,
     height: Height, // TODO 1 em ?
     width: Width = Width.Remaining,
-    x: RestrictedLength = 0 px,
+    x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
     key: String = "",
     style: AbstractStyle = Style.inherit,
@@ -413,15 +472,17 @@ sealed case class StaticText(
     val r = new net.sf.jasperreports.engine.design.JRDesignStaticText()
     r.setText(text)
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 sealed case class TextField(
     expression: Expression[Any],
     height: Height, // TODO 1 em?
     width: Width = Width.Remaining,
-    x: RestrictedLength = 0 px,
+    x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
     key: String = "",
     style: AbstractStyle = Style.inherit,
@@ -459,8 +520,10 @@ sealed case class TextField(
     EvaluationTime.putEvaluationTime(evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_)) >>
     drop(expression.transform) { r.setExpression(_) } >>
     drop(orNull(patternExpression map {_.transform})) { r.setPatternExpression(_) } >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 sealed case class ReturnValue(subreportVariable: String,
@@ -488,7 +551,7 @@ sealed case class Subreport(
    subreportExpression: Expression[Any],
    height: Height,
    width: Width = Width.Remaining,
-   x: RestrictedLength = 0 px,
+   x: RestrictedLength = (0 px),
    y: YPos = YPos.float(0 px),
    style: AbstractStyle = Style.inherit,
    conditions: Conditions = Conditions.default,
@@ -529,8 +592,10 @@ sealed case class Subreport(
     drop(orNull(dataSourceExpression map {_.transform})){r.setDataSourceExpression(_)} >>
     drop(orNull(connectionExpression map {_.transform})){r.setConnectionExpression(_)} >>
     (all(returnValues map {_.transform}) >>= { l => l.foreach { r.addReturnValue(_) }; ret() }) >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 object Subreport {
@@ -544,7 +609,7 @@ sealed case class ComponentElement(
      component: components.Component,
      height: Height, // derive like BandHeight?
      width: Width = Width.Remaining,
-     x: RestrictedLength = 0 px,
+     x: RestrictedLength = (0 px),
      y: YPos = YPos.float(0 px),
      style: AbstractStyle = Style.inherit,
      conditions: Conditions = Conditions.default,
@@ -559,8 +624,10 @@ sealed case class ComponentElement(
       r.setComponentKey(transkey)
       ret()
     }}) >>
-    ret(r, y.value + height.value)
+    ret(r)
   }
+
+  override def maxHeight = y.value + height.value
 }
 
 /* TODO
