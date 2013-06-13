@@ -1,0 +1,12 @@
+*.orig
+*~
+/.cache
+/.classpath
+/.idea/
+/.idea_modules/
+/.project
+/.settings/
+/JRLang.iml
+/project/project/
+/project/target/
+/target/
