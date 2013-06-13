@@ -33,7 +33,7 @@ object BandHeight {
 }
 
 sealed case class Band (
-    splitType : SplitTypeEnum,
+    splitType : SplitTypeEnum, // TODO add reasonable default?
     content : Element, // elements + groups
     height : BandHeight = BandHeight.Auto, // calculate from content
     printWhenExpression : Option[Expression[Boolean]] = None

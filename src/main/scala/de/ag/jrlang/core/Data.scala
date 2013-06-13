@@ -39,6 +39,7 @@ sealed case class DatasetRun(datasetName: String,
   }
 }
 
+// TODO: From some (special) types of data sources, we might be able to infer the dataset...
 sealed case class DataDef(dataset : Dataset,
                           source : Expression[JRDataSource],
                           arguments : Map[String, Expression[Any]] = Map.empty) extends Data {
@@ -213,7 +214,7 @@ sealed case class Variable(name: String,
 sealed case class Dataset(
     parameters : Seq[Parameter] = Vector.empty, // without system parameters!  // Map-Like
     variables : Seq[Variable] = Vector.empty, // without system variables!  // Map-Like
-    fields : Map[String,String] = Map.empty, // maps Name -> ClassName
+    fields : Map[String,String] = Map.empty, // maps Name -> ClassName TODO: Need to add description probably (see XMLDatasources, XPath)
     sortFields : Seq[SortField] = Vector.empty,
     query: JRDesignQuery = null, // don't use this, use a JRResultSetDataSource instead (remove?)
     /** Simple variable expressions cannot always implement complex functionality. This is where scriptlets
