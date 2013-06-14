@@ -67,6 +67,7 @@ abstract sealed class AbstractColumn(
   extends Transformable[BaseColumn] {
 
   protected def fill(tgt: net.sf.jasperreports.components.table.StandardBaseColumn) = {
+    drop(nextUUID) { tgt.setUUID(_) } >>
     currentContainerWidth >>= { containerWidth =>
       val absoluteWidth = width asPartOf containerWidth
       (withContainerWidth(absoluteWidth) {
@@ -99,10 +100,11 @@ sealed case class TableColumn(
 {
 
   override def transform = {
-    val r = new net.sf.jasperreports.components.table.StandardColumn();
+    val r = new net.sf.jasperreports.components.table.StandardColumn()
     super.fill(r) >>= { absoluteWidth =>
       withContainerWidth(absoluteWidth) {
         drop(detail.transform) { r.setDetailCell(_) } >>
+        drop(nextUUID) { r.setUUID(_) } >>
         ret(r)
       }
     }

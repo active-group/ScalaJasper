@@ -47,37 +47,40 @@ class ComponentsTest extends FunSuite {
     val args = Map("table_datasource" -> new JRMapArrayDataSource(data.asInstanceOf[Array[AnyRef]]))
 
     val expected =
-      <jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd"
-                   name="basic table" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
-        <property name="net.sf.jasperreports.export.xml.start.page.index"/>
-        <property name="net.sf.jasperreports.export.xml.end.page.index"/>
-        <property name="net.sf.jasperreports.export.xml.page.count"/>
-        <origin band="detail"/>
-        <origin band="detail">
-        </origin>
+      <jasperPrint
+      bottomMargin="30" leftMargin="20" locale="en_US" name="basic table" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
+        <property name="net.sf.jasperreports.export.xml.start.page.index"></property>
+        <property name="net.sf.jasperreports.export.xml.end.page.index"></property>
+        <property name="net.sf.jasperreports.export.xml.page.count"></property>
+        <origin band="detail"></origin>
+        <origin band="detail"></origin>
         <page>
           <frame>
-            <reportElement height="100" origin="0" srcId="1" width="100" x="20" y="30">
-              <property
-              name="net.sf.jasperreports.export.headertoolbar.tableUUID">
+            <reportElement
+            height="100" origin="0" srcId="1" uuid="93b885ad-fe0d-3089-8df6-34904fd59f71" width="100" x="20" y="30">
+              <property name="net.sf.jasperreports.export.headertoolbar.tableUUID">
               </property>
             </reportElement>
             <frame>
-              <reportElement height="50" origin="1" srcId="4" width="100" x="0" y="0">
+              <reportElement
+              height="50" origin="1" srcId="4" uuid="e0f14d38-35cf-4303-9f88-2b275f34f756" width="100" x="0" y="0">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="100" x="0" y="0">
+                <reportElement
+                height="15" origin="1" srcId="5" uuid="d18d7b63-0b7d-4486-8f16-969df4918351" width="100" x="0" y="0">
                 </reportElement>
                 <textContent>Hello</textContent>
               </text>
             </frame>
             <frame>
-              <reportElement height="50" origin="1" srcId="4" width="100" x="0" y="50">
+              <reportElement
+              height="50" origin="1" srcId="4" uuid="e0f14d38-35cf-4303-9f88-2b275f34f756" width="100" x="0" y="50">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="100" x="0" y="0">
+                <reportElement
+                height="15" origin="1" srcId="5" uuid="d18d7b63-0b7d-4486-8f16-969df4918351" width="100" x="0" y="0">
                 </reportElement>
                 <textContent>World</textContent>
               </text>
@@ -87,10 +90,12 @@ class ComponentsTest extends FunSuite {
       </jasperPrint>
 
     val actual = ReportTest.printToXML(r, args);
-    ReportTest.compareJasperPrintXML(expected,
-      ReportTest.removeElemAttr("property", "value", // would only be needed for property name=tableUUID ...
-        ReportTest.removeElemAttr("origin", "report", // on origin band detail ...
-          actual)))
+    ReportTest.compareJasperPrintXML(
+      ReportTest.removeElemAttr("reportElement", "uuid", expected),
+      ReportTest.removeElemAttr("reportElement", "uuid", // The table component seems unable to respect the uuid we define :-/
+        ReportTest.removeElemAttr("property", "value", // would only be needed for property name=tableUUID ...
+          ReportTest.removeElemAttr("origin", "report", // on origin band detail ...
+            actual))))
   }
 
   test("table component automatic dataset") {
@@ -123,37 +128,40 @@ class ComponentsTest extends FunSuite {
     )
 
     val expected =
-      <jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd"
-                   name="basic table" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
-        <property name="net.sf.jasperreports.export.xml.start.page.index"/>
-        <property name="net.sf.jasperreports.export.xml.end.page.index"/>
-        <property name="net.sf.jasperreports.export.xml.page.count"/>
-        <origin band="detail"/>
-        <origin band="detail">
-        </origin>
+      <jasperPrint
+      bottomMargin="30" leftMargin="20" locale="en_US" name="basic table" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
+        <property name="net.sf.jasperreports.export.xml.start.page.index"></property>
+        <property name="net.sf.jasperreports.export.xml.end.page.index"></property>
+        <property name="net.sf.jasperreports.export.xml.page.count"></property>
+        <origin band="detail"></origin>
+        <origin band="detail"></origin>
         <page>
           <frame>
-            <reportElement height="100" origin="0" srcId="1" width="444" x="20" y="30">
-              <property
-              name="net.sf.jasperreports.export.headertoolbar.tableUUID">
+            <reportElement
+            height="100" origin="0" srcId="1" uuid="93b885ad-fe0d-3089-8df6-34904fd59f71" width="444" x="20" y="30">
+              <property name="net.sf.jasperreports.export.headertoolbar.tableUUID">
               </property>
             </reportElement>
             <frame>
-              <reportElement height="50" origin="1" srcId="4" width="444" x="0" y="0">
+              <reportElement
+              height="50" origin="1" srcId="4" uuid="3060c9b8-8794-4898-92b2-c472e20671f8" width="444" x="0" y="0">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="399" x="0" y="0">
+                <reportElement
+                height="15" origin="1" srcId="5" uuid="78c26dc9-564d-4fbb-ba43-5f3d30856d3f" width="399" x="0" y="0">
                 </reportElement>
                 <textContent>HelloHello</textContent>
               </text>
             </frame>
             <frame>
-              <reportElement height="50" origin="1" srcId="4" width="444" x="0" y="50">
+              <reportElement
+              height="50" origin="1" srcId="4" uuid="3060c9b8-8794-4898-92b2-c472e20671f8" width="444" x="0" y="50">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-                <reportElement height="15" origin="1" srcId="5" width="399" x="0" y="0">
+                <reportElement
+                height="15" origin="1" srcId="5" uuid="78c26dc9-564d-4fbb-ba43-5f3d30856d3f" width="399" x="0" y="0">
                 </reportElement>
                 <textContent>WorldWorld</textContent>
               </text>
@@ -163,10 +171,12 @@ class ComponentsTest extends FunSuite {
       </jasperPrint>
 
     val actual = ReportTest.printToXML(r, Map.empty);
-    ReportTest.compareJasperPrintXML(expected,
-      ReportTest.removeElemAttr("property", "value", // would only be needed for property name=tableUUID ...
-        ReportTest.removeElemAttr("origin", "report", // on origin band detail ...
-          actual)))
+    ReportTest.compareJasperPrintXML(
+      ReportTest.removeElemAttr("reportElement", "uuid", expected),
+      ReportTest.removeElemAttr("reportElement", "uuid", // The table component seems unable to respect the uuid we define :-/
+        ReportTest.removeElemAttr("property", "value", // would only be needed for property name=tableUUID ...
+          ReportTest.removeElemAttr("origin", "report", // on origin band detail ...
+           actual))))
   }
 
   test("two tables in one report (with same dataset)") {

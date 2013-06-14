@@ -54,6 +54,9 @@ package object core {
             ds : net.sf.jasperreports.engine.JRDataSource = null) : net.sf.jasperreports.engine.JasperPrint = {
     val (jreport, autoArgs) = prepare(r)
     val allArgs = args ++ autoArgs
-    printJasperReport(jreport, allArgs, ds)
+    val p = printJasperReport(jreport, allArgs, ds)
+    //p.setLocaleCode(localeCode)
+    //p.setTimeZoneId(timeZoneId)
+    p
   }
 }

@@ -4,11 +4,13 @@ import net.sf.jasperreports.{engine => jre}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
 import net.sf.jasperreports.engine.JRDatasetParameter
 import de.ag.jrlang.core.Dimensions.Length
+import java.util.{UUID, TimeZone, Locale}
 
 // TODO: Abstraction over Map+Int?
 case class TransformationState(containerWidth: Length, env: Map[AnyRef, JRDesignParameter], nextp: Int,
                                styles: Map[AbstractStyle, JRDesignStyle], nextst: Int,
-                               datasets: Map[Dataset, JRDesignDataset], nextds: Int) {
+                               datasets: Map[Dataset, JRDesignDataset], nextds: Int,
+                               next_uuid: Int) {
   def binding(v : AnyRef) = {
     val o = env.get(v)
     if (o.isDefined)
@@ -56,10 +58,21 @@ case class TransformationState(containerWidth: Length, env: Map[AnyRef, JRDesign
       (name, this.copy(datasets = datasets.updated(v, s), nextds = id+1))
     }
   }
+
+  def nextUUID : (UUID, TransformationState) = {
+    // nameUUIDFromBytes uses MD5, so sequential numbers are 'mangled' anyway, so it should be ok
+    val id = UUID.nameUUIDFromBytes(Array(
+      ((next_uuid >>> 24) & 0xFF) toByte,
+      ((next_uuid >>> 16) & 0xFF) toByte,
+      ((next_uuid >>> 8) & 0xFF) toByte,
+      (next_uuid & 0xFF) toByte
+    ))
+    (id, this.copy(next_uuid = next_uuid+1))
+  }
 }
 
 object TransformationState {
-  def initial(containerWidth: Length) = TransformationState(containerWidth, Map.empty, 0, Map.empty, 0, Map.empty, 0)
+  def initial(containerWidth: Length) = TransformationState(containerWidth, Map.empty, 0, Map.empty, 0, Map.empty, 0, 0)
 }
 
 trait Transformable[+A] {
@@ -166,11 +179,22 @@ object Transformer {
           ret(res)
         }
     }
+
+  def nextUUID : Transformer[UUID] =
+    withState({ st => st.nextUUID })
 }
 
 object Compiler {
-  implicit def compile(o : Report) : (jre.JasperReport, Map[String, AnyRef]) = {
+  // The defaults for locale and timeZone are not the JVM's defaultLocale() etc values, because it's
+  // hardly imaginable that your reports suddenly translate automatically into another language, or that you want them
+  // to look different depending on the OS settings of a user; so it's better (also for testing) to have a stable
+  // default that makes you aware of the need to adjust it. As for the timezone - it probably should not be used at
+  // all, but I haven't found out yet (except it appears in the xml print)
+  def compile(o : Report,
+              locale : Locale = Locale.US,
+              timeZone : TimeZone = TimeZone.getTimeZone("GMT") ) : (jre.JasperReport, Map[String, AnyRef]) = {
     // basic object generation...
+    // TODO: Create sequential or pseudo-random UUIDs for all elements (and other?) - to simplify testing
     val (r, tstate) = o.transform.exec(TransformationState.initial(0 px))
 
     // now insert collected auto-generated properties into basic object
@@ -187,9 +211,17 @@ object Compiler {
       tstate.env foreach { case(_, p) => ds.addParameter(p) }
       r.addDataset(ds)
     }
+    // override some things where Jasper will set unpleasant defaults
+    val defaultArgs = Map(
+      "REPORT_LOCALE" -> Locale.US,
+      "REPORT_TIME_ZONE" -> TimeZone.getTimeZone("GMT")
+      // TODO? add this and remove 'resourceBundle' from Report? "REPORT_RESOURCE_BUNDLE"
+      // TODO? add IS_IGNORE_PAGINATION and remove from report? or maybe add to print() - it's a printing and not a report property anyway, isn't it?
+      // some more...?
+    )
 
     val finalreport = jre.JasperCompileManager.compileReport(r)
-    (finalreport, envArgs)
+    (finalreport, defaultArgs ++ envArgs)
   }
 
 

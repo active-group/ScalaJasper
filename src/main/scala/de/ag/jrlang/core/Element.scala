@@ -195,6 +195,7 @@ private[core] object ElementUtils {
       height: Height,
       conditions:Conditions,
       // custom properties?
+      // uuid?
       tgt:JRDesignElement) = {
     tgt.setKey(if (key == "") null else key) // don't know if it's important to be null
     tgt.setHeight(height.value inAbsolutePixels)
@@ -205,6 +206,7 @@ private[core] object ElementUtils {
     tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand)
     tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows)
 
+    drop(nextUUID) { tgt.setUUID(_) } >>
     drop(orNull(conditions.printWhenGroupChanges map {_.transform})) { tgt.setPrintWhenGroupChanges(_) } >>
     (currentContainerWidth >>= { parentWidth => {
       val absX = x asPartOf parentWidth

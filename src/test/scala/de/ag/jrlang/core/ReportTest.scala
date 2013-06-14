@@ -31,7 +31,8 @@ class ReportTest extends FunSuite {
     val r = Report("empty report")
     
     val expected = 
-<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="empty report" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
+<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="empty report" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20"
+             locale="en_US" timezone="GMT">
   <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
   <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
   <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
@@ -89,25 +90,35 @@ class ReportTest extends FunSuite {
         )
     
     val expected =
-<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="hello-world-report" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
-  <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
-  <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
-  <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
-  <origin band="pageHeader"/>
-  <origin band="detail"/>
-  <style name="auto0" forecolor="#000000" fontSize="8" backcolor="#FFFFFF" isPdfEmbedded="false" pdfEncoding="Cp1252" pdfFontName="Helvetica">
-    <pen lineColor="#C00000" lineStyle="Solid" lineWidth="1.0"></pen>
-  </style>
-  <page>
-    <line>
-      <reportElement uuid="e09461da-2eb3-41f9-9d0c-629f1532d1e8" style="auto0" x="20" y="30" width="55" height="15" origin="0" srcId="1"/>
-    </line>
-    <text textHeight="9.421875" lineSpacingFactor="1.1777344" leadingOffset="-1.6875">
-      <reportElement uuid="2155e5cc-96c2-4125-a527-c2124b38f01f" style="auto0" x="20" y="30" width="55" height="15" origin="0" srcId="2"/>
-      <textContent><![CDATA[Hello]]></textContent>
-    </text>
-  </page>
-</jasperPrint>
+      <jasperPrint
+      bottomMargin="30" leftMargin="20" locale="en_US" name="hello-world-report" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0">
+        </property>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0">
+        </property>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1">
+        </property>
+        <origin band="pageHeader"></origin>
+        <origin band="detail"></origin>
+        <style
+        backcolor="#FFFFFF" fontSize="8" forecolor="#000000" isPdfEmbedded="false" name="auto0" pdfEncoding="Cp1252" pdfFontName="Helvetica">
+          <pen lineColor="#C00000" lineStyle="Solid" lineWidth="1.0"></pen>
+        </style>
+        <page>
+          <line>
+            <reportElement
+            height="15" origin="0" srcId="1" style="auto0" uuid="f1450306-5176-34a5-beaf-bbf8ed995985" width="55" x="20" y="30">
+            </reportElement>
+          </line>
+          <text
+          leadingOffset="-1.6875" lineSpacingFactor="1.1777344" textHeight="9.421875">
+            <reportElement
+            height="15" origin="0" srcId="2" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="55" x="20" y="30">
+            </reportElement>
+            <textContent>Hello</textContent>
+          </text>
+        </page>
+      </jasperPrint>
 
     val args : Map[String, AnyRef] = Map.empty
     // ReportTest.printToPDF(r, args, "/Users/frese/tmp/test.pdf")
@@ -134,20 +145,26 @@ class ReportTest extends FunSuite {
         );
     
     val expected =
-<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" name="myfirstimage" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
-  <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
-  <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
-  <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
-  <origin band="pageHeader"/>
-  <origin band="detail"/>
-  <style name="auto0" scaleImage="RetainShape"></style>
-  <page>
-    <image hAlign="Left" isLazy="true" scaleImage="RetainShape" vAlign="Top">
-      <reportElement style="auto0" height="150" origin="0" srcId="1" width="150" x="20" y="30" />
-      <imageSource>src/test/resources/butterfly.jpg</imageSource>
-    </image>
-  </page>
-</jasperPrint>
+      <jasperPrint
+      bottomMargin="30" leftMargin="20" locale="en_US" name="myfirstimage" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0">
+        </property>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0">
+        </property>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1">
+        </property>
+        <origin band="pageHeader"></origin>
+        <origin band="detail"></origin>
+        <style name="auto0" scaleImage="RetainShape"></style>
+        <page>
+          <image hAlign="Left" isLazy="true" scaleImage="RetainShape" vAlign="Top">
+            <reportElement
+            height="150" origin="0" srcId="1" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="150" x="20" y="30">
+            </reportElement>
+            <imageSource>src/test/resources/butterfly.jpg</imageSource>
+          </image>
+        </page>
+      </jasperPrint>
    
     val actual = ReportTest.printToXML(r, Map.empty);
     ReportTest.compareJasperPrintXML(expected, actual);
@@ -173,21 +190,26 @@ class ReportTest extends FunSuite {
         );
     
     val expected =
-<jasperPrint xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" 
-  name="text-parameter" pageWidth="595" pageHeight="841" topMargin="30" leftMargin="20" bottomMargin="30" rightMargin="20" locale="en_US" timezone="Europe/Berlin">
-  <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
-  <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
-  <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
-  <origin band="pageHeader"/>
-  <origin band="detail"/>
-  <page>
-    <text leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
-      <reportElement height="50" origin="0" srcId="1" width="555" x="60" y="110">
-      </reportElement>
-      <textContent>mydefault</textContent>
-    </text>
-  </page>
-</jasperPrint>
+      <jasperPrint
+      bottomMargin="30" leftMargin="20" locale="en_US" name="text-parameter" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0">
+        </property>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0">
+        </property>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1">
+        </property>
+        <origin band="pageHeader"></origin>
+        <origin band="detail"></origin>
+        <page>
+          <text
+          leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
+            <reportElement
+            height="50" origin="0" srcId="1" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="555" x="60" y="110">
+            </reportElement>
+            <textContent>mydefault</textContent>
+          </text>
+        </page>
+      </jasperPrint>
    
     val actual = ReportTest.printToXML(r, Map.empty);
     ReportTest.compareJasperPrintXML(expected, actual);
@@ -310,9 +332,9 @@ object ReportTest {
   
   def prepareForCompare(xml: scala.xml.Elem) =
     // more diffs than that... removeAttr("orientation", // TODO only on jasperPrint element; JR 4 set's this to Portrait, while JR 5 doesn't set it?!
-      removeAttr("uuid", // remove all attributes named uuid, in all nested elements
+      //removeAttr("uuid", // remove all attributes named uuid, in all nested elements
         scala.xml.Utility.sort( // sort
-            scala.xml.Utility.trim(xml))) // remove whitespace
+            scala.xml.Utility.trim(xml)) // remove whitespace
 
   def removeAttr(n: String, xml:scala.xml.Node) =
     xml match {
