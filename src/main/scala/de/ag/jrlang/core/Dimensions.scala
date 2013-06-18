@@ -61,15 +61,15 @@ object Dimensions {
     def asPartOf(total: Length) : Length =
       (total * p.value) + l
 
-    def +(rhs: RestrictedLength) = RestrictedLength(p = this.p + rhs.p, l = this.l + rhs.l)
-    def -(rhs: RestrictedLength) = RestrictedLength(p = this.p - rhs.p, l = this.l - rhs.l)
+    def +(rhs: RestrictedLength) : RestrictedLength = RestrictedLength(p = this.p + rhs.p, l = this.l + rhs.l)
+    def -(rhs: RestrictedLength) : RestrictedLength = RestrictedLength(p = this.p - rhs.p, l = this.l - rhs.l)
 
     // implicits don't work over two steps (or something...)
 
-    def +(rhs: FractionValue) = this + RestrictedLength(p = rhs, 0 px)
-    def -(rhs: FractionValue) = this - RestrictedLength(p = rhs, 0 px)
+    def +(rhs: FractionValue) : RestrictedLength = this + RestrictedLength(p = rhs, 0 px)
+    def -(rhs: FractionValue) : RestrictedLength = this - RestrictedLength(p = rhs, 0 px)
 
-    def +(rhs: Length) = this + RestrictedLength(p = 0.0, l = rhs)
-    def -(rhs: Length) = this - RestrictedLength(p = 0.0, l = rhs)
+    def +(rhs: Length) : RestrictedLength = this + RestrictedLength(p = 0.0, l = rhs)
+    def -(rhs: Length) : RestrictedLength = this - RestrictedLength(p = 0.0, l = rhs)
   }
 }

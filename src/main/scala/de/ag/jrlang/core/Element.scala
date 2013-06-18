@@ -11,6 +11,11 @@ sealed abstract class Element {
   /** The vertical extent of this element. Usually this is the Y position plus the height. */
   def verticalExtent: Length
 
+  /* The horizontal extent of this element. Usually this is the X position plus the width. */
+  // not possible? I think we can't know the max horizontalExtent of groups until transformation time
+  // - which is 'more' 20% or 40px ? Add collections to restricted lengths???
+  // def horizontalExtent: RestrictedLength
+
   /** Returns a sequence of all primitive elements that make up this element. The resulting sequence is guaranteed
     * not to contain any [[de.ag.jrlang.core.ElementSeq]] object. */
   // TODO: Unit test this guarantee?
@@ -25,22 +30,33 @@ sealed abstract class Element {
 
   private[core] def transform : Transformer[JRChild]
 
-  // more... side-by-side, move etc....?
-
+  /** Adds the specified length (which can be negative) to the vertical position of this element */
   def moveVertically(len: Length) : Element
-  /*
 
-  // place this element below that element
-  def below(that: Element) = {
-    val ((_, height), _) = that.transform.exec(TransformationState.initial(0 px))
-    this.addYPos(height)
-  }
-  */
+  /* Adds the specified length (which can be negative) to the horizontal position of this element */
+  //def moveHorizontally(len: RestrictedLength) : Element
+
+  /** "Move" this element below that element. Note that the Y position of this element is sort of preserved as
+    * spacing between the elements, e.g. if (and only if) this has a Y position of 0 (the default) the
+    * returned element abuts the other one.
+    * @see See function `stack` in the companion object for a function that vertically distributes multiple elements.
+    */
+  def below(that: Element) = moveVertically(that.verticalExtent)
+
+  // def rightOf(that: Element) = moveHorizontally(that.horizontalExtent)
 }
 
 object Element {
   /** An element representing 'nothing', which forms the neutral element for element addition. */
   val zero : Element = ElementSeq(Seq.empty)
+
+  /** Stack all elements below each other, starting with the first element (which will remain where is it).
+    * @see See also method `below` for the exact definition of "below".
+    */
+  def stack(elements: Seq[Element]) : Seq[Element] =
+    elements.foldLeft(Vector[Element]()) { (s, e) => s :+ (if (s.isEmpty) e else e.below(s.last)) }
+
+  // def juxtapose
 }
 
 /** Element sequences are totally transparent, e.g. an Element e behaves exactly the same if it is nested
@@ -49,6 +65,9 @@ object Element {
 // contained in it with height=RelativeToTallest; so for a fully indifferent container type, we need this:
 sealed case class ElementSeq(elements: Seq[Element]) extends Element {
   override def verticalExtent = ElementUtils.maxHeight(elements)
+
+  // override def horizontalExtent = ElementUtils.maxWidth(elements)
+
   override private[core] def transform = null // treated specially
 
   override def +(e: Element) =
@@ -241,7 +260,7 @@ private[core] object ElementUtils {
   def maxHeight(elements: Seq[Element]): Length =
     (elements map {_.verticalExtent}).foldLeft(0 px) { (l1:Length, l2:Length) =>
       math.max(l1.inAbsolutePixels, l2.inAbsolutePixels).px }
-  
+
   // Various classes need this, though they don't have a common type
   def contentTransformer(content: Seq[Element],
                          addElement: JRDesignElement => Unit,
