@@ -7,7 +7,9 @@ import Transformer._
 import net.sf.jasperreports.engine.`type`._
 
 
-abstract sealed class Data extends Transformable[JRDesignDatasetRun]
+abstract sealed class Data {
+  private[core] def transform : Transformer[JRDesignDatasetRun]
+}
 
 /** A dataset run declaration supplies the values for the dataset parameters as well as the data source through which
   * the dataset will iterate. Optionally, a java.sql.Connection can be passed to the dataset instead of a JRDataSource
@@ -21,7 +23,7 @@ sealed case class DatasetRun(datasetName: String,
                              dataSourceExpression: Option[Expression[JRDataSource]] = None,
                              connectionExpression: Option[Expression[java.sql.Connection]] = None
                              ) extends Data{
-  def transform = {
+  private[core] def transform = {
     val r = new JRDesignDatasetRun()
     r.setDatasetName(datasetName)
     (all(arguments map { case(n, e) => {
@@ -44,7 +46,7 @@ sealed case class DataDef(dataset : Dataset,
                           source : Expression[JRDataSource],
                           arguments : Map[String, Expression[Any]] = Map.empty) extends Data {
   // translate this to a DatasetRun and a new Dataset
-  def transform = {
+  private[core] def transform = {
     // getCurrentEnvironment >>= { env =>
       Transformer.datasetName(dataset, { () => dataset.transform }) >>= {
         name =>
@@ -60,9 +62,9 @@ sealed case class DataDef(dataset : Dataset,
 sealed case class SortField(
     name: String,
     order: net.sf.jasperreports.engine.`type`.SortOrderEnum,
-    fieldType: net.sf.jasperreports.engine.`type`.SortFieldTypeEnum) extends Transformable[JRDesignSortField] {
+    fieldType: net.sf.jasperreports.engine.`type`.SortFieldTypeEnum) {
 
-  def transform = {
+  private[core] def transform = {
     val r = new JRDesignSortField()
     r.setName(name)
     r.setOrder(order)
@@ -87,9 +89,10 @@ sealed case class Group(/** consecutive records with the same value form the gro
                         reprintHeaderOnEachPage: Boolean = false,
                         minHeightToStartNewPage: Int = 0,
                         keepTogether: Boolean = false
-                         ) extends Transformable[JRDesignGroup] {
+                         )
+{
    // ... quite a lot
-  def transform : Transformer[JRDesignGroup] = {
+  private[core] def transform : Transformer[JRDesignGroup] = {
      val r = new JRDesignGroup()
      r.setFooterPosition(footerPosition)
      r.setStartNewColumn(startNewColumn)
@@ -109,7 +112,9 @@ sealed case class Group(/** consecutive records with the same value form the gro
    }
 }
 
-abstract sealed class Reset extends Transformable[(ResetTypeEnum, Option[JRDesignGroup])]
+abstract sealed class Reset {
+  private[core] def transform : Transformer[(ResetTypeEnum, Option[JRDesignGroup])]
+}
 
 object Reset {
   /**
@@ -117,25 +122,25 @@ object Reset {
    * the variable's initial value expression.
    */
   case object Report extends Reset {
-    def transform = ret(ResetTypeEnum.REPORT, Option.empty)
+    private[core] def transform = ret(ResetTypeEnum.REPORT, Option.empty)
   }
   /**
    * The variable is reinitialized at the beginning of each new page.
    */
   case object Page extends Reset {
-    def transform = ret(ResetTypeEnum.PAGE, Option.empty)
+    private[core] def transform = ret(ResetTypeEnum.PAGE, Option.empty)
   }
   /**
    * The variable is reinitialized at the beginning of each new column.
    */
   case object Column extends Reset {
-    def transform = ret(ResetTypeEnum.COLUMN, Option.empty)
+    private[core] def transform = ret(ResetTypeEnum.COLUMN, Option.empty)
   }
   /**
    * The variable is reinitialized every time the specified group breaks.
    */
   sealed case class Group(g : de.ag.jrlang.core.Group) extends Reset {
-    def transform =
+    private[core] def transform =
       g.transform >>= { jg =>
         ret(ResetTypeEnum.GROUP, Some(jg))
       }
@@ -145,32 +150,32 @@ object Reset {
    * evaluating the variable's expression.
    */
   case object None extends Reset {
-    def transform = ret(ResetTypeEnum.NONE, Option.empty)
+    private[core] def transform = ret(ResetTypeEnum.NONE, Option.empty)
   }
 }
 
-abstract sealed class Increment extends Transformable[(IncrementTypeEnum, Option[JRDesignGroup])]
+abstract sealed class Increment {
+  private[core] def transform : Transformer[(IncrementTypeEnum, Option[JRDesignGroup])]
+}
 
 object Increment {
   case object Report extends Increment {
-    def transform = ret(IncrementTypeEnum.REPORT, Option.empty)
+    private[core] def transform = ret(IncrementTypeEnum.REPORT, Option.empty)
   }
   case object Page extends Increment {
-    def transform = ret(IncrementTypeEnum.PAGE, Option.empty)
+    private[core] def transform = ret(IncrementTypeEnum.PAGE, Option.empty)
   }
   case object Column extends Increment {
-    def transform = ret(IncrementTypeEnum.COLUMN, Option.empty)
+    private[core] def transform = ret(IncrementTypeEnum.COLUMN, Option.empty)
   }
-  /* TODO: it's probably more like a group reference... need groups in transformation state?
-  sealed case class Group(g : de.ag.jrlang.Group) extends Increment {
-    def transform =
+  sealed case class Group(g : de.ag.jrlang.core.Group) extends Increment {
+    private[core] def transform =
       g.transform >>= { jg =>
-        ret(IncrementTypeEnum.GROUP, jg)
+        ret(IncrementTypeEnum.GROUP, Some(jg))
       }
   }
-  */
   case object None extends Increment {
-    def transform = ret(IncrementTypeEnum.NONE, Option.empty)
+    private[core] def transform = ret(IncrementTypeEnum.NONE, Option.empty)
   }
 
 }
@@ -184,9 +189,9 @@ sealed case class Variable(name: String,
                            reset: Reset = Reset.Report,
                            incrementerFactoryClassName: Option[String] = None
                            )
-  extends Transformable[JRDesignVariable] {
+{
 
-  def transform = {
+  private[core] def transform = {
     val r = new JRDesignVariable()
     r.setName(name)
     r.setCalculation(calculation)
@@ -230,9 +235,9 @@ sealed case class Dataset(
     filterExpression: Option[Expression[Boolean]] = None,
     whenResourceMissingType: WhenResourceMissingTypeEnum = WhenResourceMissingTypeEnum.NULL,
     customProperties: Map[String, String] = Map.empty) // remove?
-  extends Transformable[JRDesignDataset] {
+{
 
-  def transform = {
+  private[core] def transform = {
     val r = new JRDesignDataset(false) // isMain = false
     // name must be set externally
     fill(r) >>

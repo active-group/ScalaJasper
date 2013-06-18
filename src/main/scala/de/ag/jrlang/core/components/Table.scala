@@ -29,9 +29,9 @@ sealed case class TableCell(
     content: Element,
     height : BandHeight = BandHeight.Auto,
     style : AbstractStyle = Style.inherit,
-    rowSpan : Option[Int] = None) extends Transformable[DesignCell] {
+    rowSpan : Option[Int] = None) {
 
-  def transform : Transformer[DesignCell] = {
+  private[core] def transform : Transformer[DesignCell] = {
     val r = new net.sf.jasperreports.components.table.DesignCell()
     r.setRowSpan(if (rowSpan.isDefined) rowSpan.get : java.lang.Integer else null)
     BandHeight.calc(height, content.maxHeight)(r.setHeight(_))
@@ -44,9 +44,9 @@ sealed case class TableCell(
 
 sealed case class TableGroupCell(
   groupName: String,
-  cell: TableCell) extends Transformable[StandardGroupCell] {
+  cell: TableCell) {
 
-  def transform = {
+  private[core] def transform = {
     val r = new net.sf.jasperreports.components.table.StandardGroupCell()
     r.setGroupName(groupName)
     drop(cell.transform) { r.setCell(_) }
@@ -64,7 +64,8 @@ abstract sealed class AbstractColumn(
                                       tableFooter: Option[TableCell],
                                       width: RestrictedLength,
                                       printWhenExpression: Option[Expression[Boolean]])
-  extends Transformable[BaseColumn] {
+{
+  private[core] def transform : Transformer[net.sf.jasperreports.components.table.BaseColumn]
 
   protected def fill(tgt: net.sf.jasperreports.components.table.StandardBaseColumn) = {
     drop(nextUUID) { tgt.setUUID(_) } >>
@@ -96,10 +97,9 @@ sealed case class TableColumn(
   tableFooter: Option[TableCell] = None,
   printWhenExpression: Option[Expression[Boolean]] = None)
   extends AbstractColumn(header, footer, groupHeaders, groupFooters, tableHeader, tableFooter, width, printWhenExpression)
-  with Transformable[StandardColumn]
 {
 
-  override def transform = {
+  private[core] def transform = {
     val r = new net.sf.jasperreports.components.table.StandardColumn()
     super.fill(r) >>= { absoluteWidth =>
       withContainerWidth(absoluteWidth) {
@@ -122,9 +122,9 @@ sealed case class TableColumnGroup(
   printWhenExpression: Option[Expression[Boolean]],
   columns: Seq[AbstractColumn])
   extends AbstractColumn(header, footer, groupHeaders, groupFooters, tableHeader, tableFooter, width, printWhenExpression)
-  with Transformable[StandardColumnGroup] {
+{
 
-  override def transform : Transformer[StandardColumnGroup] = {
+  private[core] def transform : Transformer[StandardColumnGroup] = {
     val r = new net.sf.jasperreports.components.table.StandardColumnGroup()
     super.fill(r) >>= { absoluteWidth =>
       withContainerWidth(absoluteWidth) {
@@ -140,7 +140,7 @@ sealed case class Table(columns : Seq[AbstractColumn],
                         whenNoData: WhenNoDataTypeTableEnum)
   extends Component {
 
-  override def transform : Transformer[(net.sf.jasperreports.components.table.StandardTable, net.sf.jasperreports.engine.component.ComponentKey)] = {
+  override private[core] def transform : Transformer[(net.sf.jasperreports.components.table.StandardTable, net.sf.jasperreports.engine.component.ComponentKey)] = {
     val r = new net.sf.jasperreports.components.table.StandardTable()
     r.setWhenNoDataType(whenNoData)
     // The columns (the content) have to be transformed in a fresh expression environment, the auto args

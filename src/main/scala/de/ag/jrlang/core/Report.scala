@@ -105,7 +105,7 @@ sealed case class Report(
   summary : Option[SummaryBand] = None,
   title : Option[TitleBand] = None
   // UUID probably not
-) extends Transformable[JasperDesign] {
+) {
 
   private def absoluteRightMargin = page.margins.right asPartOf page.format.width
   private def absoluteLeftMargin = page.margins.left asPartOf page.format.width
@@ -117,7 +117,7 @@ sealed case class Report(
   }
 
 
-  def transform = {
+  private[core] def transform = {
     val r = new JasperDesign()
     //(o: Report, r: jre.design.JasperDesign, defaultStyleName: String, styles: Seq[(String, Style.Internal)]) = {
     // simple properties first that need not run in the monad:

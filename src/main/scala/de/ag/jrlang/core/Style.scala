@@ -206,49 +206,51 @@ object TabStop {
 
 }
 
-abstract sealed class LineSpacing extends Transformable[(LineSpacingEnum, Float)]
+abstract sealed class LineSpacing {
+  private[core] def transform : Transformer[(LineSpacingEnum, Float)]
+}
 
 object LineSpacing {
   /**
    * Normal spacing between lines.
    */
   case object Single extends LineSpacing {
-    def transform = ret(LineSpacingEnum.SINGLE, 0)
+    private[core] def transform = ret(LineSpacingEnum.SINGLE, 0)
   }
 
   /**
    * Spacing between lines of 50% more than normal.
    */
   case object OneAndHalf extends LineSpacing {
-    def transform = ret(LineSpacingEnum.ONE_AND_HALF, 0)
+    private[core] def transform = ret(LineSpacingEnum.ONE_AND_HALF, 0)
   }
 
   /**
    * Spacing between lines of double size than normal.
    */
   case object Double extends LineSpacing {
-    def transform = ret(LineSpacingEnum.DOUBLE, 0)
+    private[core] def transform = ret(LineSpacingEnum.DOUBLE, 0)
   }
 
   /**
    * Spacing between lines of at least the specified size.
    */
   sealed case class AtLeast(size: Float) extends LineSpacing {
-    def transform = ret(LineSpacingEnum.AT_LEAST, size)
+    private[core] def transform = ret(LineSpacingEnum.AT_LEAST, size)
   }
 
   /**
    * Spacing between lines of the specified size.
    */
   sealed case class Fixed(size: Float) extends LineSpacing {
-    def transform = ret(LineSpacingEnum.FIXED, size)
+    private[core] def transform = ret(LineSpacingEnum.FIXED, size)
   }
 
   /**
    * Spacing between lines to the specified proportion of the normal line spacing.
    */
   sealed case class Proportional(factor: Float) extends LineSpacing {
-    def transform = ret(LineSpacingEnum.PROPORTIONAL, factor)
+    private[core] def transform = ret(LineSpacingEnum.PROPORTIONAL, factor)
   }
 }
 
@@ -300,7 +302,9 @@ object Paragraph {
 
 
 // always transforms to a 'style reference'; the style itself will be added to the transformation state
-abstract sealed class AbstractStyle extends Transformable[Option[String]]
+abstract sealed class AbstractStyle {
+  private[core] def transform : Transformer[Option[String]]
+}
 
 sealed case class Style(
                          // name is isDefault intentionally left out (see top level JaperDesign)
@@ -358,7 +362,7 @@ sealed case class Style(
       blankWhenNull = rhs.blankWhenNull.orElse(this.blankWhenNull)
     )
 
-  def transform = {
+  private[core] def transform = {
     if (this.isEmpty)
       ret(None)
     else {
@@ -440,5 +444,5 @@ object Style {
 }
 
 sealed case class StyleReference(reference: String) extends AbstractStyle {
-  def transform = ret(Some(reference))
+  private[core] def transform = ret(Some(reference))
 }

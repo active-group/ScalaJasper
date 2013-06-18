@@ -7,7 +7,7 @@ import de.ag.jrlang.core.Dimensions.Length
 import java.util.{UUID, TimeZone, Locale}
 
 // TODO: Abstraction over Map+Int?
-case class TransformationState(containerWidth: Length, env: Map[AnyRef, JRDesignParameter], nextp: Int,
+private[core] case class TransformationState(containerWidth: Length, env: Map[AnyRef, JRDesignParameter], nextp: Int,
                                styles: Map[AbstractStyle, JRDesignStyle], nextst: Int,
                                datasets: Map[Dataset, JRDesignDataset], nextds: Int,
                                next_uuid: Int) {
@@ -71,15 +71,11 @@ case class TransformationState(containerWidth: Length, env: Map[AnyRef, JRDesign
   }
 }
 
-object TransformationState {
+private[core] object TransformationState {
   def initial(containerWidth: Length) = TransformationState(containerWidth, Map.empty, 0, Map.empty, 0, Map.empty, 0, 0)
 }
 
-trait Transformable[+A] {
-  def transform : Transformer[A]
-}
-
-trait Transformer[+A] { self =>
+private[ag] trait Transformer[+A] { self =>
   def exec(st: TransformationState) : (A, TransformationState)
 
   def >>=[B](f : (A => Transformer[B])) : Transformer[B] =
@@ -102,11 +98,11 @@ abstract def map[B, That](f: (A) ⇒ B)(implicit bf: CanBuildFrom[Repr, B, That]
 abstract def withFilter(p: (A) ⇒ Boolean): FilterMonadic[A, Repr]
  */
 
-trait ImperativeTransformer extends Transformer[Unit] {
+private[ag] trait ImperativeTransformer extends Transformer[Unit] {
   def >>[B](n : => Transformer[B]) = this >>= { _ => n }
 }
 
-object Transformer {
+private[ag] object Transformer {
   /** a transformer that already has the desired result */
   def ret[B](v : B) : Transformer[B] = new Transformer[B] {
     def exec(st: TransformationState) = (v, st)

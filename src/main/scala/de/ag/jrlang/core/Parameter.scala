@@ -13,8 +13,8 @@ sealed case class Parameter( // add type parameter?
     valueClassName: String = "java.lang.String",
     // JRBaseParamter:
     description: String = ""
-) extends Transformable[JRDesignParameter]{
-  def transform = {
+) {
+  private[core] def transform = {
     val r = new JRDesignParameter()
     ret(r.setName(name)) >>
     drop(orNull(defaultValueExpression map { _.transform })) { r.setDefaultValueExpression(_) } >>

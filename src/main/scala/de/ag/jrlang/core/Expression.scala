@@ -27,28 +27,28 @@ object EnvCollector {
 }
 */
 
-abstract class Expression[+A] extends Transformable[JRDesignExpression] {
-  def transformRaw : Transformer[String]
+abstract class Expression[+A] {
+  private[core] def transformRaw : Transformer[String]
 
-  def transform : Transformer[JRDesignExpression] = {
+  private[core] def transform : Transformer[JRDesignExpression] = {
     val r = new net.sf.jasperreports.engine.design.JRDesignExpression()
     drop(transformRaw) { r.setText(_) } >>
     ret(r)
   }
 }
 
-sealed case class RawExpression[+A](raw: String) extends Expression[A] {
-  def transformRaw = ret(raw)
+private sealed case class RawExpression[+A](raw: String) extends Expression[A] {
+  private[core] def transformRaw = ret(raw)
 }
 
-sealed case class CallExpression[A, +R](f : Expression[A => R], a : Expression[A]) extends Expression[R] {
-  def transformRaw = f.transformRaw >>= { ft => a.transformRaw >>= { at =>
+private sealed case class CallExpression[A, +R](f : Expression[A => R], a : Expression[A]) extends Expression[R] {
+  private[core] def transformRaw = f.transformRaw >>= { ft => a.transformRaw >>= { at =>
     ret("((scala.Function1)" + ft + ").apply(" + at + ")")
   }}
 }
 
-sealed case class LiftExpression[A <: AnyRef](v : A) extends Expression[A] {
-  def transformRaw = binding(v) >>= { n => ret(Expression.stdraw("P", n)) }
+private sealed case class LiftExpression[A <: AnyRef](v : A) extends Expression[A] {
+  private[core] def transformRaw = binding(v) >>= { n => ret(Expression.stdraw("P", n)) }
 }
 
 object Expression {
@@ -56,7 +56,7 @@ object Expression {
   private def lift[A <: AnyRef](v: A) : LiftExpression[A] = LiftExpression(v)
 
   /** create an expression, which evaluates f and arg at runtime, and calls the resulting function on the argument value */
-  def calle[A, R](f: Expression[A => R], arg : Expression[A]) : Expression[R] = CallExpression(f, arg)
+  private def calle[A, R](f: Expression[A => R], arg : Expression[A]) : Expression[R] = CallExpression(f, arg)
 
   // for now, we do heavy currying, but only because it seemed easier to define.
   def call[A, R](fn : A => R, arg : Expression[A]) : Expression[R] =

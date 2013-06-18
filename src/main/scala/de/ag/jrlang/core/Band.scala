@@ -38,9 +38,9 @@ sealed case class Band (
     height : BandHeight = BandHeight.Auto, // calculate from content
     printWhenExpression : Option[Expression[Boolean]] = None
     // origin: probably useless (set automatically, after Band is used somewhere)
-    ) extends Transformable[JRDesignBand] //FilterMonadic[Band, Iterable[Band]]
+    )
 {
-  def transform = {
+  private[core] def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBand()
     BandHeight.calc(height, content.maxHeight){r.setHeight(_)}
     drop(orNull(printWhenExpression map {_.transform})) { r.setPrintWhenExpression(_) } >>
