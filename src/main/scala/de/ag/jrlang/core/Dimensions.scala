@@ -36,6 +36,7 @@ object Dimensions {
     def mm = in(LengthUnit.mm)
     def cm = in(LengthUnit.cm)
 
+    def em = FontSizedLength(value)
   }
   val zero = 0 px // in case you want to make explicit that 0 actually has no unit
 
@@ -71,5 +72,29 @@ object Dimensions {
 
     def +(rhs: Length) : RestrictedLength = this + RestrictedLength(p = 0.0, l = rhs)
     def -(rhs: Length) : RestrictedLength = this - RestrictedLength(p = 0.0, l = rhs)
+  }
+
+  /** This is like 'em' in CSS, which is defined as a value relative to the current font size */
+  sealed case class FontSizedLength(ems: Double)
+
+  abstract class VerticalLength {
+    def relativeTo(font: Font) : Length
+
+    // well, I knew we should remove StyleReferences
+    def relativeTo(style: AbstractStyle) : Length =
+      style match {
+        case s: Style => relativeTo(s.font)
+        case r: StyleReference => throw new Exception("Lengths relative to the font size (em) cannot be used together with extenal style references.")
+      }
+  }
+
+  sealed case class AbsoluteVerticalLength(length: Length) extends VerticalLength {
+    def relativeTo(font: Font) = length
+  }
+  sealed case class FontRelatedVerticalLength(ems: FontSizedLength) extends VerticalLength {
+    def relativeTo(font: Font) = {
+      val em = font.fontSize.getOrElse(0) // 0 as a default? well you can't use em's if you don't define a fontsize?!
+      (ems.ems * em).px
+    }
   }
 }

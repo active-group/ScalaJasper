@@ -18,6 +18,8 @@ package object core {
   implicit def specificWidth(value: FractionValue) = Width.Specific(value)
   implicit def specificWidth(value: Length) = Width.Specific(value)
 
+  implicit def absoluteVertical(value: Length) = AbsoluteVerticalLength(value)
+  implicit def fontRelatedVertical(value: FontSizedLength) = FontRelatedVerticalLength(value)
 
   // backward-compatiblity; should be removed maybe
   implicit def liftElements(l: Seq[Element]) : Element = if (l.size == 1) l(0) else ElementSeq(l)

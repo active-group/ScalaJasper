@@ -142,25 +142,25 @@ object EvaluationTime {
 
 /** Height of an element */
 sealed case class Height(
-    value: Length,
+    value: VerticalLength,
     stretchType: StretchTypeEnum)
 
 object Height {
   /**
    * The element preserves its original specified height.
    */
-  def fixed(height: Length) = Height(value=height, StretchTypeEnum.NO_STRETCH)
+  def fixed(height: VerticalLength) = Height(value=height, StretchTypeEnum.NO_STRETCH)
 
   /**
    * The element stretches to the tallest element in it's group (@see ElementGroup).
    */
-  def relativeToTallest(height: Length) = Height(value=height, StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
+  def relativeToTallest(height: VerticalLength) = Height(value=height, StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
 
   /**
    * The element will adapt its height to match the new height of the report section it placed on, which has been
    * affected by stretch.
    */
-  def relativeToBand(height: Length) = Height(value=height, StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
+  def relativeToBand(height: VerticalLength) = Height(value=height, StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
 
 }
 
@@ -181,7 +181,7 @@ object Width {
 
 /** Vertical position of an element */
 sealed case class YPos(
-    value: Length,
+    value: VerticalLength,
     positionType: PositionTypeEnum)
 
 object YPos {
@@ -189,19 +189,19 @@ object YPos {
    * The element will float in its parent section if it is pushed downwards by other elements fount above it.
    * It will try to conserve the distance between it and the neighboring elements placed immediately above.
    */
-  def float(y: Length) = YPos(y, PositionTypeEnum.FLOAT)
+  def float(y: VerticalLength) = YPos(y, PositionTypeEnum.FLOAT)
 
   /**
    * The element will simply ignore what happens to the other section elements and tries to
    * conserve the y offset measured from the top of its parent report section.
    */
-  def fixedTop(y: Length) = YPos(y, PositionTypeEnum.FIX_RELATIVE_TO_TOP)
+  def fixedTop(y: VerticalLength) = YPos(y, PositionTypeEnum.FIX_RELATIVE_TO_TOP)
 
   /**
    * If the height of the parent report section is affected by elements that stretch, the current element will try to
    * conserve the original distance between its bottom margin and the bottom of the band.
    */
-  def fixedBottom(y: Length) = YPos(y, PositionTypeEnum.FIX_RELATIVE_TO_BOTTOM)
+  def fixedBottom(y: VerticalLength) = YPos(y, PositionTypeEnum.FIX_RELATIVE_TO_BOTTOM)
 }
 
 sealed case class Conditions(
@@ -230,9 +230,9 @@ private[core] object ElementUtils {
       // uuid?
       tgt:JRDesignElement) = {
     tgt.setKey(if (key == "") null else key) // don't know if it's important to be null
-    tgt.setHeight(height.value inAbsolutePixels)
+    tgt.setHeight(height.value relativeTo(style) inAbsolutePixels)
     tgt.setStretchType(height.stretchType)
-    tgt.setY(y.value inAbsolutePixels)
+    tgt.setY(y.value relativeTo(style) inAbsolutePixels)
     tgt.setPositionType(y.positionType)
     tgt.setPrintRepeatedValues(conditions.printRepeatedValues)
     tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand)
@@ -312,9 +312,9 @@ sealed case class Break(
     ret(r)
   }
 
-  override def verticalExtent = y.value // breaks have no height
+  override def verticalExtent = y.value relativeTo(Font(fontSize=Some(0))) // breaks have no height and no style!! :-/
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(Font(fontSize=Some(0))) + len))
 }
 
 object Break {
@@ -373,9 +373,9 @@ sealed case class Frame(
   }
 
   override def verticalExtent =
-    y.value + height.value // correct? only frame height, and content height is irrelevant?
+    y.value.relativeTo(style) + height.value.relativeTo(style) // correct? only frame height, and content height is irrelevant?
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 sealed case class Ellipse(
@@ -396,9 +396,9 @@ sealed case class Ellipse(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 sealed case class Image(
@@ -449,15 +449,15 @@ sealed case class Image(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 sealed case class Line(
     width: Width,
     height: Height,
-    x: RestrictedLength = (0 px),
+    x: RestrictedLength = 0.px,
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions : Conditions = Conditions.default,
@@ -479,9 +479,9 @@ sealed case class Line(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 sealed case class Rectangle(
@@ -500,16 +500,16 @@ sealed case class Rectangle(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 sealed case class StaticText(
     text: String,
-    height: Height, // TODO 1 em ?
+    height: Height = Height.fixed(1.0.em),
     width: Width = Width.Remaining,
-    x: RestrictedLength = (0 px),
+    x: RestrictedLength = 0.px,
     y: YPos = YPos.float(0 px),
     key: String = "",
     style: AbstractStyle = Style.inherit,
@@ -523,14 +523,14 @@ sealed case class StaticText(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 sealed case class TextField(
     expression: Expression[Any],
-    height: Height, // TODO 1 em?
+    height: Height = Height.fixed(1.0.em),
     width: Width = Width.Remaining,
     x: RestrictedLength = (0 px),
     y: YPos = YPos.float(0 px),
@@ -573,9 +573,9 @@ sealed case class TextField(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 sealed case class ReturnValue(subreportVariable: String,
@@ -648,9 +648,9 @@ sealed case class Subreport(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 object Subreport {
@@ -682,9 +682,9 @@ sealed case class ComponentElement(
     ret(r)
   }
 
-  override def verticalExtent = y.value + height.value
+  override def verticalExtent = y.value.relativeTo(style) + height.value.relativeTo(style)
 
-  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(style) + len))
 }
 
 /* TODO
