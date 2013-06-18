@@ -8,10 +8,15 @@ import net.sf.jasperreports.engine.`type`.{PositionTypeEnum, StretchTypeEnum, Ca
 import Dimensions._
 
 sealed abstract class Element {
-  def maxHeight: Length // y + height usually
+  /** The vertical extent of this element. Usually this is the Y position plus the height. */
+  def verticalExtent: Length
 
+  /** Returns a sequence of all primitive elements that make up this element. The resulting sequence is guaranteed
+    * not to contain any [[de.ag.jrlang.core.ElementSeq]] object. */
+  // TODO: Unit test this guarantee?
   def seq = Seq(this)
 
+  /** Combines this element with another element to form a new element consisting of both of them. */
   def +(e: Element) = // also overridden in ElementSeq
     e match {
       case ElementSeq(tl) => ElementSeq(this +: tl)
@@ -22,8 +27,8 @@ sealed abstract class Element {
 
   // more... side-by-side, move etc....?
 
+  def moveVertically(len: Length) : Element
   /*
-  def addYPos(len: Length) : Element
 
   // place this element below that element
   def below(that: Element) = {
@@ -34,6 +39,8 @@ sealed abstract class Element {
 }
 
 object Element {
+  /** An element representing 'nothing', which forms the neutral element for element addition. */
+  val zero : Element = ElementSeq(Seq.empty)
 }
 
 /** Element sequences are totally transparent, e.g. an Element e behaves exactly the same if it is nested
@@ -41,7 +48,7 @@ object Element {
 // This is a new 'virtual' Element type, because an ElementGroup has a small semantic meaning, to those elements
 // contained in it with height=RelativeToTallest; so for a fully indifferent container type, we need this:
 sealed case class ElementSeq(elements: Seq[Element]) extends Element {
-  override def maxHeight = ElementUtils.maxHeight(elements)
+  override def verticalExtent = ElementUtils.maxHeight(elements)
   override private[core] def transform = null // treated specially
 
   override def +(e: Element) =
@@ -51,6 +58,8 @@ sealed case class ElementSeq(elements: Seq[Element]) extends Element {
     }
 
   override def seq = elements
+
+  override def moveVertically(len: Length) = elements map { _.moveVertically(len) }
 }
 
 abstract class Anchor {
@@ -230,7 +239,7 @@ private[core] object ElementUtils {
   }
 
   def maxHeight(elements: Seq[Element]): Length =
-    (elements map {_.maxHeight}).foldLeft(0 px) { (l1:Length, l2:Length) =>
+    (elements map {_.verticalExtent}).foldLeft(0 px) { (l1:Length, l2:Length) =>
       math.max(l1.inAbsolutePixels, l2.inAbsolutePixels).px }
   
   // Various classes need this, though they don't have a common type
@@ -284,7 +293,9 @@ sealed case class Break(
     ret(r)
   }
 
-  override def maxHeight = y.value // breaks have no height
+  override def verticalExtent = y.value // breaks have no height
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 object Break {
@@ -315,7 +326,9 @@ sealed case class ElementGroup( // different from a "group"!
     ret(r)
   }
 
-  override def maxHeight = ElementUtils.maxHeight(content)
+  override def verticalExtent = ElementUtils.maxHeight(content)
+
+  override def moveVertically(len: Length) = copy(content = content map { _.moveVertically(len) })
 }
 
 object ElementGroup {
@@ -340,8 +353,10 @@ sealed case class Frame(
     ret(r)
   }
 
-  override def maxHeight =
+  override def verticalExtent =
     y.value + height.value // correct? only frame height, and content height is irrelevant?
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 sealed case class Ellipse(
@@ -362,7 +377,9 @@ sealed case class Ellipse(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 sealed case class Image(
@@ -413,7 +430,9 @@ sealed case class Image(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 sealed case class Line(
@@ -441,7 +460,9 @@ sealed case class Line(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 sealed case class Rectangle(
@@ -460,7 +481,9 @@ sealed case class Rectangle(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 sealed case class StaticText(
@@ -481,7 +504,9 @@ sealed case class StaticText(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 sealed case class TextField(
@@ -529,7 +554,9 @@ sealed case class TextField(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 sealed case class ReturnValue(subreportVariable: String,
@@ -602,7 +629,9 @@ sealed case class Subreport(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 object Subreport {
@@ -634,7 +663,9 @@ sealed case class ComponentElement(
     ret(r)
   }
 
-  override def maxHeight = y.value + height.value
+  override def verticalExtent = y.value + height.value
+
+  override def moveVertically(len: Length) = copy(y = y.copy(value = y.value + len))
 }
 
 /* TODO

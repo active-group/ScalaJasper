@@ -34,7 +34,7 @@ sealed case class TableCell(
   private[core] def transform : Transformer[DesignCell] = {
     val r = new net.sf.jasperreports.components.table.DesignCell()
     r.setRowSpan(if (rowSpan.isDefined) rowSpan.get : java.lang.Integer else null)
-    BandHeight.calc(height, content.maxHeight)(r.setHeight(_))
+    BandHeight.calc(height, content.verticalExtent)(r.setHeight(_))
 
     drop(style.transform) { so => r.setStyleNameReference(so.getOrElse(null)) } >>
     ElementUtils.contentTransformer(content.seq, r.addElement(_), r.addElementGroup(_)) >>
