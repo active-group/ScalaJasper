@@ -27,6 +27,7 @@ object EnvCollector {
 }
 */
 
+/** @see See companion object for various functions that return Expression objects. */
 abstract class Expression[+A] {
   private[core] def transformRaw : Transformer[String]
 
@@ -51,6 +52,7 @@ private sealed case class LiftExpression[A <: AnyRef](v : A) extends Expression[
   private[core] def transformRaw = binding(v) >>= { n => ret(Expression.stdraw("P", n)) }
 }
 
+/** This object provides various ways to create Expression objects. */
 object Expression {
   /** lift value v into a (java) source expression which evaluates to it at report runtime */
   private def lift[A <: AnyRef](v: A) : LiftExpression[A] = LiftExpression(v)
@@ -58,35 +60,47 @@ object Expression {
   /** create an expression, which evaluates f and arg at runtime, and calls the resulting function on the argument value */
   private def calle[A, R](f: Expression[A => R], arg : Expression[A]) : Expression[R] = CallExpression(f, arg)
 
+  /** Returns an expression that will call the given function with the value of the given expression. */
   // for now, we do heavy currying, but only because it seemed easier to define.
   def call[A, R](fn : A => R, arg : Expression[A]) : Expression[R] =
     calle(lift(fn), arg)
 
+  /** Returns an expression that will call the given function with the values of the given expressions. */
   def call[A1, A2, R](fn : (A1, A2) => R, arg1 : Expression[A1], arg2 : Expression[A2]) : Expression[R] =
     calle(call({a1:A1 => a2: A2 => fn(a1, a2)}, arg1), arg2)
 
-  def call[T1, T2, T3, R](fn : (T1, T2, T3) => R, arg1 : Expression[T1], arg2 : Expression[T2], arg3 : Expression[T3]) : Expression[R] =
-    calle(call({(a1:T1, a2:T2) => { a3:T3 => fn(a1, a2, a3)}}, arg1, arg2), arg3)
+  /** Returns an expression that will call the given function with the values of the given expressions. */
+  def call[A1, A2, A3, R](fn : (A1, A2, A3) => R, arg1 : Expression[A1], arg2 : Expression[A2], arg3 : Expression[A3]) : Expression[R] =
+    calle(call({(a1:A1, a2:A2) => { a3:A3 => fn(a1, a2, a3)}}, arg1, arg2), arg3)
 
-  def call[T1, T2, T3, T4, R](fn : (T1, T2, T3, T4) => R, arg1 : Expression[T1], arg2 : Expression[T2], arg3 : Expression[T3], arg4 : Expression[T4]) : Expression[R] =
-    calle(call({(a1:T1, a2:T2, a3:T3) => { a4:T4 => fn(a1, a2, a3, a4)}}, arg1, arg2, arg3), arg4)
+  /** Returns an expression that will call the given function with the values of the given expressions. */
+  def call[A1, A2, A3, A4, R](fn : (A1, A2, A3, A4) => R, arg1 : Expression[A1], arg2 : Expression[A2], arg3 : Expression[A3], arg4 : Expression[A4]) : Expression[R] =
+    calle(call({(a1:A1, a2:A2, a3:A3) => { a4:A4 => fn(a1, a2, a3, a4)}}, arg1, arg2, arg3), arg4)
 
   private[core] def escape(name: String) = name.replaceAllLiterally("$", "$$")
   private[core] def stdraw(id: String, name: String) = "$" + id + "{" + escape(name) + "}"
   private[core] def std[T <: AnyRef](id: String, name: String) : Expression[T] = raw(stdraw(id, name))
 
-  /** Parameter values, some built-in, some user defined */
+  /** Returns an expression that results in the value of the specified parameter values.
+    * @see See parameters in [[de.ag.jrlang.core.Dataset]]. */
   def P[T <: AnyRef](name: String) = std[T]("P", name)
-  /** Resource values */
+  /** Returns an expression that results in the value of the specified resource variable.
+    * @see See resourceBundle in [[de.ag.jrlang.core.Dataset]]. */
   def R[T <: AnyRef](name: String) = std[T]("R", name)
-  /** Field values */
+  /** Returns an expression that results in the value of the specified field.
+    * @see See fields in [[de.ag.jrlang.core.Dataset]]. */
   def F[T <: AnyRef](name: String) = std[T]("F", name)
-  /** Variable values */
+  /** Returns an expression that results in the value of the specified variable.
+    * @see See variables in [[de.ag.jrlang.core.Dataset]]. */
   def V[T <: AnyRef](name: String) = std[T]("V", name)
 
+  /** Returns an expression that results in the specified value. */
   def const[T <: AnyRef](s: T) : Expression[T] =
      lift(s)
 
+  /** Returns an expression representing the given raw jasper expression, a Java or Groovy expression, depending on
+    * the value of language in [[de.ag.jrlang.core.Report]].
+    */
   def raw[T <: AnyRef](r: String) : Expression[T] = RawExpression(r)
 };
 
