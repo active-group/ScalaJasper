@@ -43,6 +43,9 @@ object Dimensions {
     // "percent" is like a modifier or predefined division by 100; also maked the DSL work nicely
     // The percent sign unfortunately does not work as a "unary postfix operator"
     def percent = FractionValue(value/100.0)
+
+    def +(rhs: FractionValue) = FractionValue(this.value + rhs.value)
+    def -(rhs: FractionValue) = FractionValue(this.value - rhs.value)
   }
 
   private object Demo {
@@ -52,14 +55,21 @@ object Dimensions {
     val x = p(15 percent)
   }
 
-  abstract sealed class RestrictedLength {
-    def asPartOf(total: Length) : Length
-  }
-  sealed case class PartialLength(p: FractionValue) extends RestrictedLength {
-    override def asPartOf(total: Length) = total * p.value
-  }
-  sealed case class AbsoluteLength(l: Length) extends RestrictedLength {
-    override def asPartOf(total: Length) = l
-  }
+  /** A restricted length is composed of a fractional and an absolute part, so you can specify values
+    * like `100 percent - 10 px` */
+  sealed case class RestrictedLength(p: FractionValue, l: Length) {
+    def asPartOf(total: Length) : Length =
+      (total * p.value) + l
 
+    def +(rhs: RestrictedLength) = RestrictedLength(p = this.p + rhs.p, l = this.l + rhs.l)
+    def -(rhs: RestrictedLength) = RestrictedLength(p = this.p - rhs.p, l = this.l - rhs.l)
+
+    // implicits don't work over two steps (or something...)
+
+    def +(rhs: FractionValue) = this + RestrictedLength(p = rhs, 0 px)
+    def -(rhs: FractionValue) = this - RestrictedLength(p = rhs, 0 px)
+
+    def +(rhs: Length) = this + RestrictedLength(p = 0.0, l = rhs)
+    def -(rhs: Length) = this - RestrictedLength(p = 0.0, l = rhs)
+  }
 }
