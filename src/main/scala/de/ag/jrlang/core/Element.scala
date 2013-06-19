@@ -17,7 +17,7 @@ sealed abstract class Element {
   // def horizontalExtent: RestrictedLength
 
   /** Returns a sequence of all primitive elements that make up this element. The resulting sequence is guaranteed
-    * not to contain any [[de.ag.jrlang.core.ElementSeq]] object. */
+    * not to contain any [[de.ag.jrlang.core.ElementSeq]] objects. */
   // TODO: Unit test this guarantee?
   def seq = Seq(this)
 
@@ -30,18 +30,24 @@ sealed abstract class Element {
 
   private[core] def transform : Transformer[JRChild]
 
-  /** Adds the specified length (which can be negative) to the vertical position of this element */
+  /** Adds the specified length (which can be negative) to the vertical position of this element. */
   def moveVertically(len: Length) : Element
 
   /* Adds the specified length (which can be negative) to the horizontal position of this element */
   //def moveHorizontally(len: RestrictedLength) : Element
 
-  /** "Move" this element below that element. Note that the Y position of this element is sort of preserved as
-    * spacing between the elements, e.g. if (and only if) this has a Y position of 0 (the default) the
-    * returned element abuts the other one.
-    * @see See function `stack` in the companion object for a function that vertically distributes multiple elements.
-    */
-  def below(that: Element) = moveVertically(that.verticalExtent)
+  /** Returns a combination of this and that element, where this element is "moved" below that. Note that the Y
+    * position of this element is sort of preserved as spacing between the elements, e.g. if (and only if) this element
+    * has a Y position of 0 (the default) the elements abut each other.
+    * @see See function `stack` in the companion object for a function that vertically distributes multiple elements. */
+  def below(that: Element) = that + this.moveVertically(that.verticalExtent)
+
+  /** Returns a combination of this and that element, where that element is "moved" below this. Note that this element
+    * is not moved and elements are only moved down. Also note that the Y
+    * position of that element is sort of preserved as spacing between the elements, e.g. if (and only if) this element
+    * has a Y position of 0 (the default) the elements abut each other.
+    * @see See function `stack` in the companion object for a function that vertically distributes multiple elements. */
+  def above(that: Element) = that.below(this)
 
   // def rightOf(that: Element) = moveHorizontally(that.horizontalExtent)
 }
@@ -53,8 +59,8 @@ object Element {
   /** Stack all elements below each other, starting with the first element (which will remain where is it).
     * @see See also method `below` for the exact definition of "below".
     */
-  def stack(elements: Seq[Element]) : Seq[Element] =
-    elements.foldLeft(Vector[Element]()) { (s, e) => s :+ (if (s.isEmpty) e else e.below(s.last)) }
+  def stack(elements: Seq[Element]) : Element =
+    elements.foldLeft(zero) { (r, e) => r above e }
 
   // def juxtapose
 }
@@ -76,7 +82,9 @@ sealed case class ElementSeq(elements: Seq[Element]) extends Element {
       case _ => ElementSeq(elements :+ e)
     }
 
-  override def seq = elements
+  override def seq = flatSeq
+
+  private def flatSeq = elements.foldLeft(Vector[Element]()){(r, e) => r ++ e.seq}
 
   override def moveVertically(len: Length) = elements map { _.moveVertically(len) }
 }
@@ -307,26 +315,28 @@ sealed case class Break(
   override private[core] def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
     ElementUtils.putReportElement(key = key, style=Style.empty, x=(0 px),
-      y = y, width = Width.Specific(0 px), height = Height.fixed(0 px), conditions=conditions, r) >>
+      y = y, width = Width.Specific(0 px), height = Height.fixed(height), conditions=conditions, r) >>
     ret(r.setType(breakType)) >>
     ret(r)
   }
 
-  override def verticalExtent = y.value relativeTo(Font(fontSize=Some(0))) // breaks have no height and no style!! :-/
+  private val height = 1 px
+
+  override def verticalExtent = y.value.relativeTo(Font(fontSize=Some(0))) + height // breaks have a fixed height of 1 and no style!! :-/
 
   override def moveVertically(len: Length) = copy(y = y.copy(value = y.value.relativeTo(Font(fontSize=Some(0))) + len))
 }
 
 object Break {
   /** Creates a page break */
-  def page(y: YPos, conditions: Conditions = Conditions.default, key:String = "") = new Break(
+  def page(y: YPos = YPos.float(0 px), conditions: Conditions = Conditions.default, key:String = "") = new Break(
       key = key,
       y = y,
       conditions = conditions,
       breakType = net.sf.jasperreports.engine.`type`.BreakTypeEnum.PAGE)
   
   /** Creates a column break */
-  def column(y: YPos, conditions: Conditions = Conditions.default, key:String = "") = new Break(
+  def column(y: YPos = YPos.float(0 px), conditions: Conditions = Conditions.default, key:String = "") = new Break(
       key = key,
       y = y,
       conditions = conditions,

@@ -1,5 +1,5 @@
 package de.ag.jrlang.core
-
+/*
 sealed case class ChartLegend(
     color: Option[java.awt.Color],
     backgroundColor: Option[java.awt.Color],
@@ -56,5 +56,5 @@ sealed case class PieChart(
     dataset: JRPieDataset,
     plot: JRPiePlot
     ) extends ChartType(net.sf.jasperreports.engine.JRChart.CHART_TYPE_PIE);
-
+*/
 // TODO: about 10 more
