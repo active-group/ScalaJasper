@@ -1,4 +1,4 @@
-package de.ag.jrlang.core
+package de.ag.scalajasper.core
 
 import net.sf.jasperreports.engine.{JRDataSource, JRExpression, JRChild, JRAnchor}
 import net.sf.jasperreports.engine.design._
@@ -17,7 +17,7 @@ sealed abstract class Element {
   // def horizontalExtent: RestrictedLength
 
   /** Returns a sequence of all primitive elements that make up this element. The resulting sequence is guaranteed
-    * not to contain any [[de.ag.jrlang.core.ElementSeq]] objects. */
+    * not to contain any [[de.ag.scalajasper.core.ElementSeq]] objects. */
   // TODO: Unit test this guarantee?
   def seq = Seq(this)
 
@@ -126,7 +126,7 @@ object EvaluationTime {
   case object Auto extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.AUTO)
   case object Band extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.BAND)
   case object Column extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.COLUMN)
-  sealed case class Group(group: de.ag.jrlang.core.Group) extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.GROUP)
+  sealed case class Group(group: de.ag.scalajasper.core.Group) extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.GROUP)
   case object Now extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.NOW)
   case object Page extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.PAGE)
   case object Report extends EvaluationTime(net.sf.jasperreports.engine.`type`.EvaluationTimeEnum.REPORT)

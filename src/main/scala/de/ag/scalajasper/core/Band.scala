@@ -1,4 +1,4 @@
-package de.ag.jrlang.core
+package de.ag.scalajasper.core
 
 import scala.collection.generic.{CanBuildFrom, FilterMonadic}
 import scala.collection.{TraversableLike, IterableLike, GenTraversableOnce}
@@ -8,7 +8,7 @@ import net.sf.jasperreports.engine.design.JRDesignBand
 
 import Transformer._
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
-import de.ag.jrlang.core.Dimensions.Length
+import de.ag.scalajasper.core.Dimensions.Length
 
 abstract sealed class BandHeight
 

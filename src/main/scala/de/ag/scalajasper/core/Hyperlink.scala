@@ -1,4 +1,4 @@
-package de.ag.jrlang.core
+package de.ag.scalajasper.core
 
 import net.sf.jasperreports.engine.{JRHyperlinkParameter, JRExpression}
 import net.sf.jasperreports.engine.design.JRDesignHyperlinkParameter

@@ -1,7 +1,7 @@
-package de.ag.jrlang
+package de.ag.scalajasper
 
 import scala.collection.JavaConversions._
-import de.ag.jrlang.core.Dimensions._
+import de.ag.scalajasper.core.Dimensions._
 ;
 
 package object core {

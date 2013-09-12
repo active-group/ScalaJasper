@@ -1,9 +1,9 @@
-package de.ag.jrlang.core
+package de.ag.scalajasper.core
 
 import net.sf.jasperreports.{engine => jre}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
 import net.sf.jasperreports.engine.JRDatasetParameter
-import de.ag.jrlang.core.Dimensions.Length
+import de.ag.scalajasper.core.Dimensions.Length
 import java.util.{UUID, TimeZone, Locale}
 
 // TODO: Abstraction over Map+Int?

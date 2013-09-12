@@ -1,4 +1,4 @@
-package de.ag.jrlang.core
+package de.ag.scalajasper.core
 /*
 sealed case class ChartLegend(
     color: Option[java.awt.Color],

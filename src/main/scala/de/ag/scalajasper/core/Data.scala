@@ -1,4 +1,4 @@
-package de.ag.jrlang.core
+package de.ag.scalajasper.core
 
 import net.sf.jasperreports.engine.{JRScriptlet, JRDatasetRun, JRField, JRDataSource}
 import net.sf.jasperreports.engine.design._
@@ -139,7 +139,7 @@ object Reset {
   /**
    * The variable is reinitialized every time the specified group breaks.
    */
-  sealed case class Group(g : de.ag.jrlang.core.Group) extends Reset {
+  sealed case class Group(g : de.ag.scalajasper.core.Group) extends Reset {
     private[core] def transform =
       g.transform >>= { jg =>
         ret(ResetTypeEnum.GROUP, Some(jg))
@@ -168,7 +168,7 @@ object Increment {
   case object Column extends Increment {
     private[core] def transform = ret(IncrementTypeEnum.COLUMN, Option.empty)
   }
-  sealed case class Group(g : de.ag.jrlang.core.Group) extends Increment {
+  sealed case class Group(g : de.ag.scalajasper.core.Group) extends Increment {
     private[core] def transform =
       g.transform >>= { jg =>
         ret(IncrementTypeEnum.GROUP, Some(jg))

@@ -1,4 +1,4 @@
-package de.ag.jrlang.test;
+package de.ag.scalajasper.test;
 
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.design.*;

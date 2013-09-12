@@ -1,4 +1,4 @@
-package de.ag.jrlang.core
+package de.ag.scalajasper.core
 
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner

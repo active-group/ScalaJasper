@@ -3,10 +3,10 @@ import Keys._
 import sbtassembly.Plugin._ 
 import AssemblyKeys._
 
-object JRLangBuild extends Build {
+object ScalaJasperBuild extends Build {
 
   // should be first, alphabetically
-  lazy val JRLang = Project(id = "jrlang",
+  lazy val ScalaJasper = Project(id = "scalajasper",
     base = file("."))
 
 }
