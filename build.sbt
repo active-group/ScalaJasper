@@ -5,7 +5,9 @@ assemblySettings
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-organization := "de.ag"
+organization := "de.activegroup"
+
+organizationHomepage := Some(url("http://www.active-group.de/"))
 
 scalaVersion in ThisBuild := "2.9.2"
 
