@@ -1,4 +1,4 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.engine.design.JRDesignExpression
 
@@ -82,16 +82,16 @@ object Expression {
   private[core] def std[T <: AnyRef](id: String, name: String) : Expression[T] = raw(stdraw(id, name))
 
   /** Returns an expression that results in the value of the specified parameter values.
-    * @see See parameters in [[de.ag.scalajasper.core.Dataset]]. */
+    * @see See parameters in [[de.activegroup.scalajasper.core.Dataset]]. */
   def P[T <: AnyRef](name: String) = std[T]("P", name)
   /** Returns an expression that results in the value of the specified resource variable.
-    * @see See resourceBundle in [[de.ag.scalajasper.core.Dataset]]. */
+    * @see See resourceBundle in [[de.activegroup.scalajasper.core.Dataset]]. */
   def R[T <: AnyRef](name: String) = std[T]("R", name)
   /** Returns an expression that results in the value of the specified field.
-    * @see See fields in [[de.ag.scalajasper.core.Dataset]]. */
+    * @see See fields in [[de.activegroup.scalajasper.core.Dataset]]. */
   def F[T <: AnyRef](name: String) = std[T]("F", name)
   /** Returns an expression that results in the value of the specified variable.
-    * @see See variables in [[de.ag.scalajasper.core.Dataset]]. */
+    * @see See variables in [[de.activegroup.scalajasper.core.Dataset]]. */
   def V[T <: AnyRef](name: String) = std[T]("V", name)
 
   /** Returns an expression that results in the specified value. */
@@ -99,7 +99,7 @@ object Expression {
      lift(s)
 
   /** Returns an expression representing the given raw jasper expression, a Java or Groovy expression, depending on
-    * the value of language in [[de.ag.scalajasper.core.Report]].
+    * the value of language in [[de.activegroup.scalajasper.core.Report]].
     */
   def raw[T <: AnyRef](r: String) : Expression[T] = RawExpression(r)
 };

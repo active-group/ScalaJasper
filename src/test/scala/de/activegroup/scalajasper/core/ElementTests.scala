@@ -1,4 +1,4 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

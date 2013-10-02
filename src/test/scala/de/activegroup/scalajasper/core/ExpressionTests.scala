@@ -1,10 +1,10 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import de.ag.scalajasper.core.Dimensions._
+import de.activegroup.scalajasper.core.Dimensions._
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 
 @RunWith(classOf[JUnitRunner])
@@ -24,8 +24,8 @@ class ExpressionTests extends FunSuite {
       fn0_was_called = true;
       true;
     }
-    //val fnClassName:String = fn0.getClass().getName(); // like de.ag.scalajasper.core.ExpressionTests$$anonfun$1$$anonfun$2 - could be more general
-    // de.ag.scalajasper.core.ExpressionTests$$anonfun$1$$anonfun$2 cannot be referenced using its binary name ??
+    //val fnClassName:String = fn0.getClass().getName(); // like de.activegroup.scalajasper.core.ExpressionTests$$anonfun$1$$anonfun$2 - could be more general
+    // de.activegroup.scalajasper.core.ExpressionTests$$anonfun$1$$anonfun$2 cannot be referenced using its binary name ??
     val fnClassName = "scala.Function1"
     val args = Map("fn0" -> fn0);
     val r = Report("test").copy(

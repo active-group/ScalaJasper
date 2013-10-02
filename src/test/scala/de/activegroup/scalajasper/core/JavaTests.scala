@@ -1,4 +1,4 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -267,7 +267,7 @@ class JavaTests extends FunSuite {
       page = Page(header = Some(myCompanyBanner))
     )
 
-    System.out.println(toXML(de.ag.scalajasper.core.print(myReport())))
+    System.out.println(toXML(de.activegroup.scalajasper.core.print(myReport())))
     //intercept[JRRuntimeException] { toXML(myReport()) }
   }
 }

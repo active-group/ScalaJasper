@@ -1,4 +1,4 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 object Dimensions {
   case class LengthUnit(inJasperPixels: Double) {

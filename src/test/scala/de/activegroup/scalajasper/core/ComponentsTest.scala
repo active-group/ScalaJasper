@@ -1,4 +1,4 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 import scala.collection.JavaConversions._
 
@@ -6,9 +6,9 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import de.ag.scalajasper.core._
-import de.ag.scalajasper.core.Dimensions._
-import de.ag.scalajasper.core.components.{TableCell, TableColumn, Table}
+import de.activegroup.scalajasper.core._
+import de.activegroup.scalajasper.core.Dimensions._
+import de.activegroup.scalajasper.core.components.{TableCell, TableColumn, Table}
 import net.sf.jasperreports.components.table.WhenNoDataTypeTableEnum
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource
 import net.sf.jasperreports.engine.JRDataSource

@@ -1,9 +1,9 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.{engine => jre}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
 import net.sf.jasperreports.engine.JRDatasetParameter
-import de.ag.scalajasper.core.Dimensions.Length
+import de.activegroup.scalajasper.core.Dimensions.Length
 import java.util.{UUID, TimeZone, Locale}
 
 // TODO: Abstraction over Map+Int?
@@ -75,7 +75,7 @@ private[core] object TransformationState {
   def initial(containerWidth: Length) = TransformationState(containerWidth, Map.empty, 0, Map.empty, 0, Map.empty, 0, 0)
 }
 
-private[ag] trait Transformer[+A] { self =>
+private[activegroup] trait Transformer[+A] { self =>
   def exec(st: TransformationState) : (A, TransformationState)
 
   def >>=[B](f : (A => Transformer[B])) : Transformer[B] =
@@ -98,11 +98,11 @@ abstract def map[B, That](f: (A) ⇒ B)(implicit bf: CanBuildFrom[Repr, B, That]
 abstract def withFilter(p: (A) ⇒ Boolean): FilterMonadic[A, Repr]
  */
 
-private[ag] trait ImperativeTransformer extends Transformer[Unit] {
+private[activegroup] trait ImperativeTransformer extends Transformer[Unit] {
   def >>[B](n : => Transformer[B]) = this >>= { _ => n }
 }
 
-private[ag] object Transformer {
+private[activegroup] object Transformer {
   /** a transformer that already has the desired result */
   def ret[B](v : B) : Transformer[B] = new Transformer[B] {
     def exec(st: TransformationState) = (v, st)

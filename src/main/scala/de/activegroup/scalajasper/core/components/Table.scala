@@ -1,8 +1,8 @@
-package de.ag.scalajasper.core.components
+package de.activegroup.scalajasper.core.components
 
 import net.sf.jasperreports.components.table._
 
-import de.ag.scalajasper.core._
+import de.activegroup.scalajasper.core._
 
 import scala.collection.JavaConversions._
 import net.sf.jasperreports.engine.component.ComponentKey
@@ -10,7 +10,7 @@ import net.sf.jasperreports.engine.JRDatasetParameter
 import net.sf.jasperreports.engine.design.{JRDesignDatasetParameter, JRDesignSubreportParameter}
 
 import Transformer._
-import de.ag.scalajasper.core.Dimensions.RestrictedLength
+import de.activegroup.scalajasper.core.Dimensions.RestrictedLength
 
 /** From the "Ultimate guide":
   * "In order to obtain truly dynamic table structures, users had to create report templates at runtime using the

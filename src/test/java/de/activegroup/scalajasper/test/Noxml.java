@@ -1,4 +1,4 @@
-package de.ag.scalajasper.test;
+package de.activegroup.scalajasper.test;
 
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.design.*;

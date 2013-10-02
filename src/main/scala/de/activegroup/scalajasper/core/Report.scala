@@ -1,4 +1,4 @@
-package de.ag.scalajasper.core
+package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.{engine => jre}
 import scala.collection.JavaConversions._
