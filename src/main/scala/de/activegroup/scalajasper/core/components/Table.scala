@@ -6,8 +6,6 @@ import de.activegroup.scalajasper.core._
 
 import scala.collection.JavaConversions._
 import net.sf.jasperreports.engine.component.ComponentKey
-import net.sf.jasperreports.engine.JRDatasetParameter
-import net.sf.jasperreports.engine.design.{JRDesignDatasetParameter, JRDesignSubreportParameter}
 
 import Transformer._
 import de.activegroup.scalajasper.core.Dimensions.RestrictedLength
@@ -37,7 +35,7 @@ sealed case class TableCell(
     BandHeight.calc(height, content.verticalExtent)(r.setHeight(_))
 
     drop(style.transform) { so => r.setStyleNameReference(so.getOrElse(null)) } >>
-    ElementUtils.contentTransformer(content.seq, r.addElement(_), r.addElementGroup(_)) >>
+    ElementUtils.contentTransformer(content.seq, r.addElement, r.addElementGroup) >>
     ret(r)
   }
 }
@@ -68,18 +66,18 @@ abstract sealed class AbstractColumn(
   private[core] def transform : Transformer[net.sf.jasperreports.components.table.BaseColumn]
 
   protected def fill(tgt: net.sf.jasperreports.components.table.StandardBaseColumn) = {
-    drop(nextUUID) { tgt.setUUID(_) } >>
+    drop(nextUUID)(tgt.setUUID) >>
     currentContainerWidth >>= { containerWidth =>
       val absoluteWidth = width asPartOf containerWidth
-      (withContainerWidth(absoluteWidth) {
+      withContainerWidth(absoluteWidth) {
         drop(orNull(header map { _.transform })) { tgt.setColumnHeader(_) } >>
         drop(orNull(footer map { _.transform })) { tgt.setColumnFooter(_) } >>
         drop(all(groupHeaders map { _.transform })) { tgt.setGroupHeaders(_) } >>
         drop(all(groupFooters map { _.transform })) { tgt.setGroupFooters(_) } >>
         drop(orNull(tableHeader map { _.transform })) { tgt.setTableHeader(_) } >>
         drop(orNull(tableFooter map { _.transform })) { tgt.setTableFooter(_) }
-      }) >>
-      ret(tgt.setWidth(absoluteWidth inAbsolutePixels)) >>
+      } >>
+      ret(tgt.setWidth(absoluteWidth.inAbsolutePixels)) >>
       drop(orNull(printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) } >>
       setCurrentContainerWidth(containerWidth) >> // reset
       ret(absoluteWidth) }
@@ -104,7 +102,7 @@ sealed case class TableColumn(
     super.fill(r) >>= { absoluteWidth =>
       withContainerWidth(absoluteWidth) {
         drop(detail.transform) { r.setDetailCell(_) } >>
-        drop(nextUUID) { r.setUUID(_) } >>
+        drop(nextUUID)(r.setUUID) >>
         ret(r)
       }
     }

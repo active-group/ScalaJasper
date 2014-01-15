@@ -1,6 +1,6 @@
 package de.activegroup.scalajasper.core
 
-import net.sf.jasperreports.engine.{JRScriptlet, JRDatasetRun, JRField, JRDataSource}
+import net.sf.jasperreports.engine.{JRScriptlet, JRDataSource}
 import net.sf.jasperreports.engine.design._
 
 import Transformer._
@@ -26,12 +26,12 @@ sealed case class DatasetRun(datasetName: String,
   private[core] def transform = {
     val r = new JRDesignDatasetRun()
     r.setDatasetName(datasetName)
-    (all(arguments map { case(n, e) => {
+    (all(arguments.map { case(n, e) =>
       val p = new JRDesignDatasetParameter()
       p.setName(n)
       drop(e.transform) { p.setExpression(_) } >>
       ret(p)
-    }} toSeq) >>= {
+    }.toSeq) >>= {
       ps => ps foreach { r.addParameter(_) }; ret()
     }) >>
     drop(orNull(argumentsMapExpression map {_.transform})) { r.setParametersMapExpression(_)} >>
@@ -252,7 +252,7 @@ sealed case class Dataset(
         f.setValueClassName(c)
         f })
     r.setQuery(query)
-    scriptlets foreach { r.addScriptlet(_) }
+    scriptlets foreach r.addScriptlet
     r.setScriptletClass(scriptletClassName.getOrElse(null))
     r.setResourceBundle(resourceBundle.getOrElse(null))
     r.setWhenResourceMissingType(whenResourceMissingType)
@@ -263,12 +263,12 @@ sealed case class Dataset(
       ps => ps foreach { r.addParameter(_) }; ret()
     }) >>
     (all(variables map {_.transform}) >>= {
-      vs => vs foreach { r.addVariable(_) }; ret()
+      vs => vs foreach r.addVariable; ret()
     }) >>
     (all(sortFields map { _.transform }) >>= {
       sfs => sfs foreach { r.addSortField(_) }; ret()
     }) >>
-    (all(groups map { case(n, g) => g.transform >>= { jg => ret(n, jg) } } toSeq) >>= {
+    (all(groups.map { case(n, g) => g.transform >>= { jg => ret(n, jg) } }.toSeq) >>= {
       l => l foreach { case(n, g) => g.setName(n); r.addGroup(g) }; ret()
     }) >>
     ret()

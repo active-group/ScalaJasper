@@ -1,6 +1,6 @@
 package de.activegroup.scalajasper.core
 
-import net.sf.jasperreports.engine.base.{JRBaseStyle, JRBaseParagraph}
+import net.sf.jasperreports.engine.base.JRBaseParagraph
 import net.sf.jasperreports.engine.`type`.{LineSpacingEnum, TabStopAlignEnum}
 
 import Transformer._
@@ -280,7 +280,7 @@ object Paragraph {
   val empty = Paragraph()
 
   private[core] def put(o: Paragraph, r: JRBaseParagraph) {
-    def optFloat(v: Option[Float]) : java.lang.Float = if (v.isDefined) v.get else null
+    //def optFloat(v: Option[Float]) : java.lang.Float = if (v.isDefined) v.get else null
     def optInt(v: Option[Int]) : java.lang.Integer = if (v.isDefined) v.get else null
 
     r.setFirstLineIndent(optInt(o.firstLineIndent))
@@ -335,7 +335,7 @@ sealed case class Style(
                          blankWhenNull: Option[Boolean] = None
                          ) extends AbstractStyle {
 
-  def isEmpty = (this == Style.empty)
+  def isEmpty = this == Style.empty
 
   /** combine this style with given style. If a property is set in both styles, the right side replaces the left.
     * This is different from the copy method, in that it is a 'deep' combination. ParentStyle and conditionalStyles
@@ -439,7 +439,7 @@ object Style {
     r.setRadius(optInt(o.radius))
     r.setBlankWhenNull(optBool(o.blankWhenNull))
     Paragraph.put(o.paragraph, r.getParagraph.asInstanceOf[JRBaseParagraph])
-    ret(r)
+    ret()
   }
 }
 

@@ -68,7 +68,7 @@ object Hyperlink {
           }
         ret(setHyperlinkType(HyperlinkTypeEnum.CUSTOM)) >>
         ret(setLinkType(typeName)) >>
-        all(args map transarg toList) >>= { ps =>
+        all((args map transarg).toList) >>= { ps =>
           ps foreach addHyperlinkParameter
           ret()
         }

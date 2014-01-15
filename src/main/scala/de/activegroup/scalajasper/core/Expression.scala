@@ -33,7 +33,7 @@ abstract class Expression[+A] {
 
   private[core] def transform : Transformer[JRDesignExpression] = {
     val r = new net.sf.jasperreports.engine.design.JRDesignExpression()
-    drop(transformRaw) { r.setText(_) } >>
+    drop(transformRaw) { r.setText } >>
     ret(r)
   }
 }

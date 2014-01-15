@@ -2,7 +2,6 @@ package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.{engine => jre}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
-import net.sf.jasperreports.engine.JRDatasetParameter
 import de.activegroup.scalajasper.core.Dimensions.Length
 import java.util.{UUID, TimeZone, Locale}
 
@@ -37,7 +36,7 @@ private[core] case class TransformationState(containerWidth: Length, env: Map[An
     if (o.isDefined)
       (o.get.getName, this)
     else {
-      val (s, st2) = f(this)
+      val (s, _) = f(this)
       val id = nextst
       val name = "auto" + id
       s.setName(name)
@@ -51,7 +50,7 @@ private[core] case class TransformationState(containerWidth: Length, env: Map[An
     if (o.isDefined)
       (o.get.getName, this)
     else {
-      val (s, st2) = f(this)
+      val (s, _) = f(this)
       val id = nextst
       val name = "auto" + id
       s.setName(name)
@@ -62,10 +61,10 @@ private[core] case class TransformationState(containerWidth: Length, env: Map[An
   def nextUUID : (UUID, TransformationState) = {
     // nameUUIDFromBytes uses MD5, so sequential numbers are 'mangled' anyway, so it should be ok
     val id = UUID.nameUUIDFromBytes(Array(
-      ((next_uuid >>> 24) & 0xFF) toByte,
-      ((next_uuid >>> 16) & 0xFF) toByte,
-      ((next_uuid >>> 8) & 0xFF) toByte,
-      (next_uuid & 0xFF) toByte
+      ((next_uuid >>> 24) & 0xFF).toByte,
+      ((next_uuid >>> 16) & 0xFF).toByte,
+      ((next_uuid >>> 8) & 0xFF).toByte,
+      (next_uuid & 0xFF).toByte
     ))
     (id, this.copy(next_uuid = next_uuid+1))
   }
@@ -191,7 +190,7 @@ object Compiler {
               timeZone : TimeZone = TimeZone.getTimeZone("GMT") ) : (jre.JasperReport, Map[String, AnyRef]) = {
     // basic object generation...
     // TODO: Create sequential or pseudo-random UUIDs for all elements (and other?) - to simplify testing
-    val (r, tstate) = o.transform.exec(TransformationState.initial(0 px))
+    val (r, tstate) = o.transform.exec(TransformationState.initial(0.px))
 
     // now insert collected auto-generated properties into basic object
 

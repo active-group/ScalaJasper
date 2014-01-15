@@ -1,10 +1,5 @@
 package de.activegroup.scalajasper.core
 
-import scala.collection.generic.{CanBuildFrom, FilterMonadic}
-import scala.collection.{TraversableLike, IterableLike, GenTraversableOnce}
-import net.sf.jasperreports.engine.design.JRDesignBand
-
-
 
 import Transformer._
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
@@ -28,7 +23,7 @@ object BandHeight {
       case BandHeight.Auto => contentHeight
       case BandHeight.AutoPlus(v) => contentHeight + v
     }
-    setter(r inAbsolutePixels)
+    setter(r.inAbsolutePixels)
   }
 }
 
@@ -42,10 +37,10 @@ sealed case class Band (
 {
   private[core] def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBand()
-    BandHeight.calc(height, content.verticalExtent){r.setHeight(_)}
+    BandHeight.calc(height, content.verticalExtent)(r.setHeight)
     drop(orNull(printWhenExpression map {_.transform})) { r.setPrintWhenExpression(_) } >>
     ret(r.setSplitType(splitType)) >>
-    ElementUtils.contentTransformer(content.seq, r.addElement(_), r.addElementGroup(_)) >>
+    ElementUtils.contentTransformer(content.seq, r.addElement, r.addElementGroup) >>
     ret(r)
   }
 }

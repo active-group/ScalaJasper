@@ -6,35 +6,34 @@ import org.scalatest.FunSuite
 import net.sf.jasperreports.engine.design.{JRDesignStyle, JRDesignStaticText, JRDesignBand, JasperDesign}
 import net.sf.jasperreports.view.JasperViewer
 import net.sf.jasperreports.engine._
-import scala.xml
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 
 @RunWith(classOf[JUnitRunner])
 class JavaTests extends FunSuite {
   // verify how ugly the Java API really is
   test("ugliness of java") {
-    def n() = new net.sf.jasperreports.engine.design.JasperDesign();
+    def n() = new net.sf.jasperreports.engine.design.JasperDesign()
 
 
     // List properties actually mutate the property
     // and although you can actually remove default properties:
-    val v1 = n();
-    val xp = v1.getParameters().length;
-    v1.getParametersList().remove(0);
-    assert(v1.getParameters().length == (xp-1));
+    val v1 = n()
+    val xp = v1.getParameters.length
+    v1.getParametersList.remove(0)
+    assert(v1.getParameters.length == (xp-1))
     // they are still magically there:
-    val v2 = n();
-    val p : net.sf.jasperreports.engine.JRParameter = v2.getParameters()(0);
-    v2.getParametersList().clear();
-    assert(v2.getParameters().length == 0);
+    val v2 = n()
+    val p : net.sf.jasperreports.engine.JRParameter = v2.getParameters()(0)
+    v2.getParametersList.clear()
+    assert(v2.getParameters.length == 0)
     intercept[net.sf.jasperreports.engine.JRException] {
-      v2.addParameter(p);
-    };
+      v2.addParameter(p)
+    }
     // although they can be added via the list:
-    v2.getParametersList().asInstanceOf[java.util.List[net.sf.jasperreports.engine.JRParameter]].add(p);
+    v2.getParametersList.asInstanceOf[java.util.List[net.sf.jasperreports.engine.JRParameter]].add(p)
     // WTF!?
-    v2.getParametersList().clear();
-    assert(v2.getParametersList().size() == 0);
+    v2.getParametersList.clear()
+    assert(v2.getParametersList.size() == 0)
   }
 
 
@@ -102,7 +101,7 @@ class JavaTests extends FunSuite {
     company.setY(0)
     company.setText("My Company")
 
-    val t : JRElement = company;
+    val t : JRElement = company
 
     val b = new JRDesignBand()
     b.setHeight(20)
@@ -212,7 +211,7 @@ class JavaTests extends FunSuite {
       band.setHeight(30)
 
       val t = new JRDesignStaticText()
-      val st = boldSmallText(false)
+      val st = boldSmallText(real = false)
       t.setStyle(st)
       t.setHeight(12)
       t.setWidth(200)
@@ -231,7 +230,7 @@ class JavaTests extends FunSuite {
       val banner = myCompanyBanner()
       d.setPageHeader(banner)
 
-      d.addStyle(boldSmallText(true))
+      d.addStyle(boldSmallText(real = true))
 
       d
     }
@@ -250,13 +249,13 @@ class JavaTests extends FunSuite {
     )
 
     val myCompanyBanner = Band(
-      height = 30 px,
+      height = 30.px,
       splitType = SplitTypeEnum.STRETCH,
       content = StaticText(
-        x = 0 px,
-        y = YPos.float(0 px),
-        width = 200 px,
-        height = Height.fixed(12 px),
+        x = 0.px,
+        y = YPos.float(0.px),
+        width = 200.px,
+        height = Height.fixed(12.px),
         style = boldSmallText,
         text = "My Company"
       )

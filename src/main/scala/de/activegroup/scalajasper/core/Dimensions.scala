@@ -18,11 +18,11 @@ object Dimensions {
     def inInch = inMM / 25.4
     */
     def inPixels = value * unit.inJasperPixels
-    def inAbsolutePixels : Int = scala.math.floor(inPixels) toInt // floor to be sure, hope that's ok for everybody
+    def inAbsolutePixels : Int = scala.math.floor(inPixels).toInt // floor to be sure, hope that's ok for everybody
 
     def -(rhs: Length) : Length = Length(this.inPixels - rhs.inPixels, LengthUnit.px) // or keep one of the units?
     def +(rhs: Length) : Length = Length(this.inPixels + rhs.inPixels, LengthUnit.px)
-    def /(rhs: Length) : Double = (this.inPixels / rhs.inPixels)
+    def /(rhs: Length) : Double = this.inPixels / rhs.inPixels
     def /(rhs: Double) : Length = Length(this.inPixels / rhs, LengthUnit.px)
     def *(f: Double) : Length = Length(this.inPixels * f, LengthUnit.px)
   }
@@ -38,7 +38,7 @@ object Dimensions {
 
     def em = FontSizedLength(value)
   }
-  val zero = 0 px // in case you want to make explicit that 0 actually has no unit
+  val zero = 0.px // in case you want to make explicit that 0 actually has no unit
 
   sealed case class FractionValue(value: Double) {
     // "percent" is like a modifier or predefined division by 100; also maked the DSL work nicely
@@ -51,9 +51,9 @@ object Dimensions {
 
   private object Demo {
     def t(v: Length) = v
-    val strip = t(5 mm)
+    val strip = t(5.mm)
     def p(v: FractionValue) = v
-    val x = p(15 percent)
+    val x = p(15.percent)
   }
 
   /** A restricted length is composed of a fractional and an absolute part, so you can specify values
@@ -67,8 +67,8 @@ object Dimensions {
 
     // implicits don't work over two steps (or something...)
 
-    def +(rhs: FractionValue) : RestrictedLength = this + RestrictedLength(p = rhs, 0 px)
-    def -(rhs: FractionValue) : RestrictedLength = this - RestrictedLength(p = rhs, 0 px)
+    def +(rhs: FractionValue) : RestrictedLength = this + RestrictedLength(p = rhs, 0.px)
+    def -(rhs: FractionValue) : RestrictedLength = this - RestrictedLength(p = rhs, 0.px)
 
     def +(rhs: Length) : RestrictedLength = this + RestrictedLength(p = 0.0, l = rhs)
     def -(rhs: Length) : RestrictedLength = this - RestrictedLength(p = 0.0, l = rhs)

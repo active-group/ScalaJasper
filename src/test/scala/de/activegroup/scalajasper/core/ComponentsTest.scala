@@ -19,16 +19,16 @@ class ComponentsTest extends FunSuite {
   test("table component") {
     val r = Report("basic table").copy(details = List(
       Band(
-        height = 200 px,
+        height = 200.px,
         splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           ComponentElement(
-            width = 400 px, height = Height.fixed(100 px),
+            width = 400.px, height = Height.fixed(100.px),
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
               data = DatasetRun(datasetName = "dummy", arguments=Map.empty, dataSourceExpression = Some(Expression.P("table_datasource"))),
-              columns = List(TableColumn(width = 100 px,
-                detail = TableCell(height = 50 px, content = List(
-                  TextField(Expression.F("f1"), Height.fixed(15 px)))
+              columns = List(TableColumn(width = 100.px,
+                detail = TableCell(height = 50.px, content = List(
+                  TextField(Expression.F("f1"), Height.fixed(15.px)))
                 ))))
         ))
       )),
@@ -111,16 +111,16 @@ class ComponentsTest extends FunSuite {
 
     val r = Report("basic table").copy(details = List(
       Band(
-        height = 200 px,
+        height = 200.px,
         splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           ComponentElement(
-            height = Height.fixed(100 px), width = 400 px,
+            height = Height.fixed(100.px), width = 400.px,
             component = Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
               data = DataDef(dataset = dataset, source=Expression.const(datasource)),
-              columns = List(TableColumn(width = 80 percent,
-                detail = TableCell(height = 50 px, content = List(
-                  TextField(height = Height.fixed(15 px), width=90 percent,
+              columns = List(TableColumn(width = 80.percent,
+                detail = TableCell(height = 50.px, content = List(
+                  TextField(height = Height.fixed(15.px), width=90.percent,
                     expression = Expression.call({t:String => t+t}, Expression.F("f1"))))
                 ))))
           ))
@@ -193,32 +193,32 @@ class ComponentsTest extends FunSuite {
     def tab(textExpr: Expression[String]) =
       Table(whenNoData = WhenNoDataTypeTableEnum.ALL_SECTIONS_NO_DETAIL,
         data = DataDef(dataset = dataset, source=Expression.const(datasource)),
-        columns = List(TableColumn(width = 100 px,
-          detail = TableCell(height = 50 px, content = List(
-            TextField(height = Height.fixed(15 px), width=100 px,
+        columns = List(TableColumn(width = 100.px,
+          detail = TableCell(height = 50.px, content = List(
+            TextField(height = Height.fixed(15.px), width=100.px,
               expression = textExpr))
           ))))
 
     val r = Report("two tables").copy(details = List(
       Band(
-        height = 200 px,
+        height = 200.px,
         splitType = SplitTypeEnum.STRETCH,
         content = Vector(
           // same dataset etc, but different (auto-) parameters (in the form of expressions)
           ComponentElement(
-            height = Height.fixed(100 px), width = 400 px,
+            height = Height.fixed(100.px), width = 400.px,
             component = tab(Expression.call({t:String => t+t}, Expression.F("f1")))
           ),
           ComponentElement(
-            y = YPos.float(100 px),
-            height = Height.fixed(100 px), width = 400 px,
+            y = YPos.float(100.px),
+            height = Height.fixed(100.px), width = 400.px,
             component = tab(Expression.call({t:String => t+" ...and... "+t}, Expression.F("f1")))
           ))
       ))
     )
 
     // just test successfull compilation for now...
-    val actual = ReportTest.printToXML(r, Map.empty);
+    val actual = ReportTest.printToXML(r, Map.empty)
     assert(actual != null)
     /*
     ReportTest.compareJasperPrintXML(expected,

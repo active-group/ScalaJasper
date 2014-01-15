@@ -11,7 +11,7 @@ package object core {
   implicit def fractionValue(value: Double) = FractionValue(value) // might get too confusing val p:Percent = 0.45 ?
   implicit def fractionValue(value: Int) = FractionValue(value)
 
-  implicit def partialLength(p: FractionValue) = RestrictedLength(p, 0 px)
+  implicit def partialLength(p: FractionValue) = RestrictedLength(p, 0.px)
   implicit def absoluteLength(l: Length) = RestrictedLength(0.0, l)
 
   implicit def specificWidth(value: RestrictedLength) = Width.Specific(value)

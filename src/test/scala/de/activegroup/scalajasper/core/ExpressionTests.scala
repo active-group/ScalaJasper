@@ -33,11 +33,11 @@ class ExpressionTests extends FunSuite {
       page = Page(
         header = Some(Band(
           splitType = SplitTypeEnum.STRETCH,
-          height = 20 px,
+          height = 20.px,
           content = Vector(
             StaticText(
               text = "Hello",
-              height = Height.fixed(15 px), width=55 px,
+              height = Height.fixed(15.px), width=55.px,
               conditions = Conditions(printWhenExpression=Some(Expression.raw("$P{fn0}.apply($P{REPORT_PARAMETERS_MAP})")))
             )
           )))
@@ -88,20 +88,20 @@ class ExpressionTests extends FunSuite {
   */
 
   test("fully automatic scala expressions") {
-    var fn0_was_called = false;
+    var fn0_was_called = false
     val fn0 = { pmap : java.util.Map[String, Object] =>
-      fn0_was_called = true;
+      fn0_was_called = true
       true
     }
     val r = Report("test").copy(
       page = Page(
         header = Some(Band(
           splitType = SplitTypeEnum.STRETCH,
-          height = 20 px,
+          height = 20.px,
           content = Vector(
             StaticText(
               text = "Hello",
-              width=55 px, height = Height.fixed(15 px),
+              width=55.px, height = Height.fixed(15.px),
               conditions = Conditions(
                 printWhenExpression=Some(Expression.call(fn0, Expression.P("REPORT_PARAMETERS_MAP"))))
             )

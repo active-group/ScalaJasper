@@ -111,11 +111,11 @@ object Anchor {
   private[core] def put(o: Anchor,
                         setAnchorNameExpression: JRExpression => Unit,
                         setBookmarkLevel: Int => Unit) = {
-    o.transform >>= { case(e, l ) => {
+    o.transform >>= { case(e, l ) =>
       setAnchorNameExpression(e)
       setBookmarkLevel(l)
       ret()
-    }}
+    }
   }
 }
 
@@ -136,11 +136,10 @@ object EvaluationTime {
       setTime: net.sf.jasperreports.engine.`type`.EvaluationTimeEnum => Unit,
       setGroup: net.sf.jasperreports.engine.JRGroup => Unit) = {
     o match {
-      case Group(g) => {
+      case Group(g) =>
         setTime(o.value)
         drop(g.transform) { setGroup(_) } >>
         ret()
-      }
       case _ => 
         setTime(o.value)
         ret()
@@ -238,20 +237,20 @@ private[core] object ElementUtils {
       // uuid?
       tgt:JRDesignElement) = {
     tgt.setKey(if (key == "") null else key) // don't know if it's important to be null
-    tgt.setHeight(height.value relativeTo(style) inAbsolutePixels)
+    tgt.setHeight(height.value.relativeTo(style).inAbsolutePixels)
     tgt.setStretchType(height.stretchType)
-    tgt.setY(y.value relativeTo(style) inAbsolutePixels)
+    tgt.setY(y.value.relativeTo(style).inAbsolutePixels)
     tgt.setPositionType(y.positionType)
     tgt.setPrintRepeatedValues(conditions.printRepeatedValues)
     tgt.setPrintInFirstWholeBand(conditions.printInFirstWholeBand)
     tgt.setPrintWhenDetailOverflows(conditions.printWhenDetailOverflows)
 
-    drop(nextUUID) { tgt.setUUID(_) } >>
+    drop(nextUUID)(tgt.setUUID) >>
     drop(orNull(conditions.printWhenGroupChanges map {_.transform})) { tgt.setPrintWhenGroupChanges(_) } >>
     (currentContainerWidth >>= { parentWidth => {
       val absX = x asPartOf parentWidth
-      tgt.setWidth(width within (absX, parentWidth) inAbsolutePixels)
-      tgt.setX(absX inAbsolutePixels)
+      tgt.setWidth(width.within(absX, parentWidth).inAbsolutePixels)
+      tgt.setX(absX.inAbsolutePixels)
       ret()
     }}) >>
     drop(orNull(conditions.printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) } >>
@@ -266,7 +265,7 @@ private[core] object ElementUtils {
   }
 
   def maxHeight(elements: Seq[Element]): Length =
-    (elements map {_.verticalExtent}).foldLeft(0 px) { (l1:Length, l2:Length) =>
+    (elements map {_.verticalExtent}).foldLeft(0.px) { (l1:Length, l2:Length) =>
       math.max(l1.inAbsolutePixels, l2.inAbsolutePixels).px }
 
   // Various classes need this, though they don't have a common type
@@ -280,7 +279,7 @@ private[core] object ElementUtils {
         case _ => Seq(e.transform)
       }
     // obj will 'own' the created child objects (like in DOM)
-    (all(content flatMap transformAll)) >>= { lst =>
+    all(content flatMap transformAll) >>= { lst =>
       for (co <- lst) {
         // although elements and groups end up in the same children list,
         // there is no add method for children, but only for the two
@@ -314,13 +313,13 @@ sealed case class Break(
 
   override private[core] def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignBreak()
-    ElementUtils.putReportElement(key = key, style=Style.empty, x=(0 px),
-      y = y, width = Width.Specific(0 px), height = Height.fixed(height), conditions=conditions, r) >>
+    ElementUtils.putReportElement(key = key, style=Style.empty, x=0.px,
+      y = y, width = Width.Specific(0.px), height = Height.fixed(height), conditions=conditions, r) >>
     ret(r.setType(breakType)) >>
     ret(r)
   }
 
-  private val height = 1 px
+  private val height = 1.px
 
   override def verticalExtent = y.value.relativeTo(Font(fontSize=Some(0))) + height // breaks have a fixed height of 1 and no style!! :-/
 
@@ -329,14 +328,14 @@ sealed case class Break(
 
 object Break {
   /** Creates a page break */
-  def page(y: YPos = YPos.float(0 px), conditions: Conditions = Conditions.default, key:String = "") = new Break(
+  def page(y: YPos = YPos.float(0.px), conditions: Conditions = Conditions.default, key:String = "") = new Break(
       key = key,
       y = y,
       conditions = conditions,
       breakType = net.sf.jasperreports.engine.`type`.BreakTypeEnum.PAGE)
   
   /** Creates a column break */
-  def column(y: YPos = YPos.float(0 px), conditions: Conditions = Conditions.default, key:String = "") = new Break(
+  def column(y: YPos = YPos.float(0.px), conditions: Conditions = Conditions.default, key:String = "") = new Break(
       key = key,
       y = y,
       conditions = conditions,
@@ -351,7 +350,7 @@ sealed case class ElementGroup( // different from a "group"!
 
   override private[core] def transform = {
     val r = new JRDesignElementGroup()
-    ElementUtils.contentTransformer(content, r.addElement(_), r.addElementGroup(_)) >>
+    ElementUtils.contentTransformer(content, r.addElement, r.addElementGroup) >>
     ret(r)
   }
 
@@ -367,8 +366,8 @@ object ElementGroup {
 sealed case class Frame(
     height: Height,
     content: Element,
-    x: RestrictedLength = (0 px),
-    y: YPos = YPos.float(0 px),
+    x: RestrictedLength = 0.px,
+    y: YPos = YPos.float(0.px),
     width: Width = Width.Remaining,
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -391,7 +390,7 @@ sealed case class Frame(
 sealed case class Ellipse(
     width: Width,
     height: Height,
-    x: RestrictedLength = (0 px),
+    x: RestrictedLength = 0.px,
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -415,7 +414,7 @@ sealed case class Image(
     expression : Expression[Any],
     width: Width,
     height: Height,
-    x: RestrictedLength = (0 px),
+    x: RestrictedLength = 0.px,
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -435,27 +434,27 @@ sealed case class Image(
     // Unlike other elements (e.g. TextField), the ellipse is missing a default constructor;
     // setting JRDefaultStyleProvider to null like the others do.
     val r = new net.sf.jasperreports.engine.design.JRDesignImage(null)
-    r.setUsingCache(if (usingCache.isDefined) (usingCache.get : java.lang.Boolean) else null)
+    r.setUsingCache(if (usingCache.isDefined) usingCache.get : java.lang.Boolean else null)
     r.setLazy(lazily)
     r.setOnErrorType(onError)
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
-    EvaluationTime.putEvaluationTime(evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_)) >>
+    EvaluationTime.putEvaluationTime(evaluationTime, r.setEvaluationTime, r.setEvaluationGroup) >>
     Link.put(link,
-      r.setHyperlinkType(_),
-      r.setHyperlinkReferenceExpression(_),
-      r.setHyperlinkWhenExpression(_),
-      r.setHyperlinkAnchorExpression(_),
-      r.setHyperlinkPageExpression(_),
-      r.setLinkType(_),
-      r.addHyperlinkParameter(_),
-      r.setHyperlinkTarget(_),
-      r.setLinkTarget(_),
-      r.setHyperlinkTooltipExpression(_)
+      r.setHyperlinkType,
+      r.setHyperlinkReferenceExpression,
+      r.setHyperlinkWhenExpression,
+      r.setHyperlinkAnchorExpression,
+      r.setHyperlinkPageExpression,
+      r.setLinkType,
+      r.addHyperlinkParameter,
+      r.setHyperlinkTarget,
+      r.setLinkTarget,
+      r.setHyperlinkTooltipExpression
     ) >>
     Anchor.put(anchor,
-      r.setAnchorNameExpression(_),
-      r.setBookmarkLevel(_)) >>
-    drop(expression.transform)(r.setExpression(_)) >>
+      r.setAnchorNameExpression,
+      r.setBookmarkLevel) >>
+    drop(expression.transform)(r.setExpression) >>
     ret(r)
   }
 
@@ -497,7 +496,7 @@ sealed case class Line(
 sealed case class Rectangle(
     width: Width,
     height: Height,
-    x: RestrictedLength = (0 px),
+    x: RestrictedLength = 0.px,
     y: YPos = YPos.float(0 px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -542,7 +541,7 @@ sealed case class TextField(
     expression: Expression[Any],
     height: Height = Height.fixed(1.0.em),
     width: Width = Width.Remaining,
-    x: RestrictedLength = (0 px),
+    x: RestrictedLength = 0.px,
     y: YPos = YPos.float(0 px),
     key: String = "",
     style: AbstractStyle = Style.inherit,
@@ -562,24 +561,24 @@ sealed case class TextField(
     val r = new net.sf.jasperreports.engine.design.JRDesignTextField()
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
     Link.put(link,
-      r.setHyperlinkType(_),
-      r.setHyperlinkReferenceExpression(_),
-      r.setHyperlinkWhenExpression(_),
-      r.setHyperlinkAnchorExpression(_),
-      r.setHyperlinkPageExpression(_),
-      r.setLinkType(_),
-      r.addHyperlinkParameter(_),
-      r.setHyperlinkTarget(_),
-      r.setLinkTarget(_),
-      r.setHyperlinkTooltipExpression(_)
+      r.setHyperlinkType,
+      r.setHyperlinkReferenceExpression,
+      r.setHyperlinkWhenExpression,
+      r.setHyperlinkAnchorExpression,
+      r.setHyperlinkPageExpression,
+      r.setLinkType,
+      r.addHyperlinkParameter,
+      r.setHyperlinkTarget,
+      r.setLinkTarget,
+      r.setHyperlinkTooltipExpression
     ) >>
     Anchor.put(anchor,
-      r.setAnchorNameExpression(_),
-      r.setBookmarkLevel(_)) >>
+      r.setAnchorNameExpression,
+      r.setBookmarkLevel) >>
     ret(r.setStretchWithOverflow(stretchWithOverflow)) >>
-    EvaluationTime.putEvaluationTime(evaluationTime, r.setEvaluationTime(_), r.setEvaluationGroup(_)) >>
-    drop(expression.transform) { r.setExpression(_) } >>
-    drop(orNull(patternExpression map {_.transform})) { r.setPatternExpression(_) } >>
+    EvaluationTime.putEvaluationTime(evaluationTime, r.setEvaluationTime, r.setEvaluationGroup) >>
+    drop(expression.transform) { r.setExpression } >>
+    drop(orNull(patternExpression map {_.transform})) { r.setPatternExpression } >>
     ret(r)
   }
 
@@ -614,7 +613,7 @@ sealed case class Subreport(
    subreportExpression: Expression[Any],
    height: Height,
    width: Width = Width.Remaining,
-   x: RestrictedLength = (0 px),
+   x: RestrictedLength = 0.px,
    y: YPos = YPos.float(0 px),
    style: AbstractStyle = Style.inherit,
    conditions: Conditions = Conditions.default,
@@ -637,24 +636,24 @@ sealed case class Subreport(
     val (n, e) = v
     val po = new net.sf.jasperreports.engine.design.JRDesignSubreportParameter()
     po.setName(n)
-    drop(e.transform) { po.setExpression(_) }
+    drop(e.transform) { po.setExpression }
     ret(po)
   }
 
   override private[core] def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignSubreport(null)
-    r.setUsingCache(if (usingCache.isDefined) (usingCache.get : java.lang.Boolean) else null)
+    r.setUsingCache(if (usingCache.isDefined) usingCache.get : java.lang.Boolean else null)
 
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
-    drop(subreportExpression.transform) { r.setExpression(_) } >>
-    drop(orNull(argumentsMapExpression map {_.transform})) { r.setParametersMapExpression(_) }
-    (all(arguments map transArg toSeq) >>= { ps =>
-      ps foreach { r.addParameter(_) }
+    drop(subreportExpression.transform) { r.setExpression } >>
+    drop(orNull(argumentsMapExpression map {_.transform})) { r.setParametersMapExpression }
+    (all(arguments.map(transArg).toSeq) >>= { ps =>
+      ps foreach { r.addParameter }
       ret()
     }) >>
-    drop(orNull(dataSourceExpression map {_.transform})){r.setDataSourceExpression(_)} >>
-    drop(orNull(connectionExpression map {_.transform})){r.setConnectionExpression(_)} >>
-    (all(returnValues map {_.transform}) >>= { l => l.foreach { r.addReturnValue(_) }; ret() }) >>
+    drop(orNull(dataSourceExpression map {_.transform})){r.setDataSourceExpression} >>
+    drop(orNull(connectionExpression map {_.transform})){r.setConnectionExpression} >>
+    (all(returnValues map {_.transform}) >>= { l => l.foreach { r.addReturnValue }; ret() }) >>
     ret(r)
   }
 
@@ -674,7 +673,7 @@ sealed case class ComponentElement(
      component: components.Component,
      height: Height, // derive like BandHeight?
      width: Width = Width.Remaining,
-     x: RestrictedLength = (0 px),
+     x: RestrictedLength = 0.px,
      y: YPos = YPos.float(0 px),
      style: AbstractStyle = Style.inherit,
      conditions: Conditions = Conditions.default,
@@ -684,11 +683,11 @@ sealed case class ComponentElement(
   override private[core] def transform = {
     val r = new net.sf.jasperreports.engine.design.JRDesignComponentElement()
     ElementUtils.putReportElement(key, style, x, y, width, height, conditions, r) >>
-    (component.transform >>= { case (transcomp, transkey) => {
+    (component.transform >>= { case (transcomp, transkey) =>
       r.setComponent(transcomp)
       r.setComponentKey(transkey)
       ret()
-    }}) >>
+    }) >>
     ret(r)
   }
 

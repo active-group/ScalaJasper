@@ -2,7 +2,7 @@ package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.{engine => jre}
 import scala.collection.JavaConversions._
-import net.sf.jasperreports.engine.design.{JRDesignParameter, JRDesignSection, JasperDesign}
+import net.sf.jasperreports.engine.design.{JRDesignSection, JasperDesign}
 
 import Transformer._
 import Dimensions._
@@ -19,16 +19,16 @@ sealed case class FloatingBand(
 /** top and bottom margins can be relative to the page height, left and right relative to the page with */
 // same order as in CSS
 sealed case class Margins(
-    top : RestrictedLength = 0 px,
-    right : RestrictedLength = 0 px,
-    bottom : RestrictedLength = 0 px,
-    left : RestrictedLength = 0 px)
+    top : RestrictedLength = 0.px,
+    right : RestrictedLength = 0.px,
+    bottom : RestrictedLength = 0.px,
+    left : RestrictedLength = 0.px)
 
 object Margins {
   val none = Margins()
 
   /** as defined in JRBaseReport.java */
-  val default = Margins(left=20 px, right=20 px, top=30 px, bottom=30 px)
+  val default = Margins(left=20.px, right=20.px, top=30.px, bottom=30.px)
 }
 
 sealed case class SummaryBand(
@@ -50,12 +50,12 @@ sealed case class PageFormat(width: Length, height: Length, orientation: Orienta
 }
 object PageFormat {
   /** DIN A4 portrait */
-  val A4Portrait = PageFormat(210 mm, 297 mm, OrientationEnum.PORTRAIT)
+  val A4Portrait = PageFormat(210.mm, 297.mm, OrientationEnum.PORTRAIT)
   val A4 = A4Portrait
   /** DIN A4 landscape */
   val A4Landscape = A4Portrait.flip
   /** US Letter portrait */
-  val USLetterPortrait = PageFormat(8.5 inch, 11 inch, OrientationEnum.PORTRAIT)
+  val USLetterPortrait = PageFormat(8.5.inch, 11.inch, OrientationEnum.PORTRAIT)
   val USLetter = USLetterPortrait
   val USLetterLandscape = USLetterPortrait.flip
 }
@@ -64,10 +64,10 @@ sealed case class Columns(count : Int = 1,
                           direction : RunDirectionEnum = RunDirectionEnum.LTR,
                           footer : Option[FloatingBand] = None,
                           header : Option[Band] = None,
-                          spacing : Length = 0 px, // between columns
+                          spacing : Length = 0.px, // between columns
 
                           /* 100% = page width - left margin - right margin - (spacing * (column count - 1)) */
-                          width : RestrictedLength = 100 percent, // 555 is jasper's default, which should be 100%...?!
+                          width : RestrictedLength = 100.percent, // 555 is jasper's default, which should be 100%...?!
                           printOrder : PrintOrderEnum = PrintOrderEnum.VERTICAL
                           )
 
@@ -124,47 +124,47 @@ sealed case class Report(
     r.setName(name)
     r.setPageHeight(page.format.height.inAbsolutePixels)
     r.setPageWidth(page.format.width.inAbsolutePixels)
-    r.setTopMargin(page.margins.top asPartOf page.format.height inAbsolutePixels)
-    r.setRightMargin(absoluteRightMargin inAbsolutePixels)
-    r.setBottomMargin(page.margins.bottom asPartOf page.format.height inAbsolutePixels)
-    r.setLeftMargin(absoluteLeftMargin inAbsolutePixels)
+    r.setTopMargin((page.margins.top asPartOf page.format.height).inAbsolutePixels)
+    r.setRightMargin(absoluteRightMargin.inAbsolutePixels)
+    r.setBottomMargin((page.margins.bottom asPartOf page.format.height).inAbsolutePixels)
+    r.setLeftMargin(absoluteLeftMargin.inAbsolutePixels)
     r.setOrientation(page.format.orientation)
     r.setColumnCount(page.columns.count)
     r.setColumnDirection(page.columns.direction)
-    r.setFloatColumnFooter(page.columns.footer map {_.floating} getOrElse(false))
-    r.setColumnSpacing(page.columns.spacing inAbsolutePixels)
-    r.setColumnWidth(absoluteColumnWidth inAbsolutePixels)
+    r.setFloatColumnFooter(page.columns.footer.exists {_.floating})
+    r.setColumnSpacing(page.columns.spacing.inAbsolutePixels)
+    r.setColumnWidth(absoluteColumnWidth.inAbsolutePixels)
     r.setPrintOrder(page.columns.printOrder)
     r.setIgnorePagination(ignorePagination)
     r.setLanguage(language)
-    r.setSummaryNewPage(summary map { _.newPage } getOrElse(false))
-    r.setSummaryWithPageHeaderAndFooter(summary map { _.withPageHeaderAndFooter } getOrElse(false))
+    r.setSummaryNewPage(summary.exists { _.newPage })
+    r.setSummaryWithPageHeaderAndFooter(summary.exists { _.withPageHeaderAndFooter })
     r.getTemplatesList.addAll(templates)
-    imports foreach { r.addImport(_) } // Java imports for expressions - remove?
-    r.setTitleNewPage(title map { _.newPage } getOrElse(false))
+    imports foreach r.addImport // Java imports for expressions - remove?
+    r.setTitleNewPage(title.exists { _.newPage })
 
     // monadic transformation...
 
     // user defined styles (generated styles are added by caller)
     // drop(defaultStyle.mkDesignStyle) { s => s.setName("default"); s.setDefault(true); r.setDefaultStyle(s) }
-    (all(styles map { case(n,s) => s.mkDesignStyle >>= { js => js.setName(n); ret(js) } } toSeq) >>= {
+    (all(styles.map { case(n,s) => s.mkDesignStyle >>= { js => js.setName(n); ret(js) } }.toSeq) >>= {
       sts => sts foreach { r.addStyle(_) }; ret()
     }) >>
     // user defined datasets, generated datasets are added by caller
-    (all(subDatasets map {
+    (all(subDatasets.map {
       case(n,d) => d.transform >>= { o => o.setName(n); ret(o) }
-    } toList) >>= {
-      ds => ds foreach { r.addDataset(_) }; ret()
+    }.toList) >>= {
+      ds => ds foreach r.addDataset; ret()
     }) >>
-    (withContainerWidth(absoluteColumnWidth) {
+    withContainerWidth(absoluteColumnWidth) {
       // although jasper allows details to be wider than the column, you usually want 100% to mean that width
       (all(details map {_.transform}) >>= {
         bands => bands foreach { r.getDetailSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
       }) >>
       drop(orNull(page.columns.footer map {_.band.transform})) { r.setColumnFooter(_) } >>
       drop(orNull(page.columns.header map {_.transform})) { r.setColumnHeader(_) }
-    }) >>
-    (withContainerWidth(absolutePageContentWith) {
+    } >>
+    withContainerWidth(absolutePageContentWith) {
       drop(orNull(lastPageFooter map {_.transform})) { r.setLastPageFooter(_) } >>
       drop(orNull(noData map {_.transform})) { r.setNoData(_) } >>
       drop(orNull(page.footer map {_.transform})) { r.setPageFooter(_) } >>
@@ -172,7 +172,7 @@ sealed case class Report(
       drop(orNull(title map {_.band.transform})) { r.setTitle(_) } >>
       drop(orNull(page.header map {_.transform})) { r.setPageHeader(_) } >>
       drop(orNull(page.background map {_.transform})) { r.setBackground(_) }
-    }) >>
+    } >>
     mainDataset.fill(r.getMainDesignDataset) >> // must be last!
     ret(r)
   }

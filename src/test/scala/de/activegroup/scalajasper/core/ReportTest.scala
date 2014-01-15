@@ -40,8 +40,8 @@ class ReportTest extends FunSuite {
   <page/>
 </jasperPrint>
 
-    val actual = ReportTest.printToXML(r, Map.empty);
-    ReportTest.compareJasperPrintXML(expected, actual);
+    val actual = ReportTest.printToXML(r, Map.empty)
+    ReportTest.compareJasperPrintXML(expected, actual)
   }
 
   test("simple report") {
@@ -53,14 +53,14 @@ class ReportTest extends FunSuite {
             pdfFontName = Some("Helvetica"),
             pdfEncoding = Some("Cp1252"),
             pdfEmbedded = Some(false))
-        );
+        )
     val style2 = mystyle.copy(
         font = mystyle.font.copy(fontSize = Some(8)),
         forecolor = Some(java.awt.Color.black),
         backcolor = Some(java.awt.Color.white),
         line = Pen(lineWidth = Some(1.0F), lineStyle = Some(LineStyleEnum.SOLID), lineColor = Some(new java.awt.Color(0xc0, 0, 0))) // some red
         // mode = Some(net.sf.jasperreports.engine.`type`.ModeEnum.OPAQUE)
-        );
+        )
     // Experiment: We could use 'parentStyle' for every copy that is made automatically...?!
     //style = Some(Style.Internal.empty.copy(
     //    parentStyle = Some(mystyle),
@@ -68,18 +68,18 @@ class ReportTest extends FunSuite {
 
     val myband = Band(
             splitType = SplitTypeEnum.STRETCH,
-            height = 200 px,
+            height = 200.px,
             content = Vector(
                 Line(
                     style = style2,
-                    width=55 px, height = Height.fixed(15 px)
+                    width=55.px, height = Height.fixed(15.px)
                     ),
                 StaticText(
                     text = "Hello",
                     style = style2,
-                    width=55 px, height = Height.fixed(15 px)
+                    width=55.px, height = Height.fixed(15.px)
                     )
-                ));
+                ))
     val r = Report("hello-world-report").copy(
         // details = Vector(myband),
         // title = TitleBand.empty.copy(band = Some(myband), newPage = true),
@@ -128,21 +128,21 @@ class ReportTest extends FunSuite {
   }
   
   test("image") {
-    val mystyle = Style.empty;
+    val mystyle = Style.empty
     val myband = Band(
-            height = 200 px,
+            height = 200.px,
             splitType = SplitTypeEnum.STRETCH,
             content = Vector(
                 Image(expression = Expression.const("src/test/resources/butterfly.jpg"),
                       style = mystyle.copy(scaleImage = Some(net.sf.jasperreports.engine.`type`.ScaleImageEnum.RETAIN_SHAPE)),
                       lazily = true,
-                      width = 150 px, height = Height.fixed(150 px))
-                ));
+                      width = 150.px, height = Height.fixed(150.px))
+                ))
     val r = Report("myfirstimage").copy(
         page = Page(
             header = Some(myband)
             )
-        );
+        )
     
     val expected =
       <jasperPrint
@@ -166,18 +166,18 @@ class ReportTest extends FunSuite {
         </page>
       </jasperPrint>
    
-    val actual = ReportTest.printToXML(r, Map.empty);
-    ReportTest.compareJasperPrintXML(expected, actual);
+    val actual = ReportTest.printToXML(r, Map.empty)
+    ReportTest.compareJasperPrintXML(expected, actual)
   }
 
   test("textfield with parameter") {
     val myband = Band(
-            height = 200 px,
+            height = 200.px,
             splitType = SplitTypeEnum.STRETCH,
             content = Vector(
                 TextField(expression = Expression.raw("$P{myarg1}"),
-                  width=100 percent, height = Height.fixed(50 px),
-                  x = 40 px, y = YPos.float(80 px))
+                  width=100.percent, height = Height.fixed(50.px),
+                  x = 40.px, y = YPos.float(80.px))
                 ))
     val r = Report("text-parameter").copy(
         mainDataset = Dataset.empty.copy(
@@ -187,7 +187,7 @@ class ReportTest extends FunSuite {
         page = Page(
             header = Some(myband)
             )
-        );
+        )
     
     val expected =
       <jasperPrint
@@ -211,15 +211,15 @@ class ReportTest extends FunSuite {
         </page>
       </jasperPrint>
    
-    val actual = ReportTest.printToXML(r, Map.empty);
-    ReportTest.compareJasperPrintXML(expected, actual);
+    val actual = ReportTest.printToXML(r, Map.empty)
+    ReportTest.compareJasperPrintXML(expected, actual)
   }
 
   def keepShowing(f: () => Report) {
     def show(r: Report) = {
       val jp = print(r, Map.empty)
-      val viewer = new JasperViewer(jp);
-      viewer.setVisible(true);
+      val viewer = new JasperViewer(jp)
+      viewer.setVisible(true)
       viewer
     }
     def hide(v: JasperViewer) {
@@ -249,7 +249,7 @@ class ReportTest extends FunSuite {
   }*/
 
   def makeRegionsCheatSheet() = {
-    def demoBand(name: String, h:Height = Height.fixed(2 cm)) = {
+    def demoBand(name: String, h:Height = Height.fixed(2.cm)) = {
       val st = Style(box = LineBox(pen = BoxPen.uniform(Pen(lineWidth = Some(0.5F)))),
         verticalAlignment = Some(VerticalAlignEnum.MIDDLE),
         horizontalAlignment = Some(HorizontalAlignEnum.CENTER))
@@ -260,7 +260,7 @@ class ReportTest extends FunSuite {
           TextField(
             expression = Expression.const(name),
             style = st,
-            width=100 percent, height = h)
+            width=100.percent, height = h)
         ))
     }
     val r = Report(name = "cheat sheet",
@@ -268,14 +268,14 @@ class ReportTest extends FunSuite {
         header = Some(demoBand("page header")),
         footer = Some(demoBand("page footer")),
         columns = Columns(count = 2,
-          spacing = 5 px,
+          spacing = 5.px,
           header = Some(demoBand("column header")),
           footer = Some(FloatingBand(demoBand("column footer (floating)"), floating=true))
           ),
         background = Some(Band(splitType = SplitTypeEnum.IMMEDIATE, // split type of background?
           content = Vector(TextField(
             expression = Expression.const("background"),
-            width = 100 percent, height = Height.relativeToBand(100 px)))))
+            width = 100.percent, height = Height.relativeToBand(100.px)))))
       ),
       details = (1 to 12) map {i => demoBand("details "+i) },
       summary = Some(SummaryBand(demoBand("summary (new page, with header and footer)"), newPage=true, withPageHeaderAndFooter=true)),
@@ -291,41 +291,41 @@ class ReportTest extends FunSuite {
 object ReportTest {
 
   def show(jd: net.sf.jasperreports.engine.design.JasperDesign) = {
-    System.err.println("Report: ");
-    val props = jd.getPropertiesMap()
-    for (p <- props.getPropertyNames()) {
-      System.err.println("  %s -> %s", p, props.getProperty(p));
+    System.err.println("Report: ")
+    val props = jd.getPropertiesMap
+    for (p <- props.getPropertyNames) {
+      System.err.println("  %s -> %s", p, props.getProperty(p))
     }
   }
 
   def printToXML(d: Report, args: Map[String, AnyRef]) = {
-    val p = print(d, args);
+    val p = print(d, args)
     val s = net.sf.jasperreports.engine.JasperExportManager.exportReportToXml(p)
-    val xml:scala.xml.Elem = scala.xml.XML.loadString(s);
+    val xml:scala.xml.Elem = scala.xml.XML.loadString(s)
     xml
   }
 
   def printToPDF(d: Report, args: Map[String, AnyRef], pdfFilename: String) {
-    val p = print(d, args);
+    val p = print(d, args)
     net.sf.jasperreports.engine.JasperExportManager.exportReportToPdfFile(p, pdfFilename)
   }
 
   def compareJasperPrintXML(expected_ : scala.xml.Elem, actual_ : scala.xml.Elem) = {
-    val expected = prepareForCompare(expected_);
-    val actual = prepareForCompare(actual_);
+    val expected = prepareForCompare(expected_)
+    val actual = prepareForCompare(actual_)
     if (!(expected == actual)) {
       val pp = new scala.xml.PrettyPrinter(80, 2)
-      System.err.printf("Expected: %s\nActual: %s\n", pp.format(expected), pp.format(actual));
+      System.err.printf("Expected: %s\nActual: %s\n", pp.format(expected), pp.format(actual))
       // these methods are not that clever:
       //System.err.printf("Missing: %s\n", expected diff actual);
       //System.err.printf("Unexpected: %s\n", actual diff expected);
-      val e:String = expected.toString;
-      val a:String = actual.toString;
-      val (suff1, suff2) = (e, a).zipped.dropWhile(Function.tupled(_ == _)).unzip;
+      val e:String = expected.toString()
+      val a:String = actual.toString()
+      val (suff1, suff2) = (e, a).zipped.dropWhile(Function.tupled(_ == _)).unzip
       //val (inter1, inter2) = (suff1.reverse, suff2.reverse).dropWhile...
-      System.err.printf("First differences around:\n");
-      System.err.printf("...%s\n", suff1.mkString);
-      System.err.printf("...%s\n", suff2.mkString);
+      System.err.printf("First differences around:\n")
+      System.err.printf("...%s\n", suff1.mkString)
+      System.err.printf("...%s\n", suff2.mkString)
     }
     assert(expected == actual)
   }

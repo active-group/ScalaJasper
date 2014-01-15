@@ -12,7 +12,7 @@ class ElementTests extends FunSuite {
     val e1 = Break.page()
     val e2 = TextField(Expression.const("Hello"), style=Style(font = Font(fontSize = Some(12))))
     val e3 = ElementGroup(Seq(
-      Line(Width.Remaining, Height.fixed(1 px)),
+      Line(Width.Remaining, Height.fixed(1.px)),
       TextField(Expression.const("World"))
     ))
 
