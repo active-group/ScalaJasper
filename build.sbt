@@ -1,9 +1,8 @@
 import AssemblyKeys._
-import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
 assemblySettings
 
-net.virtualvoid.sbt.graph.Plugin.graphSettings
+// net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 organization := "de.activegroup"
 
@@ -14,6 +13,8 @@ scalaVersion in ThisBuild := "2.9.2"
 scalacOptions += "-deprecation"
 
 scalacOptions += "-unchecked"
+
+// 2.10: scalacOptions ++= ["-feature", "-language:implicitConversions"]
 
 crossPaths := false
 
