@@ -16,7 +16,7 @@ scalacOptions += "-unchecked"
 
 // 2.10: scalacOptions ++= ["-feature", "-language:implicitConversions"]
 
-crossPaths := false
+crossScalaVersions := Seq("2.9.2", "2.10.3")
 
 compileOrder in Compile := CompileOrder.Mixed
 

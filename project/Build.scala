@@ -11,7 +11,7 @@ object ScalaJasperBuild extends Build {
     id = "scalajasper",
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
-      version := "0.3-SNAPSHOT",
+      version := "0.4-SNAPSHOT",
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "1.9.1" % "test",
         "log4j" % "log4j" % "1.2.15"
