@@ -32,7 +32,7 @@ sealed case class DatasetRun(datasetName: String,
       drop(e.transform) { p.setExpression(_) } >>
       ret(p)
     }.toSeq) >>= {
-      ps => ps foreach { r.addParameter(_) }; ret()
+      ps => ps foreach { r.addParameter(_) }; retUnit
     }) >>
     drop(orNull(argumentsMapExpression map {_.transform})) { r.setParametersMapExpression(_)} >>
     drop(orNull(dataSourceExpression map {_.transform})) { r.setDataSourceExpression(_)} >>
@@ -103,10 +103,10 @@ sealed case class Group(/** consecutive records with the same value form the gro
 
      drop(expression.transform) { r.setExpression(_) } >>
      (all(header map {_.transform}) >>= {
-       bs => bs.foreach { r.getGroupHeaderSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
+       bs => bs.foreach { r.getGroupHeaderSection.asInstanceOf[JRDesignSection].addBand(_) }; retUnit
      }) >>
      (all(footer map {_.transform}) >>= {
-       bs => bs.foreach { r.getGroupFooterSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
+       bs => bs.foreach { r.getGroupFooterSection.asInstanceOf[JRDesignSection].addBand(_) }; retUnit
      }) >>
      ret(r)
    }
@@ -260,18 +260,18 @@ sealed case class Dataset(
 
     // user defined parameters (generated parameters are added later)
     (all(parameters map {_.transform}) >>= {
-      ps => ps foreach { r.addParameter(_) }; ret()
+      ps => ps foreach { r.addParameter(_) }; retUnit
     }) >>
     (all(variables map {_.transform}) >>= {
-      vs => vs foreach r.addVariable; ret()
+      vs => vs foreach r.addVariable; retUnit
     }) >>
     (all(sortFields map { _.transform }) >>= {
-      sfs => sfs foreach { r.addSortField(_) }; ret()
+      sfs => sfs foreach { r.addSortField(_) }; retUnit
     }) >>
     (all(groups.map { case(n, g) => g.transform >>= { jg => ret(n, jg) } }.toSeq) >>= {
-      l => l foreach { case(n, g) => g.setName(n); r.addGroup(g) }; ret()
+      l => l foreach { case(n, g) => g.setName(n); r.addGroup(g) }; retUnit
     }) >>
-    ret()
+    retUnit
   }
 }
   

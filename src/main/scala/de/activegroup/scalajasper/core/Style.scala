@@ -279,7 +279,7 @@ sealed case class Paragraph(lineSpacing: Option[LineSpacing] = None,
 object Paragraph {
   val empty = Paragraph()
 
-  private[core] def put(o: Paragraph, r: JRBaseParagraph) {
+  private[core] def put(o: Paragraph, r: JRBaseParagraph): Transformer[Unit] = {
     //def optFloat(v: Option[Float]) : java.lang.Float = if (v.isDefined) v.get else null
     def optInt(v: Option[Int]) : java.lang.Integer = if (v.isDefined) v.get else null
 
@@ -296,7 +296,7 @@ object Paragraph {
         r.setLineSpacing(en)
         r.setLineSpacingSize(sz)
       }
-    else ret()
+    else retUnit
   }
 }
 
@@ -380,7 +380,7 @@ sealed case class Style(
       // JRConditionalStyleFactory suggests, that the parentStyle should always refer to this 'containing' style
         cs foreach { _.setParentStyle(r) }
         cs foreach { r.addConditionalStyle(_) }
-        ret()
+        retUnit
       }) >>
       Style.putBase(this, r) >>
       ret(r)
@@ -438,8 +438,9 @@ object Style {
     r.setScaleImage(o.scaleImage.getOrElse(null))
     r.setRadius(optInt(o.radius))
     r.setBlankWhenNull(optBool(o.blankWhenNull))
-    Paragraph.put(o.paragraph, r.getParagraph.asInstanceOf[JRBaseParagraph])
-    ret()
+
+    Paragraph.put(o.paragraph, r.getParagraph.asInstanceOf[JRBaseParagraph]) >>
+    retUnit
   }
 }
 

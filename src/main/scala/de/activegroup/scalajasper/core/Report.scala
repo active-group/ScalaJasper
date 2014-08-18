@@ -148,18 +148,18 @@ sealed case class Report(
     // user defined styles (generated styles are added by caller)
     // drop(defaultStyle.mkDesignStyle) { s => s.setName("default"); s.setDefault(true); r.setDefaultStyle(s) }
     (all(styles.map { case(n,s) => s.mkDesignStyle >>= { js => js.setName(n); ret(js) } }.toSeq) >>= {
-      sts => sts foreach { r.addStyle(_) }; ret()
+      sts => sts foreach { r.addStyle(_) }; retUnit
     }) >>
     // user defined datasets, generated datasets are added by caller
     (all(subDatasets.map {
       case(n,d) => d.transform >>= { o => o.setName(n); ret(o) }
     }.toList) >>= {
-      ds => ds foreach r.addDataset; ret()
+      ds => ds foreach r.addDataset; retUnit
     }) >>
     withContainerWidth(absoluteColumnWidth) {
       // although jasper allows details to be wider than the column, you usually want 100% to mean that width
       (all(details map {_.transform}) >>= {
-        bands => bands foreach { r.getDetailSection.asInstanceOf[JRDesignSection].addBand(_) }; ret()
+        bands => bands foreach { r.getDetailSection.asInstanceOf[JRDesignSection].addBand(_) }; retUnit
       }) >>
       drop(orNull(page.columns.footer map {_.band.transform})) { r.setColumnFooter(_) } >>
       drop(orNull(page.columns.header map {_.transform})) { r.setColumnHeader(_) }

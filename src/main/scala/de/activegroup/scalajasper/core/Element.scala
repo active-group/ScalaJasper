@@ -114,7 +114,7 @@ object Anchor {
     o.transform >>= { case(e, l ) =>
       setAnchorNameExpression(e)
       setBookmarkLevel(l)
-      ret()
+      retUnit
     }
   }
 }
@@ -139,10 +139,10 @@ object EvaluationTime {
       case Group(g) =>
         setTime(o.value)
         drop(g.transform) { setGroup(_) } >>
-        ret()
+        retUnit
       case _ => 
         setTime(o.value)
-        ret()
+        retUnit
     }
   }
 }
@@ -251,7 +251,7 @@ private[core] object ElementUtils {
       val absX = x asPartOf parentWidth
       tgt.setWidth(width.within(absX, parentWidth).inAbsolutePixels)
       tgt.setX(absX.inAbsolutePixels)
-      ret()
+      retUnit
     }}) >>
     drop(orNull(conditions.printWhenExpression map { _.transform })) { tgt.setPrintWhenExpression(_) } >>
     // might take colors and mode out of the style - if it's worth it
@@ -298,7 +298,7 @@ private[core] object ElementUtils {
           case _ => throw new RuntimeException("Unexpected type of child: " + co.getClass)
         }
       }
-      ret()
+      retUnit
     }
   }
 }
@@ -649,11 +649,11 @@ sealed case class Subreport(
     drop(orNull(argumentsMapExpression map {_.transform})) { r.setParametersMapExpression }
     (all(arguments.map(transArg).toSeq) >>= { ps =>
       ps foreach { r.addParameter }
-      ret()
+      retUnit
     }) >>
     drop(orNull(dataSourceExpression map {_.transform})){r.setDataSourceExpression} >>
     drop(orNull(connectionExpression map {_.transform})){r.setConnectionExpression} >>
-    (all(returnValues map {_.transform}) >>= { l => l.foreach { r.addReturnValue }; ret() }) >>
+    (all(returnValues map {_.transform}) >>= { l => l.foreach { r.addReturnValue }; retUnit }) >>
     ret(r)
   }
 
@@ -686,7 +686,7 @@ sealed case class ComponentElement(
     (component.transform >>= { case (transcomp, transkey) =>
       r.setComponent(transcomp)
       r.setComponentKey(transkey)
-      ret()
+      retUnit
     }) >>
     ret(r)
   }

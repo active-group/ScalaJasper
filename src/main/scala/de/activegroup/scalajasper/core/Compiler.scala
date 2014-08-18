@@ -98,6 +98,8 @@ private[activegroup] object Transformer {
     def exec(st: TransformationState) = (v, st)
   }
 
+  val retUnit = ret(())
+
   // this ensures >> is only called on Unit Transformers
   // well, maybe the runtime overhead is to much just to prevent code errors...?
   implicit def isImperative(t: Transformer[Unit]) : ImperativeTransformer = new ImperativeTransformer {
@@ -106,7 +108,7 @@ private[activegroup] object Transformer {
 
   /** drops the result of a transformation into a matching setter function */
   def drop[B](t : Transformer[B])(set : B => Unit) : Transformer[Unit] =
-    t >>= { b => set(b); ret() }
+    t >>= { b => set(b); retUnit }
 
   def orNull[B <: AnyRef](o : Option[Transformer[B]]) : Transformer[B] =
     o.getOrElse(ret(null.asInstanceOf[B]))

@@ -70,7 +70,7 @@ object Hyperlink {
         ret(setLinkType(typeName)) >>
         all((args map transarg).toList) >>= { ps =>
           ps foreach addHyperlinkParameter
-          ret()
+          retUnit
         }
     }
   }
