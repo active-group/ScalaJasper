@@ -8,7 +8,7 @@ organization := "de.activegroup"
 
 organizationHomepage := Some(url("http://www.active-group.de/"))
 
-scalaVersion in ThisBuild := "2.9.2"
+scalaVersion in ThisBuild := "2.11.2"
 
 scalacOptions += "-deprecation"
 
@@ -16,7 +16,7 @@ scalacOptions += "-unchecked"
 
 // 2.10: scalacOptions ++= ["-feature", "-language:implicitConversions"]
 
-crossScalaVersions := Seq("2.9.2", "2.10.3")
+crossScalaVersions := Seq("2.10.4", "2.11.2")
 
 compileOrder in Compile := CompileOrder.Mixed
 
