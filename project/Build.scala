@@ -1,8 +1,7 @@
 import sbt._
 import sbt.ExclusionRule
 import sbt.Keys._
-import sbtassembly.Plugin._ 
-import AssemblyKeys._
+import sbtassembly.AssemblyPlugin.autoImport._ 
 
 object ScalaJasperBuild extends Build {
 
