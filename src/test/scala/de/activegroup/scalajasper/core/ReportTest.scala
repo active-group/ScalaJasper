@@ -91,29 +91,26 @@ class ReportTest extends FunSuite {
     
     val expected =
       <jasperPrint
-      bottomMargin="30" leftMargin="20" locale="en_US" name="hello-world-report" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
-        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0">
-        </property>
-        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0">
-        </property>
-        <property name="net.sf.jasperreports.export.xml.page.count" value="1">
-        </property>
-        <origin band="pageHeader"></origin>
-        <origin band="detail"></origin>
+      bottomMargin="30" leftMargin="20" locale="en_US" name="hello-world-report" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+        <origin band="pageHeader"/>
+        <origin band="detail"/>
         <style
         backcolor="#FFFFFF" fontSize="8" forecolor="#000000" isPdfEmbedded="false" name="auto0" pdfEncoding="Cp1252" pdfFontName="Helvetica">
-          <pen lineColor="#C00000" lineStyle="Solid" lineWidth="1.0"></pen>
+          <pen lineColor="#C00000" lineStyle="Solid" lineWidth="1.0"/>
         </style>
         <page>
           <line>
             <reportElement
-            height="15" origin="0" srcId="1" style="auto0" uuid="f1450306-5176-34a5-beaf-bbf8ed995985" width="55" x="20" y="30">
+            height="15" origin="0" printId="1" srcId="1" style="auto0" uuid="f1450306-5176-34a5-beaf-bbf8ed995985" width="55" x="20" y="30">
             </reportElement>
           </line>
           <text
           leadingOffset="-1.6875" lineSpacingFactor="1.1777344" textHeight="9.421875">
             <reportElement
-            height="15" origin="0" srcId="2" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="55" x="20" y="30">
+            height="15" origin="0" printId="1" srcId="2" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="55" x="20" y="30">
             </reportElement>
             <textContent>Hello</textContent>
           </text>
@@ -146,20 +143,17 @@ class ReportTest extends FunSuite {
     
     val expected =
       <jasperPrint
-      bottomMargin="30" leftMargin="20" locale="en_US" name="myfirstimage" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
-        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0">
-        </property>
-        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0">
-        </property>
-        <property name="net.sf.jasperreports.export.xml.page.count" value="1">
-        </property>
-        <origin band="pageHeader"></origin>
-        <origin band="detail"></origin>
-        <style name="auto0" scaleImage="RetainShape"></style>
+      bottomMargin="30" leftMargin="20" locale="en_US" name="myfirstimage" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+        <origin band="pageHeader"/>
+        <origin band="detail"/>
+        <style name="auto0" scaleImage="RetainShape"/>
         <page>
           <image hAlign="Left" isLazy="true" scaleImage="RetainShape" vAlign="Top">
             <reportElement
-            height="150" origin="0" srcId="1" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="150" x="20" y="30">
+            height="150" origin="0" printId="2" srcId="1" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="150" x="20" y="30">
             </reportElement>
             <imageSource>src/test/resources/butterfly.jpg</imageSource>
           </image>
@@ -191,20 +185,17 @@ class ReportTest extends FunSuite {
     
     val expected =
       <jasperPrint
-      bottomMargin="30" leftMargin="20" locale="en_US" name="text-parameter" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
-        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0">
-        </property>
-        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0">
-        </property>
-        <property name="net.sf.jasperreports.export.xml.page.count" value="1">
-        </property>
-        <origin band="pageHeader"></origin>
-        <origin band="detail"></origin>
+      bottomMargin="30" leftMargin="20" locale="en_US" name="text-parameter" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+        <origin band="pageHeader"/>
+        <origin band="detail"/>
         <page>
           <text
           leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
             <reportElement
-            height="50" origin="0" srcId="1" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="555" x="60" y="110">
+            height="50" origin="0" printId="1" srcId="1" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="555" x="60" y="110">
             </reportElement>
             <textContent>mydefault</textContent>
           </text>
@@ -251,8 +242,8 @@ class ReportTest extends FunSuite {
   def makeRegionsCheatSheet() = {
     def demoBand(name: String, h:Height = Height.fixed(2.cm)) = {
       val st = Style(box = LineBox(pen = BoxPen.uniform(Pen(lineWidth = Some(0.5F)))),
-        verticalAlignment = Some(VerticalAlignEnum.MIDDLE),
-        horizontalAlignment = Some(HorizontalAlignEnum.CENTER))
+        verticalTextAlignment = Some(VerticalTextAlignEnum.MIDDLE),
+        horizontalTextAlignment = Some(HorizontalTextAlignEnum.CENTER))
       Band(
         height = BandHeight.Auto,
         splitType = SplitTypeEnum.STRETCH,

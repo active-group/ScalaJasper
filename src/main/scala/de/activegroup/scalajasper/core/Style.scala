@@ -6,50 +6,9 @@ import net.sf.jasperreports.engine.`type`.{LineSpacingEnum, TabStopAlignEnum}
 import Transformer._
 import net.sf.jasperreports.engine.design.{JRDesignConditionalStyle, JRDesignStyle}
 
-// TODO: Not used yet
-sealed abstract class Align(val horizontal : net.sf.jasperreports.engine.`type`.HorizontalAlignEnum,
-                            val vertical : net.sf.jasperreports.engine.`type`.VerticalAlignEnum)
-
-object Align {
-  case object TopLeft extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP)
-  case object TopCenter extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP)
-  case object TopRight extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.TOP)
-  case object MiddleLeft extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE)
-  case object Center extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE)
-  case object MiddleRight extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.MIDDLE)
-  case object BottomLeft extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.LEFT,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM)
-  case object BottomCenter extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.CENTER,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM)
-  case object BottomRight extends Align(
-    net.sf.jasperreports.engine.`type`.HorizontalAlignEnum.RIGHT,
-    net.sf.jasperreports.engine.`type`.VerticalAlignEnum.BOTTOM)
-
-  private[core] def putAlign(o: Align, tgt: net.sf.jasperreports.engine.JRAlignment) {
-    // TODO: should be optional - resp. corresponds to style... so use this only in Styles?!
-    tgt.setHorizontalAlignment(o.horizontal)
-    tgt.setVerticalAlignment(o.vertical)
-  }
-}
-
-
 sealed case class Font(
     fontName: Option[String] = None,
-    fontSize: Option[Int] = None,
+    fontSize: Option[Float] = None,
     bold: Option[Boolean] = None,
     italic: Option[Boolean] = None,
     strikeThrough: Option[Boolean] = None,
@@ -95,8 +54,8 @@ object Pen {
   val empty = new Pen()
 
   private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.JRPen) {
-    tgt.setLineColor(o.lineColor.getOrElse(null))
-    tgt.setLineStyle(o.lineStyle.getOrElse(null))
+    tgt.setLineColor(o.lineColor.orNull)
+    tgt.setLineStyle(o.lineStyle.orNull)
     var w : java.lang.Float = null
     if (o.lineWidth.isDefined) w = o.lineWidth.get
     tgt.setLineWidth(w)
@@ -314,7 +273,8 @@ sealed case class Style(
                          backcolor: Option[java.awt.Color] = None,
                          forecolor: Option[java.awt.Color] = None,
                          font: Font = Font.empty,
-                         horizontalAlignment: Option[net.sf.jasperreports.engine.`type`.HorizontalAlignEnum] = None,
+                         horizontalImageAlignment:  Option[net.sf.jasperreports.engine.`type`.HorizontalImageAlignEnum] = None,
+                         horizontalTextAlignment: Option[net.sf.jasperreports.engine.`type`.HorizontalTextAlignEnum] = None,
                          paragraph: Paragraph = Paragraph.empty,
                          markup: Option[String] = None, // "none", "styled", "html", "rtf"
                          /** Report elements can either be transparent or opaque, depending on the value
@@ -328,7 +288,8 @@ sealed case class Style(
                          radius: Option[Int] = None,
                          rotation: Option[net.sf.jasperreports.engine.`type`.RotationEnum] = None,
                          scaleImage: Option[net.sf.jasperreports.engine.`type`.ScaleImageEnum] = None,
-                         verticalAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalAlignEnum] = None,
+                         verticalImageAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalImageAlignEnum] = None,
+                         verticalTextAlignment: Option[net.sf.jasperreports.engine.`type`.VerticalTextAlignEnum] = None,
                          line: Pen = Pen.empty,
                          box: LineBox = LineBox.empty,
                          fill: Option[net.sf.jasperreports.engine.`type`.FillEnum] = None,
@@ -347,7 +308,8 @@ sealed case class Style(
       backcolor = rhs.backcolor.orElse(this.backcolor),
       forecolor = rhs.forecolor.orElse(this.forecolor),
       font = this.font ++ rhs.font,
-      horizontalAlignment = rhs.horizontalAlignment.orElse(this.horizontalAlignment),
+      horizontalImageAlignment = rhs.horizontalImageAlignment.orElse(this.horizontalImageAlignment),
+      horizontalTextAlignment = rhs.horizontalTextAlignment.orElse(this.horizontalTextAlignment),
       paragraph = this.paragraph ++ rhs.paragraph,
       markup = rhs.markup.orElse(this.markup),
       mode = rhs.mode.orElse(this.mode),
@@ -355,7 +317,8 @@ sealed case class Style(
       radius = rhs.radius.orElse(this.radius),
       rotation = rhs.rotation.orElse(this.rotation),
       scaleImage = rhs.scaleImage.orElse(this.scaleImage),
-      verticalAlignment = rhs.verticalAlignment.orElse(this.verticalAlignment),
+      verticalImageAlignment = rhs.verticalImageAlignment.orElse(this.verticalImageAlignment),
+      verticalTextAlignment = rhs.verticalTextAlignment.orElse(this.verticalTextAlignment),
       line = this.line ++ rhs.line,
       box = this.box ++ rhs.box,
       fill = rhs.fill.orElse(this.fill),
@@ -375,7 +338,7 @@ sealed case class Style(
     // name is isDefault are set externally
     //r.setName(o.name);
     //r.setDefault(o.isDefault);
-    drop(orNull(parentStyle map {_.transform})) { op => r.setParentStyleNameReference(if (op == null) null else op.getOrElse(null)) } >>
+    drop(orNull(parentStyle map {_.transform})) { op => r.setParentStyleNameReference(if (op == null) null else op.orNull) } >>
       (all(conditionalStyles map Style.transCond) >>= { cs =>
       // JRConditionalStyleFactory suggests, that the parentStyle should always refer to this 'containing' style
         cs foreach { _.setParentStyle(r) }
@@ -397,7 +360,7 @@ object Style {
     val (e, s) = v
     val r = new net.sf.jasperreports.engine.design.JRDesignConditionalStyle()
     // these are not allowed for conditional styles (new type?)
-    assert(s.parentStyle == None) // exception?
+    assert(s.parentStyle.isEmpty) // exception?
     assert(s.conditionalStyles.isEmpty) // exception?
     putBase(s, r) >>
       drop(e.transform)(r.setConditionExpression(_)) >>
@@ -410,32 +373,36 @@ object Style {
       if (v.isDefined) v.get else null
     def optInt(v: Option[Int]) : java.lang.Integer =
       if (v.isDefined) v.get else null
+    def optFloat(v: Option[Float]) : java.lang.Float =
+      if(v.isDefined) v.get else null
     // only simple things currently (need not be within transformer monad)
-    r.setBackcolor(o.backcolor.getOrElse(null))
-    r.setForecolor(o.forecolor.getOrElse(null))
+    r.setBackcolor(o.backcolor.orNull)
+    r.setForecolor(o.forecolor.orNull)
     // Though the properties are the same, JRStyle does not use a JRFont :-/
-    r.setFontName(o.font.fontName.getOrElse(null))
+    r.setFontName(o.font.fontName.orNull)
     // the java.lang.Boolean and Integer overloads are different!
     // - null means 'inherit' or 'undefined'
-    r.setFontSize(optInt(o.font.fontSize)); // Integer
+    r.setFontSize(optFloat(o.font.fontSize)); // Float
     r.setBold(optBool(o.font.bold))
     r.setItalic(optBool(o.font.italic))
     r.setStrikeThrough(optBool(o.font.strikeThrough))
     r.setUnderline(optBool(o.font.underline))
-    r.setPdfEncoding(o.font.pdfEncoding.getOrElse(null))
-    r.setPdfFontName(o.font.pdfFontName.getOrElse(null))
+    r.setPdfEncoding(o.font.pdfEncoding.orNull)
+    r.setPdfFontName(o.font.pdfFontName.orNull)
     r.setPdfEmbedded(optBool(o.font.pdfEmbedded))
-    r.setHorizontalAlignment(o.horizontalAlignment.getOrElse(null))
-    r.setVerticalAlignment(o.verticalAlignment.getOrElse(null))
-    r.setMarkup(o.markup.getOrElse(null))
-    r.setMode(o.mode.getOrElse(null))
-    r.setPattern(o.pattern.getOrElse(null))
-    r.setRotation(o.rotation.getOrElse(null))
-    r.setFill(o.fill.getOrElse(null))
+    r.setHorizontalImageAlign(o.horizontalImageAlignment.orNull)
+    r.setHorizontalTextAlign(o.horizontalTextAlignment.orNull)
+    r.setVerticalImageAlign(o.verticalImageAlignment.orNull)
+    r.setVerticalTextAlign(o.verticalTextAlignment.orNull)
+    r.setMarkup(o.markup.orNull)
+    r.setMode(o.mode.orNull)
+    r.setPattern(o.pattern.orNull)
+    r.setRotation(o.rotation.orNull)
+    r.setFill(o.fill.orNull)
 
     Pen.putPen(o.line, r.getLinePen)
     LineBox.putLineBox(o.box, r.getLineBox)
-    r.setScaleImage(o.scaleImage.getOrElse(null))
+    r.setScaleImage(o.scaleImage.orNull)
     r.setRadius(optInt(o.radius))
     r.setBlankWhenNull(optBool(o.blankWhenNull))
 

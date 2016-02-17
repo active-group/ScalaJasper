@@ -48,39 +48,38 @@ class ComponentsTest extends FunSuite {
 
     val expected =
       <jasperPrint
-      bottomMargin="30" leftMargin="20" locale="en_US" name="basic table" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
-        <property name="net.sf.jasperreports.export.xml.start.page.index"></property>
-        <property name="net.sf.jasperreports.export.xml.end.page.index"></property>
-        <property name="net.sf.jasperreports.export.xml.page.count"></property>
-        <origin band="detail"></origin>
-        <origin band="detail"></origin>
+      bottomMargin="30" leftMargin="20" locale="en_US" name="basic table" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <property name="net.sf.jasperreports.export.xml.start.page.index"/>
+        <property name="net.sf.jasperreports.export.xml.end.page.index"/>
+        <property name="net.sf.jasperreports.export.xml.page.count"/>
+        <origin band="detail"/>
+        <origin band="detail"/>
         <page>
           <frame>
             <reportElement
-            height="100" origin="0" srcId="1" uuid="93b885ad-fe0d-3089-8df6-34904fd59f71" width="100" x="20" y="30">
-              <property name="net.sf.jasperreports.export.headertoolbar.tableUUID">
-              </property>
+            height="100" origin="0" printId="2" srcId="1" width="100" x="20" y="30">
+              <property name="net.sf.jasperreports.export.headertoolbar.tableUUID"/>
             </reportElement>
             <frame>
               <reportElement
-              height="50" origin="1" srcId="4" uuid="e0f14d38-35cf-4303-9f88-2b275f34f756" width="100" x="0" y="0">
+              height="50" origin="1" printId="1" srcId="3" width="100" x="0" y="0">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
                 <reportElement
-                height="15" origin="1" srcId="5" uuid="d18d7b63-0b7d-4486-8f16-969df4918351" width="100" x="0" y="0">
+                height="15" origin="1" printId="1" srcId="4" width="100" x="0" y="0">
                 </reportElement>
                 <textContent>Hello</textContent>
               </text>
             </frame>
             <frame>
               <reportElement
-              height="50" origin="1" srcId="4" uuid="e0f14d38-35cf-4303-9f88-2b275f34f756" width="100" x="0" y="50">
+              height="50" origin="1" printId="2" srcId="3" width="100" x="0" y="50">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
                 <reportElement
-                height="15" origin="1" srcId="5" uuid="d18d7b63-0b7d-4486-8f16-969df4918351" width="100" x="0" y="0">
+                height="15" origin="1" printId="2" srcId="4" width="100" x="0" y="0">
                 </reportElement>
                 <textContent>World</textContent>
               </text>
@@ -129,39 +128,38 @@ class ComponentsTest extends FunSuite {
 
     val expected =
       <jasperPrint
-      bottomMargin="30" leftMargin="20" locale="en_US" name="basic table" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jasperreports.sourceforge.net/jasperreports/print">
-        <property name="net.sf.jasperreports.export.xml.start.page.index"></property>
-        <property name="net.sf.jasperreports.export.xml.end.page.index"></property>
-        <property name="net.sf.jasperreports.export.xml.page.count"></property>
-        <origin band="detail"></origin>
-        <origin band="detail"></origin>
+      bottomMargin="30" leftMargin="20" locale="en_US" name="basic table" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <property name="net.sf.jasperreports.export.xml.start.page.index"/>
+        <property name="net.sf.jasperreports.export.xml.end.page.index"/>
+        <property name="net.sf.jasperreports.export.xml.page.count"/>
+        <origin band="detail"/>
+        <origin band="detail"/>
         <page>
           <frame>
             <reportElement
-            height="100" origin="0" srcId="1" uuid="93b885ad-fe0d-3089-8df6-34904fd59f71" width="444" x="20" y="30">
-              <property name="net.sf.jasperreports.export.headertoolbar.tableUUID">
-              </property>
+            height="100" origin="0" printId="2" srcId="1" width="444" x="20" y="30">
+              <property name="net.sf.jasperreports.export.headertoolbar.tableUUID"/>
             </reportElement>
             <frame>
               <reportElement
-              height="50" origin="1" srcId="4" uuid="3060c9b8-8794-4898-92b2-c472e20671f8" width="444" x="0" y="0">
+              height="50" origin="1" printId="1" srcId="3" width="444" x="0" y="0">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
                 <reportElement
-                height="15" origin="1" srcId="5" uuid="78c26dc9-564d-4fbb-ba43-5f3d30856d3f" width="399" x="0" y="0">
+                height="15" origin="1" printId="1" srcId="4" width="399" x="0" y="0">
                 </reportElement>
                 <textContent>HelloHello</textContent>
               </text>
             </frame>
             <frame>
               <reportElement
-              height="50" origin="1" srcId="4" uuid="3060c9b8-8794-4898-92b2-c472e20671f8" width="444" x="0" y="50">
+              height="50" origin="1" printId="2" srcId="3" width="444" x="0" y="50">
               </reportElement>
               <text
               leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
                 <reportElement
-                height="15" origin="1" srcId="5" uuid="78c26dc9-564d-4fbb-ba43-5f3d30856d3f" width="399" x="0" y="0">
+                height="15" origin="1" printId="2" srcId="4" width="399" x="0" y="0">
                 </reportElement>
                 <textContent>WorldWorld</textContent>
               </text>

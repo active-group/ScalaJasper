@@ -1,7 +1,5 @@
-import sbt._
-import sbt.ExclusionRule
 import sbt.Keys._
-import sbtassembly.AssemblyPlugin.autoImport._ 
+import sbt.{ExclusionRule, _}
 
 object ScalaJasperBuild extends Build {
 
@@ -10,7 +8,7 @@ object ScalaJasperBuild extends Build {
     id = "scalajasper",
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
-      version := "0.4.1",
+      version := "0.5.0",
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "2.2.1" % "test",
         "log4j" % "log4j" % "1.2.15"
@@ -18,7 +16,7 @@ object ScalaJasperBuild extends Build {
             ExclusionRule(organization = "com.sun.jdmk", name = "jmxtools"),
             ExclusionRule(organization = "com.sun.jmx", name = "jmxri"),
             ExclusionRule(organization = "javax.jms", name = "jms")),
-        "net.sf.jasperreports" % "jasperreports" % "5.1.0",
+        "net.sf.jasperreports" % "jasperreports" % "6.2.0",
         "junit" % "junit" % "4.8" % "test",
         // see http://www.slf4j.org/codes.html#StaticLoggerBinder
         "org.slf4j" % "slf4j-log4j12" % "1.5.8"
@@ -41,3 +39,4 @@ object ScalaJasperBuild extends Build {
   )
 
 }
+

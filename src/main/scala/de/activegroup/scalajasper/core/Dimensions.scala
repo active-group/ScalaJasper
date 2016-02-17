@@ -93,7 +93,7 @@ object Dimensions {
   }
   sealed case class FontRelatedVerticalLength(ems: FontSizedLength) extends VerticalLength {
     def relativeTo(font: Font) = {
-      val em = font.fontSize.getOrElse(0) // 0 as a default? well you can't use em's if you don't define a fontsize?!
+      val em = font.fontSize.getOrElse(0f) // 0 as a default? well you can't use em's if you don't define a fontsize?!
       (ems.ems * em).px
     }
   }

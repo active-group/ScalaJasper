@@ -35,18 +35,18 @@ class ElementTests extends FunSuite {
       <page>
         <text textHeight="0.0">
           <reportElement
-          height="12" origin="0" srcId="1" style="auto0" uuid="584a15a9-0f2f-359d-8703-594ad447ae93" width="555" x="20" y="30">
+          height="12" origin="0" printId="1" srcId="1" style="auto0" uuid="584a15a9-0f2f-359d-8703-594ad447ae93" width="555" x="20" y="30">
           </reportElement>
           <textContent></textContent>
         </text>
         <line>
           <reportElement
-          height="1" origin="0" srcId="2" uuid="f11177d2-ec63-3995-bb4a-c628e0d782df" width="555" x="20" y="42">
+          height="1" origin="0" printId="1" srcId="2" uuid="f11177d2-ec63-3995-bb4a-c628e0d782df" width="555" x="20" y="42">
           </reportElement>
         </line>
         <text textHeight="0.0">
           <reportElement
-          height="0" origin="0" srcId="3" uuid="f1450306-5176-34a5-beaf-bbf8ed995985" width="555" x="20" y="42">
+          height="0" origin="0" printId="1" srcId="3" uuid="f1450306-5176-34a5-beaf-bbf8ed995985" width="555" x="20" y="42">
           </reportElement>
           <textContent></textContent>
         </text>

@@ -93,7 +93,7 @@ class JavaTests extends FunSuite {
 
     val company = new JRDesignStaticText()
     company.setFontName("Helvetica")
-    company.setFontSize(12)
+    company.setFontSize(12f)
     company.setHeight(14)
     company.setBold(true)
     company.setWidth(200)
@@ -129,7 +129,7 @@ class JavaTests extends FunSuite {
 
       val t = new JRDesignStaticText()
       t.setFontName("Helvetica")
-      t.setFontSize(12)
+      t.setFontSize(12f)
       t.setHeight(12)
       t.setWidth(200)
       t.setX(0)
@@ -158,7 +158,7 @@ class JavaTests extends FunSuite {
       val st = new JRDesignStyle()
       st.setName("bold")
       st.setFontName("Helvetica")
-      st.setFontSize(12)
+      st.setFontSize(12f)
       st.setBold(true)
       st
     }
@@ -200,7 +200,7 @@ class JavaTests extends FunSuite {
       st.setName("bold")
       if (real) {
         st.setFontName("Helvetica")
-        st.setFontSize(12)
+        st.setFontSize(12f)
         st.setBold(true)
       }
       st
