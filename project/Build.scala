@@ -34,6 +34,10 @@ object ScalaJasperBuild extends Build {
           <id>dfrese</id>
           <name>David Frese</name>
         </developer>
+        <developer>
+        <id>hdobretzberger</id>
+          <name>Helmut Dobretzberger</name>
+          </developer>
       </developers>)
     )
   )
