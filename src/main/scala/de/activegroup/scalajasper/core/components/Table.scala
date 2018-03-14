@@ -47,7 +47,7 @@ sealed case class TableGroupCell(
   private[core] def transform = {
     val r = new net.sf.jasperreports.components.table.StandardGroupCell()
     r.setGroupName(groupName)
-    drop(cell.transform) { r.setCell(_) }
+    drop(cell.transform) { r.setCell(_) } >>
     ret(r)
   }
 }
