@@ -1,12 +1,10 @@
 package de.activegroup.scalajasper.core
 
+import net.sf.jasperreports.engine.`type`._
+import net.sf.jasperreports.view.JasperViewer
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
-
-import net.sf.jasperreports.engine.`type`._
-import scala.Some
-import net.sf.jasperreports.view.JasperViewer
 
 @RunWith(classOf[JUnitRunner])
 class ReportTest extends FunSuite {

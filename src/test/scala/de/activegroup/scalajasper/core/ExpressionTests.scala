@@ -1,11 +1,9 @@
 package de.activegroup.scalajasper.core
 
+import net.sf.jasperreports.engine.`type`.SplitTypeEnum
+import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
-
-import de.activegroup.scalajasper.core.Dimensions._
-import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 
 @RunWith(classOf[JUnitRunner])
 class ExpressionTests extends FunSuite {

@@ -1,9 +1,9 @@
 package de.activegroup.scalajasper.core
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSuite
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ElementTests extends FunSuite {
