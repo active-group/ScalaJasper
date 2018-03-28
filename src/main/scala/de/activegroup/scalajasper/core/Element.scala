@@ -1,13 +1,12 @@
 package de.activegroup.scalajasper.core
 
-import net.sf.jasperreports.engine.{JRDataSource, JRExpression, JRChild, JRAnchor}
+import de.activegroup.scalajasper.core.Dimensions._
+import de.activegroup.scalajasper.core.Transformer._
+import net.sf.jasperreports.engine.`type`.{CalculationEnum, PositionTypeEnum, StretchTypeEnum}
 import net.sf.jasperreports.engine.design._
+import net.sf.jasperreports.engine.{JRAnchor, JRChild, JRDataSource, JRExpression}
 
-import Transformer._
-import net.sf.jasperreports.engine.`type`.{PositionTypeEnum, StretchTypeEnum, CalculationEnum}
-import Dimensions._
-
-sealed abstract class Element {
+abstract class Element {
   /** The vertical extent of this element. Usually this is the Y position plus the height. */
   def verticalExtent: Length
 
@@ -717,19 +716,9 @@ sealed case class Chart(
   extends Element with Transformable[JRDesignChart] {
 
 }
-*/
 
-/* TODO
-sealed case class Crosstab(
-    key: String,
-    style: Style,
-    size : Size,
-    pos : Pos,
-    conditions : Conditions
-    // etc ... dataset: JRCrosstabDataset,
-    ) extends Element with Transformable[] {
-  private[core] def transform = null
-}
+
+
 
 sealed case class GenericElement(
     key: String,
