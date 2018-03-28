@@ -1,5 +1,7 @@
 import sbt.Keys._
 import sbt.{ExclusionRule, _}
+import sbtassembly.AssemblyKeys.assembly
+import sbtassembly.{AssemblyKeys, MergeStrategy, PathList}
 
 object ScalaJasperBuild extends Build {
 
@@ -9,6 +11,7 @@ object ScalaJasperBuild extends Build {
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
       version := "0.5.0",
+      fork := true,
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "2.2.1" % "test",
         "log4j" % "log4j" % "1.2.15"
@@ -21,6 +24,14 @@ object ScalaJasperBuild extends Build {
         // see http://www.slf4j.org/codes.html#StaticLoggerBinder
         "org.slf4j" % "slf4j-log4j12" % "1.5.8"
       ),
+      AssemblyKeys.assemblyMergeStrategy in assembly <<= (AssemblyKeys.mergeStrategy in assembly) { (old: String => MergeStrategy) => { s: String => s match
+      {
+        case PathList("javax", "xml", xs @ _*) => MergeStrategy.first
+        case PathList("META-INF", "spring.tooling") => MergeStrategy.discard
+        case "overview.html" => MergeStrategy.discard
+        case x => old(x)
+      }
+      }},
       homepage := None,
       startYear := Some(2013),
       description := "ScalaJasper is a purely functional, composable API for creating reports with JasperReports.",
