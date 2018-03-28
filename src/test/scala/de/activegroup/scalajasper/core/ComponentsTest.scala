@@ -4,13 +4,10 @@ import de.activegroup.scalajasper.core.components.{Table, TableCell, TableColumn
 import net.sf.jasperreports.components.table.WhenNoDataTypeTableEnum
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
 import scala.collection.JavaConversions._
 
-@RunWith(classOf[JUnitRunner])
 class ComponentsTest extends FunSuite {
   test("table component") {
     val r = Report("basic table").copy(details = List(

@@ -1,11 +1,8 @@
 package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class ExpressionTests extends FunSuite {
   test("scala functions as expressions") {
     var fn0_was_called = false;

@@ -4,11 +4,8 @@ import net.sf.jasperreports.engine._
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 import net.sf.jasperreports.engine.design.{JRDesignBand, JRDesignStaticText, JRDesignStyle, JasperDesign}
 import net.sf.jasperreports.view.JasperViewer
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class JavaTests extends FunSuite {
   // verify how ugly the Java API really is
   test("ugliness of java") {

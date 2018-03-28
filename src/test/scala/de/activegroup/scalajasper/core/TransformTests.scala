@@ -1,10 +1,8 @@
 package de.activegroup.scalajasper.core
 
 import de.activegroup.scalajasper.core.components.{TableCell, TableGroupCell}
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
-@RunWith(classOf[JUnitRunner])
+
 class TransformTests extends FunSuite {
 
   test("table group cell is set appropiate") {
