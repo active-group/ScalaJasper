@@ -12,6 +12,8 @@ object ScalaJasperBuild extends Build {
     settings = Project.defaultSettings ++ Seq(
       version := "0.5.4",
       fork := true,
+      resolvers += "Jasper" at "http://jasperreports.sourceforge.net/maven2",
+      resolvers += "Jasper Third Party" at "http://jaspersoft.artifactoryonline.com/jaspersoft/third-party-ce-artifacts",
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "2.2.1" % "test",
         "log4j" % "log4j" % "1.2.15"
