@@ -6,7 +6,7 @@ import de.activegroup.scalajasper.core._
 import net.sf.jasperreports.components.table._
 import net.sf.jasperreports.engine.component.ComponentKey
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 /** From the "Ultimate guide":
   * "In order to obtain truly dynamic table structures, users had to create report templates at runtime using the
@@ -70,8 +70,8 @@ abstract sealed class AbstractColumn(
       withContainerWidth(absoluteWidth) {
         drop(orNull(header map { _.transform })) { tgt.setColumnHeader(_) } >>
         drop(orNull(footer map { _.transform })) { tgt.setColumnFooter(_) } >>
-        drop(all(groupHeaders map { _.transform })) { tgt.setGroupHeaders(_) } >>
-        drop(all(groupFooters map { _.transform })) { tgt.setGroupFooters(_) } >>
+        drop(all(groupHeaders map { _.transform })) { gh: Seq[GroupCell] => tgt.setGroupHeaders(gh.asJava)} >>
+        drop(all(groupFooters map { _.transform })) { gf: Seq[GroupCell] => tgt.setGroupFooters(gf.asJava) } >>
         drop(orNull(tableHeader map { _.transform })) { tgt.setTableHeader(_) } >>
         drop(orNull(tableFooter map { _.transform })) { tgt.setTableFooter(_) }
       } >>
@@ -124,7 +124,7 @@ sealed case class TableColumnGroup(
     val r = new net.sf.jasperreports.components.table.StandardColumnGroup()
     super.fill(r) >>= { absoluteWidth =>
       withContainerWidth(absoluteWidth) {
-        drop(all(columns map {_.transform})) { r.setColumns(_) } >>
+        drop(all(columns map {_.transform})) { c => r.setColumns(c.asJava) } >>
         ret(r)
       }
     }
@@ -138,11 +138,14 @@ sealed case class Table(columns : Seq[AbstractColumn],
 
   override private[core] def transform : Transformer[(net.sf.jasperreports.components.table.StandardTable, net.sf.jasperreports.engine.component.ComponentKey)] = {
     val r = new net.sf.jasperreports.components.table.StandardTable()
+
+    import scala.jdk.CollectionConverters._
+
     r.setWhenNoDataType(whenNoData)
     // The columns (the content) have to be transformed in a fresh expression environment, the auto args
     // then added to the data(-set) implicitly...
     //withNewEnvironment {
-      drop(all(columns map {_.transform})) { r.setColumns(_) } >>
+      drop(all(columns map {_.transform})) { c => r.setColumns(c.asJava) } >>
       // "If no dataset run is specified for a chart or crosstab, the main dataset of the report is used."
       // Apparently, that is not true for tables - a NPE is raised when you try it - so you cannot have a table of the main dataset
       drop(data.transform) { r.setDatasetRun(_) } >> // must be last!

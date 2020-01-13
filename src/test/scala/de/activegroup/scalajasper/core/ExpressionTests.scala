@@ -1,9 +1,9 @@
 package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class ExpressionTests extends FunSuite {
+class ExpressionTests extends AnyFunSuite {
   test("scala functions as expressions") {
     var fn0_was_called = false;
     val fn0 = { pmap : java.util.Map[String, Object] =>

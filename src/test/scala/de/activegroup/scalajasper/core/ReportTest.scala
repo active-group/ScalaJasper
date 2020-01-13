@@ -2,9 +2,9 @@ package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.engine.`type`._
 import net.sf.jasperreports.view.JasperViewer
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class ReportTest extends FunSuite {
+class ReportTest extends AnyFunSuite {
   
   /*
   def testPrint(d : Report) = {
@@ -201,14 +201,14 @@ class ReportTest extends FunSuite {
     ReportTest.compareJasperPrintXML(expected, actual)
   }
 
-  def keepShowing(f: () => Report) {
+  def keepShowing(f: () => Report): Unit = {
     def show(r: Report) = {
       val jp = print(r, Map.empty)
       val viewer = new JasperViewer(jp)
       viewer.setVisible(true)
       viewer
     }
-    def hide(v: JasperViewer) {
+    def hide(v: JasperViewer): Unit = {
       v.setVisible(false)
     }
     def dorun() = {
@@ -224,7 +224,7 @@ class ReportTest extends FunSuite {
       }
     }
     new Thread(new Runnable {
-      def run() { dorun() }
+      override def run(): Unit = { dorun() }
     }).run()
   }
   /*
@@ -291,7 +291,7 @@ object ReportTest {
     xml
   }
 
-  def printToPDF(d: Report, args: Map[String, AnyRef], pdfFilename: String) {
+  def printToPDF(d: Report, args: Map[String, AnyRef], pdfFilename: String): Unit = {
     val p = print(d, args)
     net.sf.jasperreports.engine.JasperExportManager.exportReportToPdfFile(p, pdfFilename)
   }
@@ -307,7 +307,7 @@ object ReportTest {
       //System.err.printf("Unexpected: %s\n", actual diff expected);
       val e:String = expected.toString()
       val a:String = actual.toString()
-      val (suff1, suff2) = (e, a).zipped.dropWhile(Function.tupled(_ == _)).unzip
+      val (suff1, suff2) = e.lazyZip(a).dropWhile(Function.tupled(_ == _)).unzip
       //val (inter1, inter2) = (suff1.reverse, suff2.reverse).dropWhile...
       System.err.printf("First differences around:\n")
       System.err.printf("...%s\n", suff1.mkString)

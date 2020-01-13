@@ -4,11 +4,12 @@ import de.activegroup.scalajasper.core.components.{Table, TableCell, TableColumn
 import net.sf.jasperreports.components.table.WhenNoDataTypeTableEnum
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
-class ComponentsTest extends FunSuite {
+
+class ComponentsTest extends AnyFunSuite {
   test("table component") {
     val r = Report("basic table").copy(details = List(
       Band(
@@ -34,8 +35,8 @@ class ComponentsTest extends FunSuite {
       ))
     )
     val data : Array[java.util.Map[java.lang.String,AnyRef]] =
-      Array(mapAsJavaMap(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef])),
-            mapAsJavaMap(Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]))
+      Array(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef]).asJava,
+            Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]).asJava
             );
     val args = Map("table_datasource" -> new JRMapArrayDataSource(data.asInstanceOf[Array[AnyRef]]))
 
@@ -92,8 +93,8 @@ class ComponentsTest extends FunSuite {
 
   test("table component automatic dataset") {
     val data : Array[java.util.Map[java.lang.String,AnyRef]] =
-      Array(mapAsJavaMap(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef])),
-        mapAsJavaMap(Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]))
+      Array(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef]).asJava,
+        Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]).asJava
       )
     val datasource = new JRMapArrayDataSource(data.asInstanceOf[Array[AnyRef]])
     val dataset = Dataset.empty.copy(
@@ -172,8 +173,8 @@ class ComponentsTest extends FunSuite {
 
   test("two tables in one report (with same dataset)") {
     val data : Array[java.util.Map[java.lang.String,AnyRef]] =
-      Array(mapAsJavaMap(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef])),
-        mapAsJavaMap(Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]))
+      Array(Map("f1" -> new java.lang.String("Hello").asInstanceOf[AnyRef]).asJava,
+        Map("f1" -> new java.lang.String("World").asInstanceOf[AnyRef]).asJava
       )
     val datasource = new JRMapArrayDataSource(data.asInstanceOf[Array[AnyRef]])
     val dataset = Dataset.empty.copy(

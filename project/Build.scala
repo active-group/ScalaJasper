@@ -10,10 +10,10 @@ object ScalaJasperBuild extends Build {
     id = "scalajasper",
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
-      version := "0.5.3",
+      version := "0.5.5",
       fork := true,
       libraryDependencies ++= Seq(
-        "org.scalatest" %% "scalatest" % "2.2.1" % "test",
+        "org.scalatest" %% "scalatest" % "3.2.0-M2" % "test",
         "log4j" % "log4j" % "1.2.15"
           excludeAll(
             ExclusionRule(organization = "com.sun.jdmk", name = "jmxtools"),
