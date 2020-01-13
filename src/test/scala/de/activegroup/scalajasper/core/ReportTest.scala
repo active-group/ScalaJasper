@@ -148,7 +148,7 @@ class ReportTest extends AnyFunSuite {
         <page>
           <image hAlign="Left" isLazy="true" scaleImage="RetainShape" vAlign="Top">
             <reportElement
-            height="150" origin="0" printId="2" srcId="1" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="150" x="20" y="30">
+            height="150" origin="0" printId="1" srcId="1" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="150" x="20" y="30">
             </reportElement>
             <imageSource>src/test/resources/butterfly.jpg</imageSource>
           </image>
