@@ -260,7 +260,11 @@ private[core] object ElementUtils {
     // tgt.setForecolor(src.forecolor.getOrElse(null));
     // tgt.setBackcolor(src.backcolor.getOrElse(null));
     // tgt.setMode(src.mode.getOrElse(null));
-    drop(style.transform) { so => tgt.setStyleNameReference(so.getOrElse(null)) }
+    drop(style.transform) {
+      case Some(st -> ref) => tgt.setStyleNameReference(ref)
+                              st.foreach(tgt.setStyle)
+      case None => ()
+    }
   }
 
   def maxHeight(elements: Seq[Element]): Length =

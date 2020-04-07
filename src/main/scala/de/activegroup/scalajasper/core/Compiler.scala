@@ -1,9 +1,10 @@
 package de.activegroup.scalajasper.core
 
-import net.sf.jasperreports.{engine => jre}
-import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle}
+import java.util.{Locale, TimeZone, UUID}
+
 import de.activegroup.scalajasper.core.Dimensions.Length
-import java.util.{UUID, TimeZone, Locale}
+import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle, JasperDesign}
+import net.sf.jasperreports.{engine => jre}
 
 private case class NamedObjects[T, +JT](lookup: Map[T, JT], nextId: Int) {
   def update[JT1 >: JT](t: T, jt: JT1, nid: Int): NamedObjects[T, JT1] = this.copy(lookup = lookup.updated(t, jt), nextId = nid)
@@ -19,16 +20,16 @@ private[core] case class TransformationState(containerWidth: Length,
 
   private def autoName[T, JT](get: TransformationState => NamedObjects[T, JT], set: (TransformationState, NamedObjects[T, JT]) => TransformationState,
                               getName: JT => String, setName: (JT, String) => Unit)
-                             (v: T, f : TransformationState => (JT, TransformationState)): (String, TransformationState) = {
+                             (v: T, f : TransformationState => (JT, TransformationState)): ((JT, String), TransformationState) = {
     val o = get(this).lookup.get(v)
     if (o.isDefined)
-      (getName(o.get), this)
+      ((o.get, getName(o.get)), this)
     else {
       val (s, st1) = f(this)
       val id = get(st1).nextId
       val name = "auto" + id.toString
       setName(s, name)
-      (name, set(st1, get(st1).update(v, s, id+1)))
+      ((s, name), set(st1, get(st1).update(v, s, id+1))) // todo: return s always?
     }
   }
 
@@ -127,17 +128,17 @@ private[activegroup] object Transformer {
   private def getState : Transformer[TransformationState] = withState({ st => (st, st)})
 
   /** returns a parameter name for the given value */
-  def binding(v : AnyRef) : Transformer[String] = withState({st => st.binding(v)})
+  def binding(v : AnyRef) : Transformer[(JRDesignParameter, String)] = withState({st => st.binding(v)})
 
   /** returns a name for the given style. If it's a new style, f is called, a new name assigned to the result and
       stored for later retrieval (when the report if transformed. */
-  def styleName(v : AbstractStyle, f : () => Transformer[JRDesignStyle]) : Transformer[String] =
+  def styleName(v : AbstractStyle, f : () => Transformer[JRDesignStyle]) : Transformer[(JRDesignStyle, String)] =
     withState({ st =>
       st.styleName(v, { st2 => f().exec(st2) }) // do we have to call exec?
     })
 
   /** returns a name for the given dataset. Like styleName */
-  def datasetName(v : Dataset, f : () => Transformer[JRDesignDataset]) : Transformer[String] =
+  def datasetName(v : Dataset, f : () => Transformer[JRDesignDataset]) : Transformer[(JRDesignDataset,String)] =
     withState({ st =>
       st.datasetName(v, { st2 => f().exec(st2) }) // do we have to call exec?
     })

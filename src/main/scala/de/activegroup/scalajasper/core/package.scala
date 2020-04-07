@@ -2,6 +2,7 @@ package de.activegroup.scalajasper
 
 import scala.jdk.CollectionConverters._
 import de.activegroup.scalajasper.core.Dimensions._
+import net.sf.jasperreports.engine.{JRDataSource, JREmptyDataSource}
 ;
 
 package object core {

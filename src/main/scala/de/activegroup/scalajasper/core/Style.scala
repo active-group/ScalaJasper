@@ -1,10 +1,11 @@
 package de.activegroup.scalajasper.core
 
+import java.awt.Color
+
 import net.sf.jasperreports.engine.base.JRBaseParagraph
 import net.sf.jasperreports.engine.`type`.{LineSpacingEnum, TabStopAlignEnum}
-
 import Transformer._
-import net.sf.jasperreports.engine.design.{JRDesignConditionalStyle, JRDesignStyle}
+import net.sf.jasperreports.engine.design.{JRDesignConditionalStyle, JRDesignExpression, JRDesignStyle}
 
 sealed case class Font(
     fontName: Option[String] = None,
@@ -262,7 +263,7 @@ object Paragraph {
 
 // always transforms to a 'style reference'; the style itself will be added to the transformation state
 abstract sealed class AbstractStyle {
-  private[core] def transform : Transformer[Option[String]]
+  private[core] def transform : Transformer[Option[(Option[JRDesignStyle], String)]]
 }
 
 sealed case class Style(
@@ -329,7 +330,7 @@ sealed case class Style(
     if (this.isEmpty)
       ret(None)
     else {
-      styleName(this, { () => mkDesignStyle }) >>= { s => ret(Some(s)) }
+      styleName(this, { () => mkDesignStyle }) >>= { s => ret(Some(Some(s._1) -> s._2)) } // try to return etc.
     }
   }
 
@@ -338,7 +339,7 @@ sealed case class Style(
     // name is isDefault are set externally
     //r.setName(o.name);
     //r.setDefault(o.isDefault);
-    drop(orNull(parentStyle map {_.transform})) { op => r.setParentStyleNameReference(if (op == null) null else op.orNull) } >>
+    drop(orNull(parentStyle map {_.transform})) { op => r.setParentStyleNameReference(if (op == null) null else op.map(_._2).orNull)} >>
       (all(conditionalStyles map Style.transCond) >>= { cs =>
       // JRConditionalStyleFactory suggests, that the parentStyle should always refer to this 'containing' style
         cs foreach { _.setParentStyle(r) }
@@ -412,5 +413,5 @@ object Style {
 }
 
 sealed case class StyleReference(reference: String) extends AbstractStyle {
-  private[core] def transform = ret(Some(reference))
+  private[core] def transform = ret(Some(None -> reference))
 }

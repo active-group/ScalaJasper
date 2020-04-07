@@ -32,7 +32,11 @@ sealed case class TableCell(
     r.setRowSpan(if (rowSpan.isDefined) rowSpan.get : java.lang.Integer else null)
     BandHeight.calc(height, content.verticalExtent)(r.setHeight(_))
 
-    drop(style.transform) { so => r.setStyleNameReference(so.getOrElse(null)) } >>
+    drop(style.transform) {
+      case Some(st -> ref) => r.setStyleNameReference(ref)
+        st.foreach(r.setStyle)
+      case None => ()
+    } >>
     ElementUtils.contentTransformer(content.seq, r.addElement, r.addElementGroup) >>
     ret(r)
   }

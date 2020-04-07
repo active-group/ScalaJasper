@@ -1,5 +1,7 @@
 package de.activegroup.scalajasper.core
 
+import java.awt.Color
+
 import net.sf.jasperreports.engine.`type`._
 import net.sf.jasperreports.view.JasperViewer
 import org.scalatest.funsuite.AnyFunSuite
@@ -157,6 +159,83 @@ class ReportTest extends AnyFunSuite {
    
     val actual = ReportTest.printToXML(r, Map.empty)
     ReportTest.compareJasperPrintXML(expected, actual)
+  }
+
+
+  test("textfield with conditional style") {
+
+    def withConditionalExpression(comp: Int => Boolean) = {
+
+      val myband = Band(
+        height = 200.px,
+        splitType = SplitTypeEnum.STRETCH,
+        content = Vector(
+          TextField(expression = Expression.raw("$P{myarg1}"),
+            width=100.percent, height = Height.fixed(50.px),
+            x = 40.px, y = YPos.float(80.px),
+            style = Style(conditionalStyles = Seq(Expression.call(comp, Expression.V("PAGE_NUMBER")) -> Style(forecolor = Some(Color.BLUE))))
+          )))
+      val r = Report("text-parameter").copy(
+        mainDataset = Dataset.empty.copy(
+          parameters = Vector(
+            Parameter("myarg1", Some(Expression.raw("\"mydefault\"")))
+          )),
+        page = Page(
+          header = Some(myband)
+        )
+      )
+      r
+    }
+
+    val expected1 =
+      <jasperPrint
+      bottomMargin="30" leftMargin="20" locale="en_US" name="text-parameter" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+        <origin band="pageHeader"/>
+        <origin band="detail"/>
+        <style name="auto0" />
+        <style forecolor="#0000FF" name="auto0|1" />
+        <page>
+          <text
+          leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
+            <reportElement
+            height="50" origin="0" printId="1" srcId="1" style="auto0|1" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="555" x="60" y="110">
+            </reportElement>
+            <textContent>mydefault</textContent>
+          </text>
+        </page>
+      </jasperPrint>
+
+    val expected2 =
+      <jasperPrint
+      bottomMargin="30" leftMargin="20" locale="en_US" name="text-parameter" pageHeight="841" pageWidth="595" rightMargin="20" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/print http://jasperreports.sourceforge.net/xsd/jasperprint.xsd" timezone="GMT" topMargin="30" xmlns="http://jasperreports.sourceforge.net/jasperreports/print" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <property name="net.sf.jasperreports.export.xml.start.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.end.page.index" value="0"/>
+        <property name="net.sf.jasperreports.export.xml.page.count" value="1"/>
+        <origin band="pageHeader"/>
+        <origin band="detail"/>
+        <style name="auto0" />
+        <page>
+          <text
+          leadingOffset="-2.109375" lineSpacingFactor="1.1777344" textHeight="11.777344">
+            <reportElement
+            height="50" origin="0" printId="1" srcId="1" style="auto0" uuid="f1d3ff84-4329-3732-862d-f21dc4e57262" width="555" x="60" y="110">
+            </reportElement>
+            <textContent>mydefault</textContent>
+          </text>
+        </page>
+      </jasperPrint>
+
+    val r1 = withConditionalExpression(_ == 1)
+    val r2 = withConditionalExpression(_ != 1)
+
+    val actual1 = ReportTest.printToXML(r1, Map.empty)
+    ReportTest.compareJasperPrintXML(expected1, actual1)
+
+    val actual2 = ReportTest.printToXML(r2, Map.empty)
+    ReportTest.compareJasperPrintXML(expected2, actual2)
   }
 
   test("textfield with parameter") {
