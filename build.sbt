@@ -1,6 +1,7 @@
 // net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-organization := "de.activegroup"
+organization := "de.active-group"
+name := "ScalaJasper"
 
 organizationHomepage := Some(url("http://www.active-group.de/"))
 
@@ -16,6 +17,13 @@ crossScalaVersions := Seq("2.10.4", "2.11.2")
 
 compileOrder in Compile := CompileOrder.Mixed
 
+pomIncludeRepository := { _ => false }
+publishMavenStyle := true
+publishArtifact in Test := false
+
+credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+useGpg := true
+
 // patched IText version is only at http://jasperreports.sourceforge.net/maven2/com/lowagie/itext/2.1.7.js2/
 resolvers += "JasperReports Repository" at "http://jasperreports.sourceforge.net/maven2/"
 
@@ -27,4 +35,4 @@ publishTo <<= version { (v: String) =>
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
-credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+
