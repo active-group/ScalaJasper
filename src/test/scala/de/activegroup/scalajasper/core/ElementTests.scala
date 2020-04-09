@@ -1,9 +1,9 @@
 package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class ElementTests extends FunSuite {
+class ElementTests extends AnyFunSuite {
 
   test("placing elements above each other") {
     val e1 = Break.page()

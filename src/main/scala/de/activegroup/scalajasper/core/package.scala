@@ -1,7 +1,8 @@
 package de.activegroup.scalajasper
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import de.activegroup.scalajasper.core.Dimensions._
+import net.sf.jasperreports.engine.{JRDataSource, JREmptyDataSource}
 ;
 
 package object core {
@@ -47,7 +48,7 @@ package object core {
     val ds_ = if (ds == null) new net.sf.jasperreports.engine.JREmptyDataSource() else ds
     // args map must be mutable, because fillReport adds some things! (oh yeah)
     val args_ = scala.collection.mutable.Map[String, AnyRef]() ++ args
-    net.sf.jasperreports.engine.JasperFillManager.fillReport(jreport, args_, ds_)
+    net.sf.jasperreports.engine.JasperFillManager.fillReport(jreport, args_.asJava, ds_)
   }
 
   /** Creates a JasperPrint object of the report, optionally specifying a map of named arguments and a datasource */

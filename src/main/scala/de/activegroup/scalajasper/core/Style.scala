@@ -1,10 +1,11 @@
 package de.activegroup.scalajasper.core
 
+import java.awt.Color
+
 import net.sf.jasperreports.engine.base.JRBaseParagraph
 import net.sf.jasperreports.engine.`type`.{LineSpacingEnum, TabStopAlignEnum}
-
 import Transformer._
-import net.sf.jasperreports.engine.design.{JRDesignConditionalStyle, JRDesignStyle}
+import net.sf.jasperreports.engine.design.{JRDesignConditionalStyle, JRDesignExpression, JRDesignStyle}
 
 sealed case class Font(
     fontName: Option[String] = None,
@@ -53,7 +54,7 @@ object Pen {
 
   val empty = new Pen()
 
-  private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.JRPen) {
+  private[core] def putPen(o: Pen, tgt: net.sf.jasperreports.engine.JRPen): Unit = {
     tgt.setLineColor(o.lineColor.orNull)
     tgt.setLineStyle(o.lineStyle.orNull)
     var w : java.lang.Float = null
@@ -84,7 +85,7 @@ object BoxPen {
   /** Creates a box pen that uses the same pen on all sides of the box */
   implicit def uniform(pen: Pen) = new BoxPen(pen, pen, pen, pen)
 
-  private[core] def putBoxPen(o: BoxPen, tgt: net.sf.jasperreports.engine.JRLineBox) {
+  private[core] def putBoxPen(o: BoxPen, tgt: net.sf.jasperreports.engine.JRLineBox): Unit = {
     // we assume tgt is default-initialized
     if (o.isUniform) // all pens equal?
       Pen.putPen(o.top, tgt.getPen)
@@ -119,7 +120,7 @@ object BoxPadding {
   implicit def uniform(padding: Int) : BoxPadding =
     new BoxPadding(Some(padding), Some(padding), Some(padding), Some(padding))
 
-  private[core] def putBoxPadding(o: BoxPadding, tgt: net.sf.jasperreports.engine.JRLineBox) {
+  private[core] def putBoxPadding(o: BoxPadding, tgt: net.sf.jasperreports.engine.JRLineBox): Unit = {
     // we assume tgt is default-initialized
     def optInt(i: Option[Int]) : java.lang.Integer = if (i.isDefined) i.get else null
     if (o.isUniform)
@@ -147,7 +148,7 @@ sealed case class LineBox(pen: BoxPen = BoxPen.empty,
 object LineBox {
   val empty = new LineBox()
 
-  private[core] def putLineBox(o: LineBox, tgt: net.sf.jasperreports.engine.JRLineBox) {
+  private[core] def putLineBox(o: LineBox, tgt: net.sf.jasperreports.engine.JRLineBox): Unit = {
     BoxPen.putBoxPen(o.pen, tgt)
     BoxPadding.putBoxPadding(o.padding, tgt)
   }
@@ -262,7 +263,7 @@ object Paragraph {
 
 // always transforms to a 'style reference'; the style itself will be added to the transformation state
 abstract sealed class AbstractStyle {
-  private[core] def transform : Transformer[Option[String]]
+  private[core] def transform : Transformer[Option[(Option[JRDesignStyle], String)]]
 }
 
 sealed case class Style(
@@ -329,7 +330,7 @@ sealed case class Style(
     if (this.isEmpty)
       ret(None)
     else {
-      styleName(this, { () => mkDesignStyle }) >>= { s => ret(Some(s)) }
+      styleName(this, { () => mkDesignStyle }) >>= { s => ret(Some(Some(s._1) -> s._2)) } // try to return etc.
     }
   }
 
@@ -338,7 +339,7 @@ sealed case class Style(
     // name is isDefault are set externally
     //r.setName(o.name);
     //r.setDefault(o.isDefault);
-    drop(orNull(parentStyle map {_.transform})) { op => r.setParentStyleNameReference(if (op == null) null else op.orNull) } >>
+    drop(orNull(parentStyle map {_.transform})) { op => r.setParentStyleNameReference(if (op == null) null else op.map(_._2).orNull)} >>
       (all(conditionalStyles map Style.transCond) >>= { cs =>
       // JRConditionalStyleFactory suggests, that the parentStyle should always refer to this 'containing' style
         cs foreach { _.setParentStyle(r) }
@@ -412,5 +413,5 @@ object Style {
 }
 
 sealed case class StyleReference(reference: String) extends AbstractStyle {
-  private[core] def transform = ret(Some(reference))
+  private[core] def transform = ret(Some(None -> reference))
 }

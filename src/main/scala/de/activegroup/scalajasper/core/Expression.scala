@@ -49,7 +49,7 @@ private sealed case class CallExpression[A, +R](f : Expression[A => R], a : Expr
 }
 
 private sealed case class LiftExpression[A <: AnyRef](v : A) extends Expression[A] {
-  private[core] def transformRaw = binding(v) >>= { n => ret(Expression.stdraw("P", n)) }
+  private[core] def transformRaw = binding(v) >>= { n => ret(Expression.stdraw("P", n._2)) }
 }
 
 /** This object provides various ways to create Expression objects. */

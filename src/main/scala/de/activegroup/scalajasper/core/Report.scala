@@ -1,7 +1,7 @@
 package de.activegroup.scalajasper.core
 
 import net.sf.jasperreports.{engine => jre}
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import net.sf.jasperreports.engine.design.{JRDesignSection, JasperDesign}
 
 import Transformer._
@@ -90,7 +90,7 @@ object Page {
 sealed case class Report(
   name : String,
   details: Seq[Band] = Vector.empty,
-  // defaultStyle: Style = Style.empty,
+  defaultStyle: Style = Style.empty,
   styles: Map[String, Style] = Map.empty, // additional user-defined styles, usually not needed
   templates : IndexedSeq[jre.JRReportTemplate] = Vector.empty,
   subDatasets: Map[String, Dataset] = Map.empty,
@@ -139,14 +139,14 @@ sealed case class Report(
     r.setLanguage(language)
     r.setSummaryNewPage(summary.exists { _.newPage })
     r.setSummaryWithPageHeaderAndFooter(summary.exists { _.withPageHeaderAndFooter })
-    r.getTemplatesList.addAll(templates)
+    r.getTemplatesList.addAll(templates.asJava)
     imports foreach r.addImport // Java imports for expressions - remove?
     r.setTitleNewPage(title.exists { _.newPage })
 
     // monadic transformation...
 
     // user defined styles (generated styles are added by caller)
-    // drop(defaultStyle.mkDesignStyle) { s => s.setName("default"); s.setDefault(true); r.setDefaultStyle(s) }
+    drop(defaultStyle.mkDesignStyle) { s => s.setName("default"); s.setDefault(true); r.setDefaultStyle(s) } >>
     (all(styles.map { case(n,s) => s.mkDesignStyle >>= { js => js.setName(n); ret(js) } }.toSeq) >>= {
       sts => sts foreach { r.addStyle(_) }; retUnit
     }) >>

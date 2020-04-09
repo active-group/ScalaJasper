@@ -4,9 +4,9 @@ import net.sf.jasperreports.engine._
 import net.sf.jasperreports.engine.`type`.SplitTypeEnum
 import net.sf.jasperreports.engine.design.{JRDesignBand, JRDesignStaticText, JRDesignStyle, JasperDesign}
 import net.sf.jasperreports.view.JasperViewer
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class JavaTests extends FunSuite {
+class JavaTests extends AnyFunSuite {
   // verify how ugly the Java API really is
   test("ugliness of java") {
     def n() = new net.sf.jasperreports.engine.design.JasperDesign()
@@ -52,7 +52,7 @@ class JavaTests extends FunSuite {
     val p = print(jd)
     toXML(p)
   }
-  def viewAndExit(jd: () => JasperDesign) {
+  def viewAndExit(jd: () => JasperDesign): Unit = {
     var jasperViewer : JasperViewer = null
     var prev = jd()
     while (true) {

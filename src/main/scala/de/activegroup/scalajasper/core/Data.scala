@@ -49,7 +49,7 @@ sealed case class DataDef(dataset : Dataset,
   private[core] def transform = {
     // getCurrentEnvironment >>= { env =>
       Transformer.datasetName(dataset, { () => dataset.transform }) >>= {
-        name =>
+        case (dataset, name) =>
           DatasetRun(datasetName = name, arguments = arguments, dataSourceExpression = Some(source),
             // pass all values from global report args, parameter declarations are added in compile() later
             argumentsMapExpression = Some(Expression.P("REPORT_PARAMETERS_MAP"))

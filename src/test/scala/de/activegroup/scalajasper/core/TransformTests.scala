@@ -1,9 +1,10 @@
 package de.activegroup.scalajasper.core
 
 import de.activegroup.scalajasper.core.components.{TableCell, TableGroupCell}
-import org.scalatest.FunSuite
+import scala.language.postfixOps
+import org.scalatest.funsuite.AnyFunSuite
 
-class TransformTests extends FunSuite {
+class TransformTests extends AnyFunSuite {
 
   test("table group cell is set appropiate") {
     val initTransform = TransformationState.initial(0 px)

@@ -5,7 +5,7 @@ name := "ScalaJasper"
 
 organizationHomepage := Some(url("http://www.active-group.de/"))
 
-scalaVersion in ThisBuild := "2.11.2"
+scalaVersion in ThisBuild := "2.13.1"
 
 scalacOptions += "-deprecation"
 
@@ -13,7 +13,7 @@ scalacOptions += "-unchecked"
 
 // 2.10: scalacOptions ++= ["-feature", "-language:implicitConversions"]
 
-crossScalaVersions := Seq("2.10.4", "2.11.2")
+crossScalaVersions := Seq("2.10.4", "2.11.2", "2.13.1")
 
 compileOrder in Compile := CompileOrder.Mixed
 

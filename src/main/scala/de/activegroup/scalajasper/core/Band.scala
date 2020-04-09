@@ -17,7 +17,7 @@ object BandHeight {
 
   implicit def fixed(height: Length) = Fixed(height)
 
-  private[core] def calc(h: BandHeight, contentHeight: Length)(setter: Int=>Unit) {
+  private[core] def calc(h: BandHeight, contentHeight: Length)(setter: Int=>Unit): Unit = {
     val r = h match {
       case BandHeight.Fixed(v) => v
       case BandHeight.Auto => contentHeight
