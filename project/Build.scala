@@ -34,7 +34,7 @@ object ScalaJasperBuild extends Build {
         case x => old(x)
       }
       }},
-      homepage := None,
+      homepage := Some(url("https://github.com/active-group/ScalaJasper")),
       startYear := Some(2013),
       description := "ScalaJasper is a purely functional, composable API for creating reports with JasperReports.",
       licenses += "BSD 3-Clause" -> url("https://github.com/active-group/ScalaJasper/blob/master/LICENSE"),
