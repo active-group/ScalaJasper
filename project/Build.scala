@@ -37,7 +37,7 @@ object ScalaJasperBuild extends Build {
       homepage := Some(url("https://github.com/active-group/ScalaJasper")),
       startYear := Some(2013),
       description := "ScalaJasper is a purely functional, composable API for creating reports with JasperReports.",
-      licenses += "BSD 3-Clause" -> url("https://github.com/active-group/ScalaJasper/blob/master/LICENSE"),
+      licenses += "Eclipse Public License either version 1.0 or (at your option) any later version." -> url("https://github.com/active-group/ScalaJasper/blob/master/LICENSE"),
       scmInfo := Some(ScmInfo(
         browseUrl=url("http://github.com/active-group/ScalaJasper"),
         connection="scm:git:git://github.com/active-group/ScalaJasper.git",
@@ -54,6 +54,5 @@ object ScalaJasperBuild extends Build {
       </developers>)
     )
   )
-
 }
 
