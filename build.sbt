@@ -11,9 +11,7 @@ scalacOptions += "-deprecation"
 
 scalacOptions += "-unchecked"
 
-// 2.10: scalacOptions ++= ["-feature", "-language:implicitConversions"]
-
-crossScalaVersions := Seq("2.10.4", "2.11.2", "2.13.1")
+crossScalaVersions := Seq("2.13.0", "2.13.1")
 
 compileOrder in Compile := CompileOrder.Mixed
 
