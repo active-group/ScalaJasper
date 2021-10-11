@@ -3,7 +3,7 @@ ScalaJasper is a purely functional, composable API for creating reports with Jas
 
 ## License
 
-Copyright © 2013-2020 Active Group GmbH
+Copyright © 2013-2021 Active Group GmbH
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
