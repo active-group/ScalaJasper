@@ -136,6 +136,14 @@ sealed case class Crosstab(x: Int,
     r.setWidth(width)
     r.setHeight(height)
 
+    import net.sf.jasperreports.engine.design.JRDesignExpression
+
+    // a crosstab should allow access to the auto-parameters, so
+    // use the REPORT_PARAMETERS_MAP to pass them.
+    val mapExp = new JRDesignExpression
+    mapExp.setText("$P{REPORT_PARAMETERS_MAP}")
+    r.setParametersMapExpression(mapExp)
+
     drop(header.transform) {r.setHeaderCell} >>
       drop(all(rowGroups map {_.transform})) { _.foreach(rg =>
         r.addRowGroup(rg))} >>

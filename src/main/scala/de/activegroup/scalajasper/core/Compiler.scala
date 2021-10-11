@@ -1,8 +1,9 @@
 package de.activegroup.scalajasper.core
 
 import java.util.{Locale, TimeZone, UUID}
-
 import de.activegroup.scalajasper.core.Dimensions.Length
+import net.sf.jasperreports.crosstabs.{JRCrosstab, JRCrosstabParameter}
+import net.sf.jasperreports.crosstabs.design.{JRDesignCrosstab, JRDesignCrosstabParameter}
 import net.sf.jasperreports.engine.design.{JRDesignDataset, JRDesignParameter, JRDesignStyle, JasperDesign}
 import net.sf.jasperreports.{engine => jre}
 
@@ -208,6 +209,29 @@ object Compiler {
       // TODO? add IS_IGNORE_PAGINATION and remove from report? or maybe add to print() - it's a printing and not a report property anyway, isn't it?
       // some more...?
     )
+
+
+    /** the Crosstabs needs access to the auto-parameters, so pass the available parameters.   */
+    r.getAllBands.toList.map(b =>
+      b.getElements.toList.map {
+        case crosstab: JRDesignCrosstab =>
+          import net.sf.jasperreports.engine.design.JRDesignExpression
+          r.getParametersMap.forEach { case (k, v) =>
+            val newp = new JRDesignCrosstabParameter()
+            newp.setName(k)
+            val expr = new JRDesignExpression("$P{" + k + "}")
+            newp.setExpression(expr)
+            // fore some reason, Object does not work when reusing parameters. so use java.lang.Object
+            if(v.getValueClassName == "Object") newp.setValueClassName("java.lang.Object") else newp.setValueClassName(v.getValueClassName)
+            newp.setSystemDefined(v.isSystemDefined)
+            newp.setDescription(v.getDescription)
+            crosstab.removeParameter(k)
+            crosstab.addParameter(newp)
+          }
+        case _ =>
+      }
+    )
+
 
     val finalreport = jre.JasperCompileManager.compileReport(r)
     (finalreport, defaultArgs ++ envArgs)
