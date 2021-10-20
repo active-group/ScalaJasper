@@ -10,7 +10,7 @@ object ScalaJasperBuild extends Build {
     id = "scalajasper",
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
-      version := "0.5.9-SNAPSHOT",
+      version := "0.5.9",
       fork := true,
       resolvers += "Jasper" at "http://jasperreports.sourceforge.net/maven2",
       resolvers += "Jasper Third Party" at "https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts",
