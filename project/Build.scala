@@ -13,18 +13,14 @@ object ScalaJasperBuild extends Build {
       version := "0.5.9-SNAPSHOT",
       fork := true,
       resolvers += "Jasper" at "http://jasperreports.sourceforge.net/maven2",
-      resolvers += "Jasper Third Party" at "http://jaspersoft.artifactoryonline.com/jaspersoft/third-party-ce-artifacts",
+      resolvers += "Jasper Third Party" at "https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts",
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "3.2.0-M2" % "test",
-        "log4j" % "log4j" % "1.2.15"
-          excludeAll(
-            ExclusionRule(organization = "com.sun.jdmk", name = "jmxtools"),
-            ExclusionRule(organization = "com.sun.jmx", name = "jmxri"),
-            ExclusionRule(organization = "javax.jms", name = "jms")),
-        "net.sf.jasperreports" % "jasperreports" % "6.2.2",
+        "org.apache.logging.log4j" % "log4j-core" % "2.14.1",
+        "net.sf.jasperreports" % "jasperreports" % "6.12.2", // fixme: higher is not possible, results in an error
         "junit" % "junit" % "4.8" % "test",
         // see http://www.slf4j.org/codes.html#StaticLoggerBinder
-        "org.slf4j" % "slf4j-log4j12" % "1.5.8"
+        "org.slf4j" % "slf4j-log4j12" % "1.7.32"
       ),
       AssemblyKeys.assemblyMergeStrategy in assembly <<= (AssemblyKeys.mergeStrategy in assembly) { (old: String => MergeStrategy) => { s: String => s match
       {
