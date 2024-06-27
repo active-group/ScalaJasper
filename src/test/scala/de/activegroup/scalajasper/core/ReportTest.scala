@@ -295,10 +295,13 @@ class ReportTest extends AnyFunSuite {
         val r = f()
         val v = show(r)
         var r2 = r
-        do {
+
+        while ({
           Thread.sleep(500)
           r2 = f()
-        } while (r2 == r)
+          r2 == r
+        }) {}
+
         hide(v)
       }
     }
@@ -359,7 +362,7 @@ object ReportTest {
     System.err.println("Report: ")
     val props = jd.getPropertiesMap
     for (p <- props.getPropertyNames) {
-      System.err.println("  %s -> %s", p, props.getProperty(p))
+      System.err.println("  %s -> %s".format(p, props.getProperty(p)))
     }
   }
 

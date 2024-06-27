@@ -74,8 +74,8 @@ abstract sealed class AbstractColumn(
       withContainerWidth(absoluteWidth) {
         drop(orNull(header map { _.transform })) { tgt.setColumnHeader(_) } >>
         drop(orNull(footer map { _.transform })) { tgt.setColumnFooter(_) } >>
-        drop(all(groupHeaders map { _.transform })) { gh: Seq[GroupCell] => tgt.setGroupHeaders(gh.asJava)} >>
-        drop(all(groupFooters map { _.transform })) { gf: Seq[GroupCell] => tgt.setGroupFooters(gf.asJava) } >>
+        drop(all(groupHeaders map { _.transform })) { (gh: Seq[GroupCell]) => tgt.setGroupHeaders(gh.asJava)} >>
+        drop(all(groupFooters map { _.transform })) { (gf: Seq[GroupCell]) => tgt.setGroupFooters(gf.asJava) } >>
         drop(orNull(tableHeader map { _.transform })) { tgt.setTableHeader(_) } >>
         drop(orNull(tableFooter map { _.transform })) { tgt.setTableFooter(_) }
       } >>

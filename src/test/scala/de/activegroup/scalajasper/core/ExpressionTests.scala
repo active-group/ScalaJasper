@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 class ExpressionTests extends AnyFunSuite {
   test("scala functions as expressions") {
     var fn0_was_called = false;
-    val fn0 = { pmap : java.util.Map[String, Object] =>
+    val fn0 = { (pmap : java.util.Map[String, Object]) =>
       // parameters_map is:
       // {REPORT_LOCALE=en_US,
       // JASPER_REPORT=net.sf.jasperreports.engine.JasperReport@16daee9,
@@ -84,7 +84,7 @@ class ExpressionTests extends AnyFunSuite {
 
   test("fully automatic scala expressions") {
     var fn0_was_called = false
-    val fn0 = { pmap : java.util.Map[String, Object] =>
+    val fn0 = { (pmap : java.util.Map[String, Object]) =>
       fn0_was_called = true
       true
     }

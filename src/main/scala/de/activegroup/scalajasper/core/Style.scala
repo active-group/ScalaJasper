@@ -83,7 +83,7 @@ object BoxPen {
   val empty = new BoxPen()
 
   /** Creates a box pen that uses the same pen on all sides of the box */
-  implicit def uniform(pen: Pen) = new BoxPen(pen, pen, pen, pen)
+  implicit def uniform(pen: Pen): BoxPen = new BoxPen(pen, pen, pen, pen)
 
   private[core] def putBoxPen(o: BoxPen, tgt: net.sf.jasperreports.engine.JRLineBox): Unit = {
     // we assume tgt is default-initialized

@@ -15,7 +15,7 @@ object BandHeight {
   /** Automatically calculate needed height, but add some margin */
   sealed case class AutoPlus(margin: Length) extends BandHeight
 
-  implicit def fixed(height: Length) = Fixed(height)
+  implicit def fixed(height: Length): Fixed = Fixed(height)
 
   private[core] def calc(h: BandHeight, contentHeight: Length)(setter: Int=>Unit): Unit = {
     val r = h match {

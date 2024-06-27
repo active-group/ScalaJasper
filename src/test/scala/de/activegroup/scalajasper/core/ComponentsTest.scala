@@ -114,7 +114,7 @@ class ComponentsTest extends AnyFunSuite {
               columns = List(TableColumn(width = 80.percent,
                 detail = TableCell(height = 50.px, content = List(
                   TextField(height = Height.fixed(15.px), width=90.percent,
-                    expression = Expression.call({t:String => t+t}, Expression.F("f1"))))
+                    expression = Expression.call({(t:String) => t+t}, Expression.F("f1"))))
                 ))))
           ))
       ))
@@ -199,12 +199,12 @@ class ComponentsTest extends AnyFunSuite {
           // same dataset etc, but different (auto-) parameters (in the form of expressions)
           ComponentElement(
             height = Height.fixed(100.px), width = 400.px,
-            component = tab(Expression.call({t:String => t+t}, Expression.F("f1")))
+            component = tab(Expression.call({(t:String) => t+t}, Expression.F("f1")))
           ),
           ComponentElement(
             y = YPos.float(100.px),
             height = Height.fixed(100.px), width = 400.px,
-            component = tab(Expression.call({t:String => t+" ...and... "+t}, Expression.F("f1")))
+            component = tab(Expression.call({(t:String) => t+" ...and... "+t}, Expression.F("f1")))
           ))
       ))
     )

@@ -67,17 +67,17 @@ object Expression {
 
   /** Returns an expression that will call the given function with the values of the given expressions. */
   def call[A1, A2, R](fn : (A1, A2) => R, arg1 : Expression[A1], arg2 : Expression[A2]) : Expression[R] =
-    calle(call({a1:A1 => a2: A2 => fn(a1, a2)}, arg1), arg2)
+    calle(call({(a1:A1) => (a2: A2) => fn(a1, a2)}, arg1), arg2)
 
   /** Returns an expression that will call the given function with the values of the given expressions. */
   def call[A1, A2, A3, R](fn : (A1, A2, A3) => R, arg1 : Expression[A1], arg2 : Expression[A2], arg3 : Expression[A3]) : Expression[R] =
-    calle(call({(a1:A1, a2:A2) => { a3:A3 => fn(a1, a2, a3)}}, arg1, arg2), arg3)
+    calle(call({(a1:A1, a2:A2) => { (a3:A3) => fn(a1, a2, a3)}}, arg1, arg2), arg3)
 
   /** Returns an expression that will call the given function with the values of the given expressions. */
   def call[A1, A2, A3, A4, R](fn : (A1, A2, A3, A4) => R, arg1 : Expression[A1], arg2 : Expression[A2], arg3 : Expression[A3], arg4 : Expression[A4]) : Expression[R] =
-    calle(call({(a1:A1, a2:A2, a3:A3) => { a4:A4 => fn(a1, a2, a3, a4)}}, arg1, arg2, arg3), arg4)
+    calle(call({(a1:A1, a2:A2, a3:A3) => { (a4:A4) => fn(a1, a2, a3, a4)}}, arg1, arg2, arg3), arg4)
 
-  private[core] def escape(name: String) = name.replaceAllLiterally("$", "$$")
+  private[core] def escape(name: String) = name.replace("$", "$$")
   private[core] def stdraw(id: String, name: String) = "$" + id + "{" + escape(name) + "}"
   private[core] def std[T <: AnyRef](id: String, name: String) : Expression[T] = raw(stdraw(id, name))
 

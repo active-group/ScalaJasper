@@ -1,14 +1,7 @@
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.13.0")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.2.0")
 
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
+addDependencyTreePlugin
+//addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2") when sbt >= 1.4 use: addDependencyTreePlugin
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.3")
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
-
-
-// addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.1")
-
-// addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.2")
-
-// IntelliJ plugin
-// addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.3.0")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.10.0")
+addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.1.2")

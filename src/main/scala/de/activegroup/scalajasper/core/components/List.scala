@@ -12,7 +12,7 @@ sealed case class ListContent(fields: Seq[Element],
     val r = new net.sf.jasperreports.components.list.DesignListContents()
 
     r.setHeight(height)
-    r.setWidth(width)
+    r.setWidth(Integer.valueOf(width))
 
     ElementUtils.contentTransformer(fields, r.addElement, r.addElementGroup) >>
     ret(r)

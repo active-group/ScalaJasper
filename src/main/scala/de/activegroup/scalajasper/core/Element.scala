@@ -1,9 +1,9 @@
 package de.activegroup.scalajasper.core
 
-import de.activegroup.scalajasper.core.Dimensions._
-import de.activegroup.scalajasper.core.Transformer._
-import net.sf.jasperreports.engine.`type`.{CalculationEnum, PositionTypeEnum, StretchTypeEnum}
-import net.sf.jasperreports.engine.design._
+import de.activegroup.scalajasper.core.Dimensions.*
+import de.activegroup.scalajasper.core.Transformer.*
+import net.sf.jasperreports.engine.`type`.{CalculationEnum, PositionTypeEnum, StretchTypeEnum, TextAdjustEnum}
+import net.sf.jasperreports.engine.design.*
 import net.sf.jasperreports.engine.{JRAnchor, JRChild, JRDataSource, JRExpression}
 
 abstract class Element {
@@ -160,13 +160,13 @@ object Height {
   /**
    * The element stretches to the tallest element in it's group (@see ElementGroup).
    */
-  def relativeToTallest(height: VerticalLength) = Height(value=height, StretchTypeEnum.RELATIVE_TO_TALLEST_OBJECT)
+  def relativeToTallest(height: VerticalLength) = Height(value=height, StretchTypeEnum.ELEMENT_GROUP_HEIGHT)
 
   /**
    * The element will adapt its height to match the new height of the report section it placed on, which has been
    * affected by stretch.
    */
-  def relativeToBand(height: VerticalLength) = Height(value=height, StretchTypeEnum.RELATIVE_TO_BAND_HEIGHT)
+  def relativeToBand(height: VerticalLength) = Height(value=height, StretchTypeEnum.CONTAINER_HEIGHT)
 
 }
 
@@ -394,7 +394,7 @@ sealed case class Ellipse(
     width: Width,
     height: Height,
     x: RestrictedLength = 0.px,
-    y: YPos = YPos.float(0 px),
+    y: YPos = YPos.float(0.px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
@@ -418,7 +418,7 @@ sealed case class Image(
     width: Width,
     height: Height,
     x: RestrictedLength = 0.px,
-    y: YPos = YPos.float(0 px),
+    y: YPos = YPos.float(0.px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "",
@@ -470,7 +470,7 @@ sealed case class Line(
     width: Width,
     height: Height,
     x: RestrictedLength = 0.px,
-    y: YPos = YPos.float(0 px),
+    y: YPos = YPos.float(0.px),
     style: AbstractStyle = Style.inherit,
     conditions : Conditions = Conditions.default,
     key: String = "",
@@ -500,7 +500,7 @@ sealed case class Rectangle(
     width: Width,
     height: Height,
     x: RestrictedLength = 0.px,
-    y: YPos = YPos.float(0 px),
+    y: YPos = YPos.float(0.px),
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
     key: String = "")
@@ -522,7 +522,7 @@ sealed case class StaticText(
     height: Height = Height.fixed(1.0.em),
     width: Width = Width.Remaining,
     x: RestrictedLength = 0.px,
-    y: YPos = YPos.float(0 px),
+    y: YPos = YPos.float(0.px),
     key: String = "",
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default)
@@ -545,7 +545,7 @@ sealed case class TextField(
     height: Height = Height.fixed(1.0.em),
     width: Width = Width.Remaining,
     x: RestrictedLength = 0.px,
-    y: YPos = YPos.float(0 px),
+    y: YPos = YPos.float(0.px),
     key: String = "",
     style: AbstractStyle = Style.inherit,
     conditions: Conditions = Conditions.default,
@@ -578,7 +578,7 @@ sealed case class TextField(
     Anchor.put(anchor,
       r.setAnchorNameExpression,
       r.setBookmarkLevel) >>
-    ret(r.setStretchWithOverflow(stretchWithOverflow)) >>
+    ret(r.setTextAdjust(if(stretchWithOverflow) then TextAdjustEnum.STRETCH_HEIGHT else TextAdjustEnum.CUT_TEXT)) >>
     EvaluationTime.putEvaluationTime(evaluationTime, r.setEvaluationTime, r.setEvaluationGroup) >>
     drop(expression.transform) { r.setExpression } >>
     drop(orNull(patternExpression map {_.transform})) { r.setPatternExpression } >>
@@ -617,7 +617,7 @@ sealed case class Subreport(
    height: Height,
    width: Width = Width.Remaining,
    x: RestrictedLength = 0.px,
-   y: YPos = YPos.float(0 px),
+   y: YPos = YPos.float(0.px),
    style: AbstractStyle = Style.inherit,
    conditions: Conditions = Conditions.default,
    key: String = "",
@@ -677,7 +677,7 @@ sealed case class ComponentElement(
      height: Height, // derive like BandHeight?
      width: Width = Width.Remaining,
      x: RestrictedLength = 0.px,
-     y: YPos = YPos.float(0 px),
+     y: YPos = YPos.float(0.px),
      style: AbstractStyle = Style.inherit,
      conditions: Conditions = Conditions.default,
      key: String = "")

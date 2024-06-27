@@ -6,21 +6,21 @@ import net.sf.jasperreports.engine.{JRDataSource, JREmptyDataSource}
 ;
 
 package object core {
-  implicit def lengthValue(value: Double) = new LengthValue(value)
-  implicit def lengthValue(value: Int) = new LengthValue(value)
+  implicit def lengthValue(value: Double): LengthValue = new LengthValue(value)
+  implicit def lengthValue(value: Int): LengthValue = new LengthValue(value)
 
-  implicit def fractionValue(value: Double) = FractionValue(value) // might get too confusing val p:Percent = 0.45 ?
-  implicit def fractionValue(value: Int) = FractionValue(value)
+  implicit def fractionValue(value: Double): FractionValue = FractionValue(value) // might get too confusing val p:Percent = 0.45 ?
+  implicit def fractionValue(value: Int): FractionValue = FractionValue(value)
 
-  implicit def partialLength(p: FractionValue) = RestrictedLength(p, 0.px)
-  implicit def absoluteLength(l: Length) = RestrictedLength(0.0, l)
+  implicit def partialLength(p: FractionValue): RestrictedLength = RestrictedLength(p, 0.px)
+  implicit def absoluteLength(l: Length): RestrictedLength = RestrictedLength(0.0, l)
 
-  implicit def specificWidth(value: RestrictedLength) = Width.Specific(value)
-  implicit def specificWidth(value: FractionValue) = Width.Specific(value)
-  implicit def specificWidth(value: Length) = Width.Specific(value)
+  implicit def specificWidth(value: RestrictedLength): Width.Specific = Width.Specific(value)
+  implicit def specificWidth(value: FractionValue): Width.Specific = Width.Specific(value)
+  implicit def specificWidth(value: Length): Width.Specific = Width.Specific(value)
 
-  implicit def absoluteVertical(value: Length) = AbsoluteVerticalLength(value)
-  implicit def fontRelatedVertical(value: FontSizedLength) = FontRelatedVerticalLength(value)
+  implicit def absoluteVertical(value: Length): AbsoluteVerticalLength = AbsoluteVerticalLength(value)
+  implicit def fontRelatedVertical(value: FontSizedLength): FontRelatedVerticalLength = FontRelatedVerticalLength(value)
 
   // backward-compatiblity; should be removed maybe
   implicit def liftElements(l: Seq[Element]) : Element = if (l.size == 1) l(0) else ElementSeq(l)
