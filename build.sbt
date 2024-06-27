@@ -2,7 +2,7 @@ ThisBuild / scalaVersion := "3.3.3"
 
 organization := "de.active-group"
 name := "ScalaJasper"
-version := "0.6.0-SNAPSHOT"
+version := "0.6.0"
 
 organizationHomepage := Some(url("http://www.active-group.de/"))
 homepage := Some(url("https://github.com/active-group/ScalaJasper"))
